@@ -266,12 +266,15 @@ exports.editUserForm = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   const userId = req.params.id;
-  const { fullname, email, phone, gender, role } = req.body;
+  const { fullname, email, phone, gender, role, wallet_balance2 } = req.body;
 
   try {
+    // Convert empty string to 0, otherwise keep number
+    const balance = wallet_balance2 === "" ? 0 : parseFloat(wallet_balance2);
+
     await pool.query(
-      "UPDATE users2 SET fullname = $1, email = $2, phone = $3, gender = $4, role = $5 WHERE id = $6",
-      [fullname, email, phone, gender, role, userId]
+      "UPDATE users2 SET fullname = $1, email = $2, phone = $3, gender = $4, role = $5, wallet_balance2 = $6 WHERE id = $7",
+      [fullname, email, phone, gender, role, wallet_balance2, userId]
     );
 
     res.redirect("/admin/dashboard");

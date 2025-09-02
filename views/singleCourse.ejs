@@ -104,26 +104,36 @@
                   <p><strong>Price:</strong> ₦<%= course.amount %></p>
                 <% } %>
 
+       
         <div style="display: flex; width: 100%;">
-                <% const isEnrolled = enrolledCourseIds?.includes(course.id); %>
+  <% const isEnrolled = enrolledCourseIds?.includes(course.id); %>
 
-                  <% if (isLoggedIn && !isEnrolled) { %>
-                    <form action="/student/courses/enroll/<%= course.id %>" method="POST" onsubmit="return confirmEnroll(<%= course.amount %>)">
-                      <button type="submit" class="btn-create">
-                        <% if (course.amount == 0) { %>
-                          Enroll for Free
-                        <% } else { %>
-                          Enroll (₦<%= course.amount.toLocaleString() %> from wallet)
-                        <% } %>
-                      </button>
-                    </form>
-                  <% } else if (isLoggedIn && isEnrolled) { %>
-                    <p style="color: green;"><i class="fas fa-check-circle"></i> Already Enrolled</p>
-                  <% } else { %>
-                    <button class="btn-create" onclick="promptLogin()">Login to Enroll</button>
-                  <% } %>
-                  </div>
-        
+  <% if (isLoggedIn && !isEnrolled) { %>
+    <% if (course.amount == 0) { %>
+      <!-- Free course -->
+      <form action="/student/courses/enroll/<%= course.id %>" method="POST">
+        <button type="submit" class="btn-create">Enroll for Free</button>
+      </form>
+    <% } else if (walletBalance >= course.amount) { %>
+      <!-- Paid course and balance is enough -->
+      <form action="/student/courses/enroll/<%= course.id %>" method="POST">
+        <button type="submit" class="btn-create">
+          Enroll (₦<%= course.amount.toLocaleString() %> from wallet)
+        </button>
+      </form>
+    <% } else { %>
+      <!-- Not enough balance -->
+      <p style="color:red;font-weight:bold;">
+        ❌ Not sufficient funds. <a class="btn-create" href="/make-payment">Fund wallet</a>
+      </p>
+    <% } %>
+  <% } else if (isLoggedIn && isEnrolled) { %>
+    <p style="color: green;"><i class="fas fa-check-circle"></i> Already Enrolled</p>
+  <% } else { %>
+    <button class="btn-create" onclick="promptLogin()">Login to Enroll</button>
+  <% } %>
+</div>
+
 
     </div>
 

@@ -800,8 +800,75 @@ exports.completeLesson = async (req, res) => {
 
 // POST: Enroll in course using wallet balance
 
+// exports.enrollInCourse = async (req, res) => {
+//   console.log("req.user:", req.user); // 👈 Add this
+//   const userId = req.user.id;
+//   const courseId = req.params.courseId;
+
+//   try {
+//     // 1. Check if already enrolled
+//     const check = await pool.query(
+//       "SELECT * FROM course_enrollments WHERE user_id = $1 AND course_id = $2",
+//       [userId, courseId]
+//     );
+
+//     if (check.rows.length > 0) {
+//       return res.redirect("/student/courses?msg=Already enrolled");
+//     }
+
+//     // 2. Get course info
+//     const courseRes = await pool.query("SELECT * FROM courses WHERE id = $1", [
+//       courseId,
+//     ]);
+//     const course = courseRes.rows[0];
+
+//     if (!course) {
+//       return res.status(404).send("Course not found.");
+//     }
+
+//     if (course.amount > 0) {
+//       // 3. Get user wallet
+//       const userRes = await pool.query(
+//         "SELECT wallet_balance2 FROM users2 WHERE id = $1",
+//         [userId]
+//       );
+//       const wallet = userRes.rows[0].wallet_balance;
+
+//       if (wallet < course.amount) {
+//         return res.redirect(
+//           "/student/dashboard?msg=Insufficient wallet balance"
+//         );
+//       }
+
+//       // 4. Deduct wallet
+//       await pool.query(
+//         "UPDATE users2 SET wallet_balance2 = wallet_balance2 - $1 WHERE id = $2",
+//         [course.amount, userId]
+//       );
+
+//       // 4b. Get new wallet balance
+//       const updatedWalletRes = await pool.query(
+//         "SELECT wallet_balance FROM users2 WHERE id = $1",
+//         [userId]
+//       );
+//       const newWalletBalance = updatedWalletRes.rows[0]?.wallet_balance;
+//     }
+
+//     // 5. Enroll student
+//     await pool.query(
+//       "INSERT INTO course_enrollments (user_id, course_id, progress) VALUES ($1, $2, 0)",
+//       [userId, courseId]
+//     );
+
+//     res.redirect("/student/courses?msg=Enrollment successful");
+//   } catch (err) {
+//     console.error("Enrollment error:", err);
+//     res.status(500).send("Server error");
+//   }
+// };
+
 exports.enrollInCourse = async (req, res) => {
-  console.log("req.user:", req.user); // 👈 Add this
+  console.log("req.user:", req.user);
   const userId = req.user.id;
   const courseId = req.params.courseId;
 
@@ -832,7 +899,7 @@ exports.enrollInCourse = async (req, res) => {
         "SELECT wallet_balance2 FROM users2 WHERE id = $1",
         [userId]
       );
-      const wallet = userRes.rows[0].wallet_balance;
+      const wallet = userRes.rows[0].wallet_balance2; // ✅ fixed
 
       if (wallet < course.amount) {
         return res.redirect(
@@ -846,12 +913,15 @@ exports.enrollInCourse = async (req, res) => {
         [course.amount, userId]
       );
 
-      // 4b. Get new wallet balance
+      // Optional: log new balance
       const updatedWalletRes = await pool.query(
-        "SELECT wallet_balance FROM users2 WHERE id = $1",
+        "SELECT wallet_balance2 FROM users2 WHERE id = $1",
         [userId]
       );
-      const newWalletBalance = updatedWalletRes.rows[0]?.wallet_balance;
+      console.log(
+        "New wallet balance:",
+        updatedWalletRes.rows[0].wallet_balance2
+      );
     }
 
     // 5. Enroll student
@@ -866,6 +936,7 @@ exports.enrollInCourse = async (req, res) => {
     res.status(500).send("Server error");
   }
 };
+
 
 exports.editProfile = async (req, res) => {
   const { fullname, gender, dob } = req.body;
