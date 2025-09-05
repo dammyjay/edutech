@@ -114,15 +114,68 @@ exports.getDashboard = async (req, res) => {
     }
 
     // Lessons (🔑 with unlocked flag)
+    // const moduleIds = modulesRes.rows.map((m) => m.id);
+    // let lessonCounts = {};
+    // let moduleLessons = {};
+    // if (moduleIds.length > 0) {
+    //   const countRes = await pool.query(
+    //     `SELECT module_id, COUNT(*) AS total_lessons
+    //      FROM lessons
+    //      WHERE module_id = ANY($1)
+    //      GROUP BY module_id`,
+    //     [moduleIds]
+    //   );
+    //   countRes.rows.forEach((row) => {
+    //     lessonCounts[row.module_id] = parseInt(row.total_lessons);
+    //   });
+
+    //   const lessonsRes = await pool.query(
+    //     `
+    //     SELECT l.*,
+    //            EXISTS(
+    //              SELECT 1 FROM unlocked_lessons ul
+    //              WHERE ul.student_id = $2 AND ul.lesson_id = l.id
+    //            ) AS unlocked,
+    //            EXISTS(SELECT 1 FROM quizzes q WHERE q.lesson_id = l.id) AS has_quiz
+    //     FROM lessons l
+    //     WHERE l.module_id = ANY($1)
+    //     ORDER BY l.id ASC
+    //     `,
+    //     [moduleIds, studentId]
+    //   );
+
+    //   // Auto-unlock first lesson if none unlocked
+    //   if (
+    //     lessonsRes.rows.length > 0 &&
+    //     !lessonsRes.rows.some((l) => l.unlocked)
+    //   ) {
+    //     const firstLesson = lessonsRes.rows[0];
+    //     firstLesson.unlocked = true;
+    //     await pool.query(
+    //       `INSERT INTO unlocked_lessons (student_id, lesson_id)
+    //        VALUES ($1,$2)
+    //        ON CONFLICT (student_id,lesson_id) DO NOTHING`,
+    //       [studentId, firstLesson.id]
+    //     );
+    //   }
+
+    //   lessonsRes.rows.forEach((lesson) => {
+    //     if (!moduleLessons[lesson.module_id])
+    //       moduleLessons[lesson.module_id] = [];
+    //     moduleLessons[lesson.module_id].push(lesson);
+    //   });
+    // }
+
+    // Lessons (🔑 with unlocked flag)
     const moduleIds = modulesRes.rows.map((m) => m.id);
     let lessonCounts = {};
     let moduleLessons = {};
     if (moduleIds.length > 0) {
       const countRes = await pool.query(
         `SELECT module_id, COUNT(*) AS total_lessons
-         FROM lessons
-         WHERE module_id = ANY($1)
-         GROUP BY module_id`,
+     FROM lessons
+     WHERE module_id = ANY($1)
+     GROUP BY module_id`,
         [moduleIds]
       );
       countRes.rows.forEach((row) => {
@@ -131,32 +184,40 @@ exports.getDashboard = async (req, res) => {
 
       const lessonsRes = await pool.query(
         `
-        SELECT l.*,
-               EXISTS(
-                 SELECT 1 FROM unlocked_lessons ul
-                 WHERE ul.student_id = $2 AND ul.lesson_id = l.id
-               ) AS unlocked,
-               EXISTS(SELECT 1 FROM quizzes q WHERE q.lesson_id = l.id) AS has_quiz
-        FROM lessons l
-        WHERE l.module_id = ANY($1)
-        ORDER BY l.id ASC
-        `,
+    SELECT l.*,
+           EXISTS(
+             SELECT 1 FROM unlocked_lessons ul
+             WHERE ul.student_id = $2 AND ul.lesson_id = l.id
+           ) AS unlocked,
+           EXISTS(SELECT 1 FROM quizzes q WHERE q.lesson_id = l.id) AS has_quiz
+    FROM lessons l
+    WHERE l.module_id = ANY($1)
+    ORDER BY l.id ASC
+    `,
         [moduleIds, studentId]
       );
 
-      // Auto-unlock first lesson if none unlocked
-      if (
-        lessonsRes.rows.length > 0 &&
-        !lessonsRes.rows.some((l) => l.unlocked)
-      ) {
-        const firstLesson = lessonsRes.rows[0];
-        firstLesson.unlocked = true;
-        await pool.query(
-          `INSERT INTO unlocked_lessons (student_id, lesson_id)
-           VALUES ($1,$2)
-           ON CONFLICT (student_id,lesson_id) DO NOTHING`,
-          [studentId, firstLesson.id]
+      // Auto-unlock the first lesson of each unlocked module if none unlocked yet
+      for (const mod of modulesRes.rows) {
+        if (!mod.unlocked) continue; // skip locked modules
+
+        const lessonsForModule = lessonsRes.rows.filter(
+          (l) => l.module_id === mod.id
         );
+
+        if (
+          lessonsForModule.length > 0 &&
+          !lessonsForModule.some((l) => l.unlocked)
+        ) {
+          const firstLesson = lessonsForModule[0]; // lowest id lesson
+          firstLesson.unlocked = true;
+          await pool.query(
+            `INSERT INTO unlocked_lessons (student_id, lesson_id)
+         VALUES ($1,$2)
+         ON CONFLICT (student_id,lesson_id) DO NOTHING`,
+            [studentId, firstLesson.id]
+          );
+        }
       }
 
       lessonsRes.rows.forEach((lesson) => {
