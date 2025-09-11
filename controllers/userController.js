@@ -52,7 +52,8 @@ exports.signup = async (req, res) => {
       dob,
     ]
   );
-  await sendEmail(email, "Your OTP Code", `Your code is: ${otp}`);
+  // await sendEmail(email, "Your OTP Code", `Your code is: ${otp}`);
+  await sendEmail("dammykirchhoff@gmail.com", "Your OTP Code", `Your code is: ${otp}`);
   res.status(200).send("OTP sent to your email.");
 };
 
