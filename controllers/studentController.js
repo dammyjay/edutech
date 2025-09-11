@@ -1898,11 +1898,242 @@ exports.viewAssignment = async (req, res) => {
 };
 
 // ✅ Student submits an assignment
+// exports.submitAssignment = async (req, res) => {
+//   try {
+//     const assignmentId = req.params.assignmentId || req.body.assignmentId;
+
+//     // ✅ Try different sources for studentId
+//     let studentId =
+//       req.session?.student?.id || req.user?.id || req.body.studentId;
+//     const { description } = req.body;
+//     const file = req.file ? req.file.path : null; // multer file path
+
+//     if (!assignmentId || !description) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Assignment ID and description are required.",
+//       });
+//     }
+
+//     if (!studentId) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Student ID missing. Please log in again.",
+//       });
+//     }
+
+//     // ✅ Check assignment exists
+//     const aRes = await pool.query(
+//       `SELECT id, title, instructions FROM module_assignments WHERE id=$1`,
+//       [assignmentId]
+//     );
+//     if (aRes.rows.length === 0) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Assignment not found." });
+//     }
+//     const assignment = aRes.rows[0];
+
+//     // ✅ Save submission
+//     const save = await pool.query(
+//       `INSERT INTO assignment_submissions (assignment_id, student_id, description, file_url)
+//        VALUES ($1,$2,$3,$4) RETURNING *`,
+//       [assignmentId, studentId, description, file]
+//     );
+//     const submission = save.rows[0];
+
+//     // ✅ AI grading
+// //     const gradingPrompt = `
+// // You are an AI tutor. A student submitted an assignment.
+
+// // ASSIGNMENT TITLE: ${assignment.title}
+// // INSTRUCTIONS: ${assignment.instructions}
+
+// // STUDENT SUBMISSION:
+// // "${description}"
+
+// // TASK:
+// // - Grade the submission based on instructions.
+// // - Give a score out of 100.
+// // - Assign a grade (A, B, C, D, F).
+// // - Provide constructive, encouraging feedback (3–5 sentences).
+
+// // OUTPUT:
+// // Return only JSON:
+// // {
+// //   "score": 85,
+// //   "grade": "B",
+// //   "feedback": "..."
+// // }
+//     // `;
+    
+//     const gradingPrompt = `
+// You are an AI tutor grading a student's assignment.
+
+// --- ASSIGNMENT INSTRUCTIONS ---
+// ${assignment.instructions}
+
+// Inside the instructions, the "Evaluation Criteria" or "Marking Scheme" is described.
+// Extract those criteria and use them as the official rubric.
+
+// --- STUDENT SUBMISSION ---
+// "${description}"
+
+// --- TASK ---
+// 1. Parse the evaluation criteria from the assignment instructions.
+// 2. Check how well the student's submission meets each criterion.
+// 3. Assign a score for EACH criterion (out of its allocated weight).
+// 4. Sum up the weighted scores to a total (0–100).
+// 5. Assign a grade:
+//    - A (90–100)
+//    - B (75–89)
+//    - C (60–74)
+//    - D (40–59)
+//    - F (<40)
+// 6. Provide constructive feedback (3–5 sentences), explaining strengths and weaknesses.
+
+// --- OUTPUT FORMAT ---
+// Return ONLY valid JSON, e.g.:
+
+// {
+//   "criteria": {
+//     "Theoretical answers": 10,
+//     "Correct use of interface & tools": 0,
+//     "Part creation and arrangement": 0,
+//     "Obstacle Step build": 0,
+//     "Use of colors and materials": 0,
+//     "Proper saving and submission": 0
+//   },
+//   "total": 10,
+//   "grade": "F",
+//   "feedback": "The submission does not follow the required structure. Most parts of the task were missing..."
+// }
+// `;
+
+
+//     let score = null,
+//       grade = null,
+//       feedbackText = null;
+
+//     try {
+//       const raw = await askTutor({ question: gradingPrompt });
+//       console.log("AI Raw Response:", raw); // 🔍 debug what AI sends
+
+//       const jsonMatch = raw.match(/\{[\s\S]*\}/);
+//       if (jsonMatch) {
+//         const parsed = JSON.parse(jsonMatch[0]);
+
+//         score = parsed.score ?? null;
+//         grade = parsed.grade ?? null;
+//         feedbackText = parsed.feedback ?? null;
+//       }
+
+//       if (!feedbackText) {
+//         // fallback if AI didn’t provide feedback
+//         feedbackText =
+//           "Your assignment was graded, but detailed feedback was not generated. Please try again or ask your tutor.";
+//       }
+//     } catch (err) {
+//       console.error("AI grading failed:", err.message);
+//       feedbackText =
+//         "AI grading unavailable. Your assignment has been submitted.";
+//     }
+
+//     // ✅ Update submission with grading
+//     await pool.query(
+//       `UPDATE assignment_submissions
+//        SET score=$1, grade=$2, ai_feedback=$3
+//        WHERE id=$4`,
+//       [score, grade, feedbackText, submission.id]
+//     );
+
+//     res.json({
+//       success: true,
+//       message: "Assignment submitted and graded ✅",
+//       submissionId: submission.id,
+//       score,
+//       grade,
+//       feedbackText,
+//     });
+
+//     // ✅ Unlock next module after assignment is graded
+//     if (score !== null) {
+//       // grading happened
+//       const nextModuleRes = await pool.query(
+//         `SELECT id FROM modules
+//      WHERE course_id = (SELECT course_id FROM modules WHERE id=(SELECT module_id FROM module_assignments WHERE id=$1))
+//        AND id > (SELECT module_id FROM module_assignments WHERE id=$1)
+//      ORDER BY id ASC
+//      LIMIT 1`,
+//         [assignmentId]
+//       );
+
+//       if (nextModuleRes.rows.length > 0) {
+//         const nextModuleId = nextModuleRes.rows[0].id;
+
+//         await pool.query(
+//           `INSERT INTO unlocked_modules (student_id, module_id)
+//        VALUES ($1, $2)
+//        ON CONFLICT (student_id, module_id) DO NOTHING`,
+//           [studentId, nextModuleId]
+//         );
+
+//         // 🔑 Also auto-unlock the first lesson of that module
+//         const firstLessonRes = await pool.query(
+//           `SELECT id FROM lessons WHERE module_id = $1 ORDER BY id ASC LIMIT 1`,
+//           [nextModuleId]
+//         );
+
+//         if (firstLessonRes.rows.length > 0) {
+//           const firstLessonId = firstLessonRes.rows[0].id;
+//           await pool.query(
+//             `INSERT INTO unlocked_lessons (student_id, lesson_id)
+//        VALUES ($1, $2)
+//        ON CONFLICT (student_id, lesson_id) DO NOTHING`,
+//             [studentId, firstLessonId]
+//           );
+//         }
+//       }
+//     }
+//   } catch (err) {
+//     console.error("Assignment submit error:", err.message);
+//     res
+//       .status(500)
+//       .json({ success: false, message: "Failed to submit assignment" });
+//   }
+// };
+
+// StudentController.js
+// exports.getMyAssignments = async (req, res) => {
+//   try {
+//     const submissions = await pool.query(
+//       `SELECT s.id, s.assignment_id, s.description, s.file_url,
+//           s.score, s.grade, s.ai_feedback, s.submitted_at,
+//           ma.title AS assignment_title, ma.instructions,
+//           m.title AS module_title, c.title AS course_title
+//    FROM assignment_submissions s
+//    JOIN module_assignments ma ON s.assignment_id = ma.id
+//    JOIN modules m ON ma.module_id = m.id
+//    JOIN courses c ON m.course_id = c.id
+//    WHERE s.student_id = $1
+//    ORDER BY s.submitted_at DESC`,
+//       [req.user.id]
+//     );
+
+//     res.json({ success: true, submissions: submissions.rows });
+//   } catch (err) {
+//     console.error("Fetch submissions error:", err.message);
+//     res
+//       .status(500)
+//       .json({ success: false, message: "Failed to fetch submissions" });
+//   }
+// };
+
+// ✅ Student submits an assignment
 exports.submitAssignment = async (req, res) => {
   try {
     const assignmentId = req.params.assignmentId || req.body.assignmentId;
 
-    // ✅ Try different sources for studentId
     let studentId =
       req.session?.student?.id || req.user?.id || req.body.studentId;
     const { description } = req.body;
@@ -1914,7 +2145,6 @@ exports.submitAssignment = async (req, res) => {
         message: "Assignment ID and description are required.",
       });
     }
-
     if (!studentId) {
       return res.status(400).json({
         success: false,
@@ -1924,7 +2154,9 @@ exports.submitAssignment = async (req, res) => {
 
     // ✅ Check assignment exists
     const aRes = await pool.query(
-      `SELECT id, title, instructions FROM module_assignments WHERE id=$1`,
+      `SELECT id, title, instructions 
+       FROM module_assignments 
+       WHERE id=$1`,
       [assignmentId]
     );
     if (aRes.rows.length === 0) {
@@ -1934,7 +2166,7 @@ exports.submitAssignment = async (req, res) => {
     }
     const assignment = aRes.rows[0];
 
-    // ✅ Save submission
+    // ✅ Save submission (ungraded first)
     const save = await pool.query(
       `INSERT INTO assignment_submissions (assignment_id, student_id, description, file_url)
        VALUES ($1,$2,$3,$4) RETURNING *`,
@@ -1944,50 +2176,69 @@ exports.submitAssignment = async (req, res) => {
 
     // ✅ AI grading
     const gradingPrompt = `
-You are an AI tutor. A student submitted an assignment.
+You are an AI tutor grading a student's assignment.
 
-ASSIGNMENT TITLE: ${assignment.title}
-INSTRUCTIONS: ${assignment.instructions}
+--- ASSIGNMENT INSTRUCTIONS ---
+${assignment.instructions}
 
-STUDENT SUBMISSION:
+Inside the instructions, the "Evaluation Criteria" or "Marking Scheme" is described.
+Extract those criteria and use them as the official rubric.
+
+--- STUDENT SUBMISSION ---
 "${description}"
 
-TASK:
-- Grade the submission based on instructions.
-- Give a score out of 100.
-- Assign a grade (A, B, C, D, F).
-- Provide constructive, encouraging feedback (3–5 sentences).
+--- TASK ---
+1. Parse the evaluation criteria from the assignment instructions.
+2. Check how well the student's submission meets each criterion.
+3. Assign a score for EACH criterion (out of its allocated weight).
+4. Sum up the weighted scores to a total (0–100).
+5. Assign a grade:
+   - A (90–100)
+   - B (75–89)
+   - C (60–74)
+   - D (40–59)
+   - F (<40)
+6. Provide constructive feedback (3–5 sentences), explaining strengths and weaknesses.
 
-OUTPUT:
-Return only JSON:
+--- OUTPUT FORMAT ---
+Return ONLY valid JSON, e.g.:
+
 {
-  "score": 85,
-  "grade": "B",
-  "feedback": "..."
+  "criteria": {
+    "Theoretical answers": 10,
+    "Correct use of interface & tools": 0,
+    "Part creation and arrangement": 0,
+    "Obstacle Step build": 0,
+    "Use of colors and materials": 0,
+    "Proper saving and submission": 0
+  },
+  "total": 10,
+  "grade": "F",
+  "feedback": "The submission does not follow the required structure..."
 }
 `;
 
-    let score = null,
+    let total = null,
       grade = null,
-      feedbackText = null;
+      feedbackText = null,
+      criteria = null;
 
     try {
       const raw = await askTutor({ question: gradingPrompt });
-      console.log("AI Raw Response:", raw); // 🔍 debug what AI sends
+      console.log("AI Raw Response:", raw);
 
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
-
-        score = parsed.score ?? null;
+        total = parsed.total ?? null;
         grade = parsed.grade ?? null;
         feedbackText = parsed.feedback ?? null;
+        criteria = parsed.criteria ?? null;
       }
 
       if (!feedbackText) {
-        // fallback if AI didn’t provide feedback
         feedbackText =
-          "Your assignment was graded, but detailed feedback was not generated. Please try again or ask your tutor.";
+          "Your assignment was graded, but detailed feedback was not generated.";
       }
     } catch (err) {
       console.error("AI grading failed:", err.message);
@@ -1998,29 +2249,29 @@ Return only JSON:
     // ✅ Update submission with grading
     await pool.query(
       `UPDATE assignment_submissions
-       SET score=$1, grade=$2, ai_feedback=$3
-       WHERE id=$4`,
-      [score, grade, feedbackText, submission.id]
+       SET score=$1, total=$1, grade=$2, ai_feedback=$3, criteria=$4
+       WHERE id=$5`,
+      [total, grade, feedbackText, criteria ? JSON.stringify(criteria) : null, submission.id]
     );
 
     res.json({
       success: true,
       message: "Assignment submitted and graded ✅",
       submissionId: submission.id,
-      score,
+      total,
       grade,
       feedbackText,
+      criteria,
     });
 
-    // ✅ Unlock next module after assignment is graded
-    if (score !== null) {
-      // grading happened
+    // ✅ Unlock next module if grading happened
+    if (total !== null) {
       const nextModuleRes = await pool.query(
         `SELECT id FROM modules 
-     WHERE course_id = (SELECT course_id FROM modules WHERE id=(SELECT module_id FROM module_assignments WHERE id=$1))
-       AND id > (SELECT module_id FROM module_assignments WHERE id=$1)
-     ORDER BY id ASC
-     LIMIT 1`,
+         WHERE course_id = (SELECT course_id FROM modules WHERE id=(SELECT module_id FROM module_assignments WHERE id=$1))
+           AND id > (SELECT module_id FROM module_assignments WHERE id=$1)
+         ORDER BY id ASC
+         LIMIT 1`,
         [assignmentId]
       );
 
@@ -2029,54 +2280,116 @@ Return only JSON:
 
         await pool.query(
           `INSERT INTO unlocked_modules (student_id, module_id)
-       VALUES ($1, $2)
-       ON CONFLICT (student_id, module_id) DO NOTHING`,
+           VALUES ($1, $2)
+           ON CONFLICT (student_id, module_id) DO NOTHING`,
           [studentId, nextModuleId]
         );
 
-        // 🔑 Also auto-unlock the first lesson of that module
+        // 🔑 Auto-unlock first lesson
         const firstLessonRes = await pool.query(
-          `SELECT id FROM lessons WHERE module_id = $1 ORDER BY id ASC LIMIT 1`,
+          `SELECT id FROM lessons WHERE module_id=$1 ORDER BY id ASC LIMIT 1`,
           [nextModuleId]
         );
-
         if (firstLessonRes.rows.length > 0) {
-          const firstLessonId = firstLessonRes.rows[0].id;
           await pool.query(
             `INSERT INTO unlocked_lessons (student_id, lesson_id)
-       VALUES ($1, $2)
-       ON CONFLICT (student_id, lesson_id) DO NOTHING`,
-            [studentId, firstLessonId]
+             VALUES ($1, $2)
+             ON CONFLICT (student_id, lesson_id) DO NOTHING`,
+            [studentId, firstLessonRes.rows[0].id]
           );
         }
       }
     }
   } catch (err) {
     console.error("Assignment submit error:", err.message);
-    res
-      .status(500)
-      .json({ success: false, message: "Failed to submit assignment" });
+    res.status(500).json({ success: false, message: "Failed to submit assignment" });
   }
 };
 
-// StudentController.js
+// exports.getMyAssignments = async (req, res) => {
+//   try {
+//     const submissions = await pool.query(
+//       `SELECT s.id, s.assignment_id, s.description, s.file_url,
+//               s.score, s.total, s.grade, s.ai_feedback, s.criteria,
+//               s.created_at AS submitted_at,
+//               ma.title AS assignment_title, ma.instructions,
+//               m.title AS module_title, c.title AS course_title
+//        FROM assignment_submissions s
+//        JOIN module_assignments ma ON s.assignment_id = ma.id
+//        JOIN modules m ON ma.module_id = m.id
+//        JOIN courses c ON m.course_id = c.id
+//        WHERE s.student_id = $1
+//        ORDER BY s.created_at DESC`,
+//       [req.user.id]
+//     );
+
+//     res.json({ success: true, submissions: submissions.rows });
+//   } catch (err) {
+//     console.error("Fetch submissions error:", err.message);
+//     res
+//       .status(500)
+//       .json({ success: false, message: "Failed to fetch submissions" });
+//   }
+// };
+
+
+// exports.getSubmissionById = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const sub = await pool.query(
+//       `SELECT s.*,
+//           ma.title AS assignment_title, ma.instructions,
+//           m.title AS module_title, c.title AS course_title
+//    FROM assignment_submissions s
+//    JOIN module_assignments ma ON s.assignment_id = ma.id
+//    JOIN modules m ON ma.module_id = m.id
+//    JOIN courses c ON m.course_id = c.id
+//    WHERE s.id = $1 AND s.student_id = $2`,
+//       [id, req.user.id]
+//     );
+
+
+//     if (sub.rows.length === 0) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Submission not found" });
+//     }
+
+//     res.json({ success: true, submission: sub.rows[0] });
+//   } catch (err) {
+//     console.error("Fetch single submission error:", err.message);
+//     res
+//       .status(500)
+//       .json({ success: false, message: "Failed to load submission" });
+//   }
+// };
+
+
+
 exports.getMyAssignments = async (req, res) => {
   try {
     const submissions = await pool.query(
       `SELECT s.id, s.assignment_id, s.description, s.file_url, 
-          s.score, s.grade, s.ai_feedback, s.submitted_at,
-          ma.title AS assignment_title, ma.instructions,
-          m.title AS module_title, c.title AS course_title
-   FROM assignment_submissions s
-   JOIN module_assignments ma ON s.assignment_id = ma.id
-   JOIN modules m ON ma.module_id = m.id
-   JOIN courses c ON m.course_id = c.id
-   WHERE s.student_id = $1
-   ORDER BY s.submitted_at DESC`,
+              s.score, s.total, s.grade, s.ai_feedback, s.criteria,
+              s.created_at AS submitted_at,
+              ma.title AS assignment_title, ma.instructions,
+              m.title AS module_title, c.title AS course_title
+       FROM assignment_submissions s
+       JOIN module_assignments ma ON s.assignment_id = ma.id
+       JOIN modules m ON ma.module_id = m.id
+       JOIN courses c ON m.course_id = c.id
+       WHERE s.student_id = $1
+       ORDER BY s.created_at DESC`,
       [req.user.id]
     );
 
-    res.json({ success: true, submissions: submissions.rows });
+    // ✅ Parse criteria JSON safely
+    const rows = submissions.rows.map((r) => ({
+      ...r,
+      criteria: r.criteria ? JSON.parse(r.criteria) : null,
+    }));
+
+    res.json({ success: true, submissions: rows });
   } catch (err) {
     console.error("Fetch submissions error:", err.message);
     res
@@ -2092,14 +2405,13 @@ exports.getSubmissionById = async (req, res) => {
       `SELECT s.*, 
           ma.title AS assignment_title, ma.instructions,
           m.title AS module_title, c.title AS course_title
-   FROM assignment_submissions s
-   JOIN module_assignments ma ON s.assignment_id = ma.id
-   JOIN modules m ON ma.module_id = m.id
-   JOIN courses c ON m.course_id = c.id
-   WHERE s.id = $1 AND s.student_id = $2`,
+       FROM assignment_submissions s
+       JOIN module_assignments ma ON s.assignment_id = ma.id
+       JOIN modules m ON ma.module_id = m.id
+       JOIN courses c ON m.course_id = c.id
+       WHERE s.id = $1 AND s.student_id = $2`,
       [id, req.user.id]
     );
-
 
     if (sub.rows.length === 0) {
       return res
@@ -2107,7 +2419,14 @@ exports.getSubmissionById = async (req, res) => {
         .json({ success: false, message: "Submission not found" });
     }
 
-    res.json({ success: true, submission: sub.rows[0] });
+    const row = sub.rows[0];
+    res.json({
+      success: true,
+      submission: {
+        ...row,
+        criteria: row.criteria ? JSON.parse(row.criteria) : null, total: row.total,
+      },
+    });
   } catch (err) {
     console.error("Fetch single submission error:", err.message);
     res

@@ -71,7 +71,7 @@ async function createTables() {
         reset_token TEXT,
         reset_token_expires TIMESTAMP,
         dob DATE,
-        wallet_balance2 NUMERIC DEFAULT 0
+        wallet_balance2 NUMERIC DEFAULT 0,
         xp INTEGER DEFAULT 0
       )`
     );
@@ -387,7 +387,9 @@ async function createTables() {
           ai_feedback TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           file_url TEXT,
-          grade TEXT
+          grade TEXT,
+          criteria JSON,
+          total INT
       );
       `
     );

@@ -783,6 +783,105 @@ function loadQuizInMain(lessonId) {
 }
 
 
+// async function loadAssignment(assignmentId) {
+//   try {
+//     const res = await fetch(`/student/assignments/${assignmentId}`);
+//     if (!res.ok) {
+//       const text = await res.text();
+//       console.error("Assignment fetch failed:", text);
+//       alert("Could not load assignment");
+//       return;
+//     }
+//     const data = await res.json();
+
+//     const lessonMain = document.getElementById("lessonMainArea");
+
+//     if (data.submitted) {
+//       // ✅ Show submission instead of form
+//       lessonMain.innerHTML = `
+//         <div class="assignment-container" style="border:1px solid #ccc; padding:15px; border-radius:8px; max-width:600px;">
+//           <h2>📑 ${data.assignment.title}</h2>
+//           <p><strong>Course:</strong> ${data.assignment.course_title}</p>
+//           <p><strong>Module:</strong> ${data.assignment.module_title}</p>
+//           <hr>
+//           <h3>✅ You already submitted this assignment</h3>
+//           <p><strong>Description:</strong> ${data.submission.description}</p>
+//           ${data.submission.file_url ? `<p><a href="${data.submission.file_url}" target="_blank">📂 View File</a></p>` : ""}
+//           <p><strong>Score:</strong> ${data.submission.score ?? "Pending"}</p>
+//           <p><strong>Grade:</strong> ${data.submission.grade ?? "N/A"}</p>
+//           <p><strong>AI Feedback:</strong> ${data.submission.ai_feedback ?? "Pending"}</p>
+//         </div>
+//       `;
+//     } else {
+//       // ✅ Show form if not yet submitted
+//       lessonMain.innerHTML = `
+//         <div class="assignment-container" style="border:1px solid #ccc; padding:15px; border-radius:8px; max-width:600px;">
+//           <h2>📑 ${data.assignment.title}</h2>
+//           <p><strong>Course:</strong> ${data.assignment.course_title}</p>
+//           <p><strong>Module:</strong> ${data.assignment.module_title}</p>
+//           <div class="instructions">
+//             <strong>Instructions:</strong>
+//             <p>${data.assignment.instructions}</p>
+//           </div>
+//           <p><strong>Due Date:</strong> ${data.assignment.due_date || "No due date"}</p>
+
+//           <h3>Submit Your Work</h3>
+//           <form id="submitAssignmentForm" enctype="multipart/form-data">
+//             <input type="hidden" name="assignmentId" value="${assignmentId}" />
+//             <label>Description:</label><br>
+//             <textarea name="description" placeholder="Write your answer..." required></textarea><br><br>
+//             <label>Upload File (optional):</label>
+//             <input type="file" name="file"><br><br>
+//             <button type="submit">Submit Assignment</button>
+//           </form>
+//         </div>
+//       `;
+
+//       // ✅ Attach submit handler
+//       document.getElementById("submitAssignmentForm")
+//         .addEventListener("submit", async (e) => {
+//           e.preventDefault();
+//           const formData = new FormData(e.target);
+
+//           const res2 = await fetch(`/student/assignments/${assignmentId}/submit`, {
+//             method: "POST",
+//             body: formData
+//           });
+
+//           const result = await res2.json();
+
+//           if (result.success) {
+//   lessonMain.innerHTML = `
+//     <div class="assignment-container" style="border:1px solid #ccc; padding:15px; border-radius:8px; max-width:600px;">
+//       <h2>✅ Assignment Submitted Successfully!</h2>
+//       <p><strong>Assignment:</strong> ${data.assignment.title}</p>
+//       <p><strong>Status:</strong> Graded by AI</p>
+//       <hr>
+//       <h3>📊 AI Feedback</h3>
+//       <div class="feedback-box">
+//         <p><strong>Score:</strong> ${result.score ?? "Pending"}</p>
+//         <p><strong>Grade:</strong> ${result.grade ?? "N/A"}</p>
+//         <div>
+//           <strong>Comments:</strong>
+//           <p>${result.feedbackText ?? "Feedback not available yet."}</p>
+//         </div>
+//       </div>
+//     </div>
+//   `;
+// } else {
+//   alert(result.message || "❌ Submission failed.");
+// }
+
+//         });
+//     }
+
+//   } catch (err) {
+//     console.error("Error loading assignment:", err);
+//     alert("Could not load assignment");
+//   }
+// }
+
+
 async function loadAssignment(assignmentId) {
   try {
     const res = await fetch(`/student/assignments/${assignmentId}`);
@@ -797,7 +896,13 @@ async function loadAssignment(assignmentId) {
     const lessonMain = document.getElementById("lessonMainArea");
 
     if (data.submitted) {
-      // ✅ Show submission instead of form
+      // ✅ Show previous submission with breakdown
+      const criteriaHTML = data.submission.criteria
+        ? Object.entries(data.submission.criteria)
+            .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
+            .join("")
+        : "<p>No detailed breakdown.</p>";
+
       lessonMain.innerHTML = `
         <div class="assignment-container" style="border:1px solid #ccc; padding:15px; border-radius:8px; max-width:600px;">
           <h2>📑 ${data.assignment.title}</h2>
@@ -807,9 +912,11 @@ async function loadAssignment(assignmentId) {
           <h3>✅ You already submitted this assignment</h3>
           <p><strong>Description:</strong> ${data.submission.description}</p>
           ${data.submission.file_url ? `<p><a href="${data.submission.file_url}" target="_blank">📂 View File</a></p>` : ""}
-          <p><strong>Score:</strong> ${data.submission.score ?? "Pending"}</p>
+          <h3>📊 AI Feedback</h3>
+          <p><strong>Total Score:</strong> ${data.submission.total ?? "Pending"}</p>
           <p><strong>Grade:</strong> ${data.submission.grade ?? "N/A"}</p>
-          <p><strong>AI Feedback:</strong> ${data.submission.ai_feedback ?? "Pending"}</p>
+          <div><strong>Criteria Breakdown:</strong>${criteriaHTML}</div>
+          <div><strong>Comments:</strong><p>${data.submission.ai_feedback ?? "Pending"}</p></div>
         </div>
       `;
     } else {
@@ -851,27 +958,30 @@ async function loadAssignment(assignmentId) {
           const result = await res2.json();
 
           if (result.success) {
-  lessonMain.innerHTML = `
-    <div class="assignment-container" style="border:1px solid #ccc; padding:15px; border-radius:8px; max-width:600px;">
-      <h2>✅ Assignment Submitted Successfully!</h2>
-      <p><strong>Assignment:</strong> ${data.assignment.title}</p>
-      <p><strong>Status:</strong> Graded by AI</p>
-      <hr>
-      <h3>📊 AI Feedback</h3>
-      <div class="feedback-box">
-        <p><strong>Score:</strong> ${result.score ?? "Pending"}</p>
-        <p><strong>Grade:</strong> ${result.grade ?? "N/A"}</p>
-        <div>
-          <strong>Comments:</strong>
-          <p>${result.feedbackText ?? "Feedback not available yet."}</p>
-        </div>
-      </div>
-    </div>
-  `;
-} else {
-  alert(result.message || "❌ Submission failed.");
-}
+            const criteriaHTML = result.criteria
+              ? Object.entries(result.criteria)
+                  .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
+                  .join("")
+              : "<p>No detailed breakdown.</p>";
 
+            lessonMain.innerHTML = `
+              <div class="assignment-container" style="border:1px solid #ccc; padding:15px; border-radius:8px; max-width:600px;">
+                <h2>✅ Assignment Submitted Successfully!</h2>
+                <p><strong>Assignment:</strong> ${data.assignment.title}</p>
+                <p><strong>Status:</strong> Graded by AI</p>
+                <hr>
+                <h3>📊 AI Feedback</h3>
+                <div class="feedback-box">
+                  <p><strong>Total Score:</strong> ${result.total ?? "Pending"}</p>
+                  <p><strong>Grade:</strong> ${result.grade ?? "N/A"}</p>
+                  <div><strong>Criteria Breakdown:</strong>${criteriaHTML}</div>
+                  <div><strong>Comments:</strong><p>${result.feedbackText ?? "Feedback not available yet."}</p></div>
+                </div>
+              </div>
+            `;
+          } else {
+            alert(result.message || "❌ Submission failed.");
+          }
         });
     }
 
@@ -880,6 +990,7 @@ async function loadAssignment(assignmentId) {
     alert("Could not load assignment");
   }
 }
+
 
 document.addEventListener("DOMContentLoaded", () => {
   // Assignment button event binding
@@ -896,6 +1007,73 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
+// async function loadPastSubmissions() {
+//   try {
+//     const res = await fetch("/student/assignments/mine");
+//     const data = await res.json();
+//     if (!data.success) {
+//       alert(data.message || "Could not load submissions");
+//       return;
+//     }
+
+//     const lessonMain = document.getElementById("lessonMainArea");
+//     lessonMain.innerHTML = `
+//       <h2>📚 My Assignment Submissions</h2>
+//       <div class="submissions-list">
+//         ${data.submissions.map(s => `
+//           <div class="submission-card style="border:1px solid #ccc; padding:10px; margin-bottom:10px; width:50%;">
+//             <h3>${s.assignment_title}</h3>
+//             <p><strong>Course:</strong> ${s.course_title}</p>
+//             <p><strong>Module:</strong> ${s.module_title}</p>
+//             <p><strong>Submitted:</strong> ${new Date(s.submitted_at).toLocaleString()}</p>
+//             <p><strong>Score:</strong> ${s.score ?? "Not graded yet"}</p>
+//             <p><strong>Grade:</strong> ${s.grade ?? "-"}</p>
+//             <p><strong>Feedback:</strong> ${s.ai_feedback ?? "Not graded yet"}</p>
+//             <button onclick="reviewSubmission(${s.id})">🔍 Review</button>
+//           </div>
+//         `).join("")}
+//       </div>
+//     `;
+//   } catch (err) {
+//     console.error("Error loading past submissions:", err);
+//     alert("Could not load past submissions");
+//   }
+// }
+
+
+// async function reviewSubmission(subId) {
+//   try {
+//     const res = await fetch(`/student/assignments/submission/${subId}`);
+//     const data = await res.json();
+//     if (!data.success) {
+//       alert(data.message || "Could not load submission");
+//       return;
+//     }
+
+//     const s = data.submission;
+//     const lessonMain = document.getElementById("lessonMainArea");
+//     lessonMain.innerHTML = `
+//       <div class="submission-review">
+//         <h2>📝 ${s.assignment_title}</h2>
+//         <p><strong>Instructions:</strong> ${s.instructions}</p>
+//         <p><strong>Your Answer:</strong> ${s.description}</p>
+//         ${s.file_url ? `<p><a href="${s.file_url}" target="_blank">📂 View File</a></p>` : ""}
+
+//         <h3>✅ AI Feedback</h3>
+//         <p><strong>Score:</strong> ${s.score ?? "Pending"}</p>
+//         <p><strong>Grade:</strong> ${s.grade ?? "-"}</p>
+//         <div class="ai-feedback-box">${s.ai_feedback ?? "Not graded yet"}</div>
+
+//         <button onclick="loadPastSubmissions()">⬅ Back to Submissions</button>
+//       </div>
+//     `;
+//   } catch (err) {
+//     console.error("Error reviewing submission:", err);
+//     alert("Could not review submission");
+//   }
+// }
+
+
 async function loadPastSubmissions() {
   try {
     const res = await fetch("/student/assignments/mine");
@@ -909,18 +1087,36 @@ async function loadPastSubmissions() {
     lessonMain.innerHTML = `
       <h2>📚 My Assignment Submissions</h2>
       <div class="submissions-list">
-        ${data.submissions.map(s => `
-          <div class="submission-card style="border:1px solid #ccc; padding:10px; margin-bottom:10px; width:50%;">
-            <h3>${s.assignment_title}</h3>
-            <p><strong>Course:</strong> ${s.course_title}</p>
-            <p><strong>Module:</strong> ${s.module_title}</p>
-            <p><strong>Submitted:</strong> ${new Date(s.submitted_at).toLocaleString()}</p>
-            <p><strong>Score:</strong> ${s.score ?? "Not graded yet"}</p>
-            <p><strong>Grade:</strong> ${s.grade ?? "-"}</p>
-            <p><strong>Feedback:</strong> ${s.ai_feedback ?? "Not graded yet"}</p>
-            <button onclick="reviewSubmission(${s.id})">🔍 Review</button>
-          </div>
-        `).join("")}
+        ${data.submissions.map(s => {
+          // const criteriaHTML = s.criteria
+          //   ? Object.entries(s.criteria)
+          //       .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
+          //       .join("")
+          //   : "<p>No detailed breakdown.</p>";
+          const criteriaData = s.criteria 
+            ? (typeof s.criteria === "string" ? JSON.parse(s.criteria) : s.criteria) 
+            : null;
+
+          const criteriaHTML = criteriaData
+            ? Object.entries(criteriaData)
+                .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
+                .join("")
+            : "<p>No detailed breakdown.</p>";
+
+          return `
+            <div class="submission-card" style="border:1px solid #ccc; padding:10px; margin-bottom:10px; width:50%;">
+              <h3>${s.assignment_title}</h3>
+              <p><strong>Course:</strong> ${s.course_title}</p>
+              <p><strong>Module:</strong> ${s.module_title}</p>
+              <p><strong>Submitted:</strong> ${new Date(s.submitted_at).toLocaleString()}</p>
+              <p><strong>Total Score:</strong> ${s.total ?? "Not graded yet"}</p>
+              <p><strong>Grade:</strong> ${s.grade ?? "-"}</p>
+              <div><strong>Criteria Breakdown:</strong>${criteriaHTML}</div>
+              <p><strong>Feedback:</strong> ${s.ai_feedback ?? "Not graded yet"}</p>
+              <button onclick="reviewSubmission(${s.id})">🔍 Review</button>
+            </div>
+          `;
+        }).join("")}
       </div>
     `;
   } catch (err) {
@@ -940,18 +1136,36 @@ async function reviewSubmission(subId) {
     }
 
     const s = data.submission;
+
+    // const criteriaHTML = s.criteria
+    //   ? Object.entries(s.criteria)
+    //       .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
+    //       .join("")
+    //   : "<p>No detailed breakdown.</p>";
+
+    const criteriaData = s.criteria 
+      ? (typeof s.criteria === "string" ? JSON.parse(s.criteria) : s.criteria) 
+      : null;
+
+    const criteriaHTML = criteriaData
+      ? Object.entries(criteriaData)
+          .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
+          .join("")
+      : "<p>No detailed breakdown.</p>";
+
     const lessonMain = document.getElementById("lessonMainArea");
     lessonMain.innerHTML = `
-      <div class="submission-review">
+      <div class="submission-review" style="border:1px solid #ccc; padding:15px; border-radius:8px; max-width:600px;">
         <h2>📝 ${s.assignment_title}</h2>
         <p><strong>Instructions:</strong> ${s.instructions}</p>
         <p><strong>Your Answer:</strong> ${s.description}</p>
         ${s.file_url ? `<p><a href="${s.file_url}" target="_blank">📂 View File</a></p>` : ""}
 
         <h3>✅ AI Feedback</h3>
-        <p><strong>Score:</strong> ${s.score ?? "Pending"}</p>
+        <p><strong>Total Score:</strong> ${s.total ?? "Pending"}</p>
         <p><strong>Grade:</strong> ${s.grade ?? "-"}</p>
-        <div class="ai-feedback-box">${s.ai_feedback ?? "Not graded yet"}</div>
+        <div><strong>Criteria Breakdown:</strong>${criteriaHTML}</div>
+        <div class="ai-feedback-box"><strong>Comments:</strong> ${s.ai_feedback ?? "Not graded yet"}</div>
 
         <button onclick="loadPastSubmissions()">⬅ Back to Submissions</button>
       </div>
