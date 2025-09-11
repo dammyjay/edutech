@@ -4,52 +4,150 @@
   <meta charset="UTF-8">
   <title>Student Progress</title>
   <link rel="stylesheet" href="/css/style.css">
-  <style>
-    .tabs { display: flex; border-bottom: 2px solid #ccc; margin-bottom: 20px; }
-    .tab {
-      padding: 10px 20px;
-      cursor: pointer;
-      border: 1px solid #ccc;
-      border-bottom: none;
-      background: #f4f4f4;
-      margin-right: 5px;
-      border-radius: 5px 5px 0 0;
+<style>
+  .tabs { 
+    display: flex; 
+    flex-wrap: wrap; /* wrap tabs to new line on small screens */
+    border-bottom: 2px solid #ccc; 
+    margin-bottom: 20px; 
+  }
+
+  .tab {
+    padding: 10px 15px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-bottom: none;
+    background: #f4f4f4;
+    margin-right: 5px;
+    border-radius: 5px 5px 0 0;
+    flex: 1 1 auto; /* allow equal width on small screens */
+    text-align: center;
+  }
+
+  .tab.active { background: #fff; font-weight: bold; }
+  .tab-content { display: none; padding: 15px; border: 1px solid #ccc; border-radius: 0 5px 5px 5px; background: #fff; width: 100%; }
+  .tab-content.active { display: block; }
+
+  /* Responsive Tables */
+  table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin-top: 10px; 
+    display: block; /* force scroll on small screens */
+    overflow-x: auto; 
+    white-space: nowrap;
+  }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+
+  /* Progress Cards */
+  .course-card, .module-card {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    background: #fafafa;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .course-header, .module-header {
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    background: #f0f0f0;
+    border-radius: 8px 8px 0 0;
+    flex-wrap: wrap;
+  }
+
+  .course-body, .module-body {
+    padding: 10px 20px;
+  }
+
+  .toggle-btn {
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+
+  /* Default: normal table */
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+
+/* Mobile: convert table into cards */
+@media (max-width: 768px) {
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
+
+  thead { display: none; } /* hide headers */
+
+  tr {
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    background: #fafafa;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  td {
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+
+  td::before {
+    content: attr(data-label); /* pull label from header */
+    font-weight: bold;
+    margin-right: 10px;
+    color: #333;
+  }
+}
+
+
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    body { font-size: 14px; }
+
+    .header {
+      flex-direction: column;
+      align-items: flex-start;
     }
-    .tab.active { background: #fff; font-weight: bold; }
-    .tab-content { display: none; padding: 20px; border: 1px solid #ccc; border-radius: 0 5px 5px 5px; background: #fff; }
-    .tab-content.active { display: block; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
 
-    .course-card, .module-card {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  margin-bottom: 15px;
-  background: #fafafa;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
+    h1 { font-size: 1.4rem; }
+    h2 { font-size: 1.2rem; }
+    h3, h4 { font-size: 1rem; }
 
-.course-header, .module-header {
-  padding: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  background: #f0f0f0;
-  border-radius: 8px 8px 0 0;
-}
+    .course-header, .module-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
 
-.course-body, .module-body {
-  padding: 10px 20px;
-}
+    table th, table td {
+      padding: 6px;
+      font-size: 13px;
+    }
+  }
 
-.toggle-btn {
-  font-size: 20px;
-  font-weight: bold;
-  cursor: pointer;
-}
+  @media (max-width: 480px) {
+    .tab { 
+      flex: 100%; /* stack tabs vertically on extra small screens */
+      margin-bottom: 5px;
+      width: 100%;
+    }
+    h1 { font-size: 1.2rem; }
+    h2 { font-size: 1rem; }
+    td{
+        text-wrap: wrap;
+        white-space: normal;
+        text-align: right;
+    }
+  }
+</style>
 
-  </style>
 </head>
 <body>
   <header class="header">
@@ -140,9 +238,9 @@
       <tbody>
         <% courses.forEach(c => { %>
           <tr>
-            <td><%= c.course_title %></td>
-            <td><%= c.percent %>%</td>
-            <td><%= c.enrolled_at ? new Date(c.enrolled_at).toLocaleDateString() : "N/A" %></td>
+            <td data-label="Course"><%= c.course_title %></td>
+            <td data-label="Progress"><%= c.percent %>%</td>
+            <td data-label="Enrolled At"><%= c.enrolled_at ? new Date(c.enrolled_at).toLocaleDateString() : "N/A" %></td>
           </tr>
         <% }) %>
       </tbody>
@@ -190,11 +288,11 @@
         <% courses.forEach(c => { %>
           <% c.modules.forEach(m => { %>
             <tr>
-              <td><%= m.module_title %></td>
-              <td><%= c.course_title %></td>
-              <td><%= m.percent %>%</td>
-              <td><%= m.quizAvg ?? "N/A" %></td>
-              <td><%= m.assignmentAvg ?? "N/A" %></td>
+              <td data-label="Module"><%= m.module_title %></td>
+              <td data-label="Course"><%= c.course_title %></td>
+              <td data-label="Progress"><%= m.percent %>%</td>
+              <td data-label="Quiz Average"><%= m.quizAvg ?? "N/A" %></td>
+              <td data-label="Assignment Average"><%= m.assignmentAvg ?? "N/A" %></td>
             </tr>
           <% }) %>
         <% }) %>
@@ -249,11 +347,11 @@
           <% c.modules.forEach(m => { %>
             <% m.lessons.forEach(l => { %>
               <tr>
-                <td><%= l.lesson_title %></td>
-                <td><%= m.module_title %></td>
-                <td><%= c.course_title %></td>
-                <td><%= l.completed_at ? "✅ Completed" : "❌ Not completed" %></td>
-                <td><%= l.completed_at ? new Date(l.completed_at).toLocaleString() : "-" %></td>
+                <td data-label="Lesson"><%= l.lesson_title %></td>
+                <td data-label="Module"><%= m.module_title %></td>
+                <td data-label="Course"><%= c.course_title %></td>
+                <td data-label="Status"><%= l.completed_at ? "✅ Completed" : "❌ Not completed" %></td>
+                <td data-label="Completed at"><%= l.completed_at ? new Date(l.completed_at).toLocaleString() : "-" %></td>
               </tr>
             <% }) %>
           <% }) %>
@@ -275,10 +373,10 @@
         <tbody>
           <% quizzes.forEach(q => { %>
             <tr>
-              <td><%= q.title %></td>
-              <td><%= q.lesson_title %></td>
-              <td><%= q.score %></td>
-              <td><%= new Date(q.taken_at).toLocaleString() %></td>
+              <td data-label="Quiz"><%= q.title %></td>
+              <td data-label="Lesson"><%= q.lesson_title %></td>
+              <td data-label="Score"><%= q.score %></td>
+              <td data-label="Date taken"><%= new Date(q.taken_at).toLocaleString() %></td>
             </tr>
           <% }) %>
         </tbody>
@@ -368,13 +466,13 @@
           <% c.modules.forEach(m => { %>
             <% m.assignments?.forEach(a => { %>
               <tr>
-                <td><%= a.title %></td>
-                <td><%= m.module_title %></td>
-                <td><%= c.course_title %></td>
-                <td><%= a.total ?? "Pending" %></td>
-                <td><%= a.grade ?? "-" %></td>
-                <td><%= a.ai_feedback ?? "No feedback" %></td>
-                <td><%= a.submitted_at ? new Date(a.submitted_at).toLocaleString() : "-" %></td>
+                <td data-label="Assignment"><%= a.title %></td>
+                <td data-label="Module"><%= m.module_title %></td>
+                <td data-label="Course"><%= c.course_title %></td>
+                <td data-label="Score"><%= a.total ?? "Pending" %></td>
+                <td data-label="Grade"ack><%= a.grade ?? "-" %></td>
+                <td data-label="Feedback"><%= a.ai_feedback ?? "No feedback" %></td>
+                <td data-label="Submitted at"><%= a.submitted_at ? new Date(a.submitted_at).toLocaleString() : "-" %></td>
               </tr>
             <% }) %>
           <% }) %>
