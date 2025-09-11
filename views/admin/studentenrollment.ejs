@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Enrollments</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="logo-title">
+      <img src="/logo.png" alt="Logo" />
+      <p>Admin Dashboard</p>
+    </div>
+    <a href="/admin/dashboard">⬅ Back to Dashboard</a>
+  </header>
+
+  <h1>🎓 Student Enrollments</h1>
+
+  <% if (courses.length > 0) { %>
+    <div class="table-responsive">
+      <table class="user-table" style="width:80%; margin-top:20px;">
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>Thumbnail</th>
+            <th>Enrolled At</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% courses.forEach(c => { %>
+            <tr>
+              <td><%= c.title %></td>
+              <td>
+                <img src="<%= c.thumbnail || '/default-course.png' %>" 
+                     alt="Course Thumbnail" 
+                     style="width:60px; height:60px; object-fit:cover; border-radius:8px;">
+              </td>
+              <td><%= c.enrolled_at ? new Date(c.enrolled_at).toLocaleString() : '-' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <p>No courses enrolled yet.</p>
+  <% } %>
+</body>
+</html>

@@ -337,93 +337,11 @@ router.put("/events/:id", upload.single("image"), adminController.updateEvent);
 // Delete event
 router.delete("/events/:id", adminController.deleteEvent);
 
+// Student management
+router.get("/students", adminController.listStudents);
+router.get("/students/:id", adminController.viewStudentDetails);
+router.get("/students/:id/progress", adminController.viewStudentProgress);
+router.get("/students/:id/enrollments", adminController.viewStudentEnrollments);
 
-
-
-// // Temporary route to add `created_at` column
-// router.get("/fix-created-at", async (req, res) => {
-//   try {
-//     await pool.query(`
-//         ALTER TABLE articles
-//         ADD COLUMN IF NOT EXISTS created_at4 TIMESTAMPTZ DEFAULT NOW();
-//       `);
-//     res.send("✅ created_at column added successfully!");
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send("❌ Failed to add column.");
-//   }
-// });
-
-// router.get("/forgot-password", adminController.showForgotPasswordForm);
-// router.post("/forgot-password", adminController.handleForgotPassword);
-// router.get("/reset-password/:token", adminController.showResetPasswordForm);
-// router.post("/reset-password/:token", adminController.handleResetPassword);
-
-// // routes for announcements
-// router.get("/announcements", adminController.showAnnouncements);
-// router.post(
-//   "/announcements",
-//   upload.single("flyer"),
-//   adminController.createAnnouncement
-// );
-
-// router.post("/announcements/delete/:id", adminController.deleteAnnouncement);
-// router.get("/announcements/edit/:id", adminController.showEditAnnouncement);
-// router.post(
-//   "/announcements/edit/:id",
-//   upload.single("flyer"),
-//   adminController.editAnnouncement
-// );
-
-// // send newsletter email
-// router.get("/newsletter", adminController.showNewsletterForm);
-
-// router.post("/newsletter/send-now/:id", adminController.sendNow);
-// router.post(
-//   "/newsletter/edit/:id",
-//   upload.single("image"),
-//   adminController.editNewsletter
-// );
-
-// router.post(
-//   "/newsletter",
-//   upload.single("image"),
-//   adminController.handleNewsletterForm
-// );
-// router.post("/newsletter/delete/:id", adminController.deleteNewsletter);
-
-// router.get("/admin/profile", adminController.getAdminProfile);
-// router.post(
-//   "/admin/profile",
-//   upload.single("profile_picture"),
-//   adminController.updateAdminProfile
-// );
-
-// router.get("/devotionals", devotionalController.showUploadForm);
-// router.post(
-//   "/devotionals",
-//   upload.single("image_url"),
-//   devotionalController.saveDevotional
-// );
-// router.get("/devotionals/edit/:id", devotionalController.showEditDevotional);
-// router.post(
-//   "/devotionals/edit/:id",
-//   upload.single("image_url"),
-//   devotionalController.updateDevotional
-// );
-// router.post("/devotionals/delete/:id", devotionalController.deleteDevotional);
-
-// router.get("/demo-videos", demoVideoController.showDemoVideos);
-// router.post(
-//   "/demo-videos",
-//   upload.single("video"),
-//   demoVideoController.saveDemoVideo
-// );
-// router.post("/demo-videos/delete/:id", demoVideoController.delete);
-// router.post(
-//   "/demo-videos/edit/:id",
-//   upload.single("video"),
-//   demoVideoController.update
-// );
 
 module.exports = router;

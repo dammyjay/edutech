@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Progress</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .tabs { display: flex; border-bottom: 2px solid #ccc; margin-bottom: 20px; }
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-bottom: none;
+      background: #f4f4f4;
+      margin-right: 5px;
+      border-radius: 5px 5px 0 0;
+    }
+    .tab.active { background: #fff; font-weight: bold; }
+    .tab-content { display: none; padding: 20px; border: 1px solid #ccc; border-radius: 0 5px 5px 5px; background: #fff; }
+    .tab-content.active { display: block; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+
+    .course-card, .module-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  background: #fafafa;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.course-header, .module-header {
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  background: #f0f0f0;
+  border-radius: 8px 8px 0 0;
+}
+
+.course-body, .module-body {
+  padding: 10px 20px;
+}
+
+.toggle-btn {
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+  </style>
+</head>
+<body>
+  <header class="header">
+    <!-- <div class="logo-title">
+      <img src="/logo.png" alt="Logo" />
+      <p>Admin Dashboard</p>
+    </div> -->
+
+    <div class="logo-title">
+        <% info = info || {}; %> <% if (info.logo_url) { %>
+        <img src="<%= info.logo_url %>" alt="Logo" />
+        <% } %>
+        <p><%= info?.company_name || 'Jaykirch Tech Hub' %></p>
+    </div>
+    <a style="text-decoration: none; color: white;" href="/admin/students">⬅ Back to Students</a>
+  </header>
+
+  <h1>📊 Progress Report for <%= student.fullname %></h1>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="openTab('summary')">Summary</div>
+    <div class="tab" onclick="openTab('courses')">Courses</div>
+    <div class="tab" onclick="openTab('modules')">Modules</div>
+    <div class="tab" onclick="openTab('lessons')">Lessons</div>
+    <div class="tab" onclick="openTab('quizzes')">Quizzes</div>
+    <div class="tab" onclick="openTab('assignments')">Assignments</div>
+  </div>
+
+  <!-- Tab Contents -->
+<div id="summary" class="tab-content active">
+  <h2>📌 Summary</h2>
+  <p><strong>Student:</strong> <%= student.fullname %></p>
+  <p><strong>Email:</strong> <%= student.email %></p>
+  <p><strong>Registered:</strong> <%= new Date(student.created_at).toLocaleDateString() %></p>
+
+  <% if (courses.length) { %>
+    <% courses.forEach((c, ci) => { %>
+      <div class="course-card">
+        <div class="course-header" onclick="toggleExpand('course-<%= ci %>')">
+          <h3>🎓 <%= c.course_title %> — <%= c.percent %>% complete</h3>
+          <div class="progress-container">
+            <div class="progress-bar progress-green" style="width:<%= c.percent %>%"><%= c.percent %>%</div>
+          </div>
+          <span class="toggle-btn" id="toggle-btn-course-<%= ci %>">➕</span>
+        </div>
+
+        <div class="course-body" id="course-<%= ci %>" style="display:none;">
+          <% c.modules.forEach((m, mi) => { %>
+            <div class="module-card">
+              <div class="module-header" onclick="toggleExpand('module-<%= ci %>-<%= mi %>')">
+                <h4>📦 <%= m.module_title %> — <%= m.percent %>% complete</h4>
+                <div class="progress-container">
+                  <div class="progress-bar progress-blue" style="width:<%= m.percent %>%"><%= m.percent %>%</div>
+                </div>
+                <span class="toggle-btn" id="toggle-btn-module-<%= ci %>-<%= mi %>">➕</span>
+              </div>
+
+              <div class="module-body" id="module-<%= ci %>-<%= mi %>" style="display:none;">
+                <p>Quiz Avg: <%= m.quizAvg ?? "N/A" %>, Assignment Avg: <%= m.assignmentAvg ?? "N/A" %></p>
+                <ul>
+                  <% m.lessons.forEach(l => { %>
+                    <li>
+                      📚 <%= l.lesson_title %> — 
+                      <%= l.completed_at ? "✅ Completed" : "❌ Not completed" %>
+                    </li>
+                  <% }) %>
+                </ul>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <p>No enrolled courses yet.</p>
+  <% } %>
+</div>
+
+
+<div id="courses" class="tab-content">
+  <h2>🎓 Courses Enrolled</h2>
+  <% if (courses.length) { %>
+    <table>
+      <thead>
+        <tr><th>Course</th><th>Progress</th><th>Enrolled At</th></tr>
+      </thead>
+      <tbody>
+        <% courses.forEach(c => { %>
+          <tr>
+            <td><%= c.course_title %></td>
+            <td><%= c.percent %>%</td>
+            <td><%= c.enrolled_at ? new Date(c.enrolled_at).toLocaleDateString() : "N/A" %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>No courses enrolled.</p>
+  <% } %>
+</div>
+
+
+  <!-- <div id="modules" class="tab-content">
+  <h2>📦 Modules Unlocked</h2>
+  <% if (courses.length) { %>
+    <% courses.forEach(c => { %>
+      <% c.modules.forEach(m => { %>
+        <div style="margin-bottom:15px;">
+          <p>
+            <strong><%= m.module_title %></strong> (in <%= c.course_title %>) —
+            <%= m.percent %>% complete
+          </p>
+          <p>
+            Quiz Avg: <%= m.quizAvg ?? "N/A" %>, Assignment Avg:
+            <%= m.assignmentAvg ?? "N/A" %>
+          </p>
+          <p>
+            Unlocked At:
+            <%= m.unlocked_at ? new Date(m.unlocked_at).toLocaleDateString() : "N/A" %>
+          </p>
+        </div>
+      <% }) %>
+    <% }) %>
+  <% } else { %>
+    <p>No modules unlocked yet.</p>
+  <% } %>
+</div> -->
+
+<div id="modules" class="tab-content">
+  <h2>📦 Modules Unlocked</h2>
+  <% if (courses.length) { %>
+    <table>
+      <thead>
+        <tr><th>Module</th><th>Course</th><th>Progress</th><th>Quiz Avg</th><th>Assignment Avg</th></tr>
+      </thead>
+      <tbody>
+        <% courses.forEach(c => { %>
+          <% c.modules.forEach(m => { %>
+            <tr>
+              <td><%= m.module_title %></td>
+              <td><%= c.course_title %></td>
+              <td><%= m.percent %>%</td>
+              <td><%= m.quizAvg ?? "N/A" %></td>
+              <td><%= m.assignmentAvg ?? "N/A" %></td>
+            </tr>
+          <% }) %>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>No modules unlocked yet.</p>
+  <% } %>
+</div>
+
+
+<!-- <div id="lessons" class="tab-content">
+  <h2>📚 Lessons Progress</h2>
+  <% if (courses.length) { %>
+    <% courses.forEach(c => { %>
+      <h3><%= c.course_title %></h3>
+      <% c.modules.forEach(m => { %>
+        <h4>📦 <%= m.module_title %></h4>
+        <% if (m.lessons.length) { %>
+          <table>
+            <thead>
+              <tr><th>Lesson</th><th>Completed At</th></tr>
+            </thead>
+            <tbody>
+              <% m.lessons.forEach(l => { %>
+                <tr>
+                  <td><%= l.title %></td>
+                  <td><%= l.completed_at ? new Date(l.completed_at).toLocaleString() : "Not completed" %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } else { %>
+          <p>No lessons in this module yet.</p>
+        <% } %>
+      <% }) %>
+    <% }) %>
+  <% } else { %>
+    <p>No lessons available yet.</p>
+  <% } %>
+</div> -->
+
+<div id="lessons" class="tab-content">
+  <h2>📚 Lessons Progress</h2>
+  <% if (courses.length) { %>
+    <table>
+      <thead>
+        <tr><th>Lesson</th><th>Module</th><th>Course</th><th>Status</th><th>Completed At</th></tr>
+      </thead>
+      <tbody>
+        <% courses.forEach(c => { %>
+          <% c.modules.forEach(m => { %>
+            <% m.lessons.forEach(l => { %>
+              <tr>
+                <td><%= l.lesson_title %></td>
+                <td><%= m.module_title %></td>
+                <td><%= c.course_title %></td>
+                <td><%= l.completed_at ? "✅ Completed" : "❌ Not completed" %></td>
+                <td><%= l.completed_at ? new Date(l.completed_at).toLocaleString() : "-" %></td>
+              </tr>
+            <% }) %>
+          <% }) %>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>No lessons available yet.</p>
+  <% } %>
+</div>
+
+
+  <div id="quizzes" class="tab-content">
+    <h2>📝 Quiz Results</h2>
+    <p><strong>Overall Average:</strong> <%= quizAvg ?? "N/A" %></p>
+    <% if (quizzes.length) { %>
+      <table>
+        <thead><tr><th>Quiz</th><th>Lesson</th><th>Score</th><th>Taken At</th></tr></thead>
+        <tbody>
+          <% quizzes.forEach(q => { %>
+            <tr>
+              <td><%= q.title %></td>
+              <td><%= q.lesson_title %></td>
+              <td><%= q.score %></td>
+              <td><%= new Date(q.taken_at).toLocaleString() %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } else { %><p>No quizzes taken yet.</p><% } %>
+  </div>
+
+<!-- <div id="quizzes" class="tab-content">
+  <h2>📝 Quiz Results</h2>
+  <p><strong>Overall Average:</strong> <%= quizAvg ?? "N/A" %></p>
+  <% if (quizzes.length) { %>
+    <table>
+      <thead>
+        <tr><th>Quiz</th><th>Module</th><th>Course</th><th>Score</th><th>Taken At</th></tr>
+      </thead>
+      <tbody>
+        <% courses.forEach(c => { %>
+          <% c.modules.forEach(m => { %>
+            <% m.quizzes?.forEach(q => { %>
+              <tr>
+                <td><%= q.title %></td>
+                <td><%= m.module_title %></td>
+                <td><%= c.course_title %></td>
+                <td><%= q.score %></td>
+                <td><%= new Date(q.taken_at).toLocaleString() %></td>
+              </tr>
+            <% }) %>
+          <% }) %>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } else { %><p>No quizzes taken yet.</p><% } %>
+</div> -->
+
+
+  <!-- <div id="assignments" class="tab-content">
+  <h2>📑 Assignments</h2>
+  <% if (courses.length) { %>
+    <% courses.forEach(c => { %>
+      <h3>🎓 <%= c.course_title %></h3>
+      <% c.modules.forEach(m => { %>
+        <h4>📦 <%= m.module_title %></h4>
+        <% if (m.assignments.length) { %>
+          <table>
+            <thead>
+              <tr>
+                <th>Assignment</th>
+                <th>Score</th>
+                <th>Grade</th>
+                <th>Feedback</th>
+                <th>Submitted At</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% m.assignments.forEach(a => { %>
+                <tr>
+                  <td><%= a.title %></td>
+                  <td><%= a.total ?? "Pending" %></td>
+                  <td><%= a.grade ?? "-" %></td>
+                  <td><%= a.ai_feedback ?? "No feedback" %></td>
+                  <td><%= a.submitted_at ? new Date(a.submitted_at).toLocaleString() : "-" %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } else { %>
+          <p>No assignments submitted for this module yet.</p>
+        <% } %>
+      <% }) %>
+    <% }) %>
+  <% } else { %>
+    <p>No assignments submitted yet.</p>
+  <% } %>
+</div> -->
+<div id="assignments" class="tab-content">
+  <h2>📑 Assignments</h2>
+  <% if (courses.length) { %>
+    <table>
+      <thead>
+        <tr>
+          <th>Assignment</th><th>Module</th><th>Course</th>
+          <th>Score</th><th>Grade</th><th>Feedback</th><th>Submitted At</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% courses.forEach(c => { %>
+          <% c.modules.forEach(m => { %>
+            <% m.assignments?.forEach(a => { %>
+              <tr>
+                <td><%= a.title %></td>
+                <td><%= m.module_title %></td>
+                <td><%= c.course_title %></td>
+                <td><%= a.total ?? "Pending" %></td>
+                <td><%= a.grade ?? "-" %></td>
+                <td><%= a.ai_feedback ?? "No feedback" %></td>
+                <td><%= a.submitted_at ? new Date(a.submitted_at).toLocaleString() : "-" %></td>
+              </tr>
+            <% }) %>
+          <% }) %>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>No assignments submitted yet.</p>
+  <% } %>
+</div>
+
+
+  <script>
+    function openTab(tabId) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      document.querySelector(`.tab[onclick="openTab('${tabId}')"]`).classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+
+    function toggleExpand(id) {
+        const el = document.getElementById(id);
+        const btn = document.getElementById("toggle-btn-" + id);
+        if (el.style.display === "none") {
+            el.style.display = "block";
+            if (btn) btn.textContent = "➖";
+        } else {
+            el.style.display = "none";
+            if (btn) btn.textContent = "➕";
+        }
+    }
+
+  </script>
+</body>
+</html>

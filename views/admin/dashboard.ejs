@@ -18,6 +18,17 @@
       <button class="nav-toggle" onclick="toggleNav()">☰</button>
       <nav id="main-nav">
         <a class="active" href="/admin/dashboard">Dashboard</a>
+        <div class="dropdown">
+          <button class="dropbtn" onclick="toggleDropdown('studentsMenu')">
+            Students ▾
+          </button>
+          <div class="dropdown-content" id="studentsMenu">
+            <a href="/admin/students">All Students</a>
+            <a href="/admin/students/progress">Progress & Performance</a>
+            <a href="/admin/students/enrollments">Enrollments</a>
+          </div>
+        </div>
+
         <a href="/admin/pathways">Pathways</a>
         <a href="/admin/courses">Courses</a>
 
