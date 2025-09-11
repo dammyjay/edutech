@@ -71,7 +71,8 @@ async function createTables() {
         reset_token TEXT,
         reset_token_expires TIMESTAMP,
         dob DATE,
-        wallet_balance NUMERIC DEFAULT 0
+        wallet_balance2 NUMERIC DEFAULT 0
+        xp INTEGER DEFAULT 0
       )`
     );
 
@@ -424,6 +425,7 @@ async function createTables() {
       `
     );
 
+  // junction table for unlocked assignments
     await pool.query(
       `
       CREATE TABLE IF NOT EXISTS unlocked_assignments (
@@ -434,8 +436,16 @@ async function createTables() {
       `
     );
 
+    // table for user certificates
     await pool.query(
-      `
+      `CREATE TABLE IF NOT EXISTS user_certificates (
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES users2(id) ON DELETE CASCADE,
+        course_id INT REFERENCES courses(id) ON DELETE CASCADE,
+        issued_at TIMESTAMP DEFAULT NOW(),
+        certificate_url TEXT
+      );
+
       `
     );
     await pool.query(

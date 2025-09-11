@@ -41,6 +41,31 @@ exports.getDashboard = async (req, res) => {
       [studentId]
     );
 
+        const enrolledCourses = enrolledCoursesRes.rows;
+
+        // ✅ Calculate progress for each enrolled course
+        for (let course of enrolledCourses) {
+          const totalLessonsRes = await pool.query(
+            `SELECT COUNT(*) FROM lessons l
+         JOIN modules m ON l.module_id = m.id
+         WHERE m.course_id = $1`,
+            [course.id]
+          );
+          const totalLessons = parseInt(totalLessonsRes.rows[0].count) || 1;
+
+          const completedLessonsRes = await pool.query(
+            `SELECT COUNT(DISTINCT ul.lesson_id) 
+         FROM user_lesson_progress ul
+         JOIN lessons l ON ul.lesson_id = l.id
+         JOIN modules m ON l.module_id = m.id
+         WHERE ul.user_id = $1 AND m.course_id = $2`,
+            [studentId, course.id]
+          );
+          const completedLessons = parseInt(completedLessonsRes.rows[0].count);
+
+          course.progress = Math.round((completedLessons / totalLessons) * 100);
+        }
+
     // Modules (🔑 with unlocked flag)
     const courseIds = enrolledCoursesRes.rows.map((c) => c.id);
     let modulesRes = { rows: [] };
@@ -327,6 +352,8 @@ exports.getDashboard = async (req, res) => {
     );
     const completedCourses = parseInt(completedCoursesRes.rows[0].count);
 
+    // const certificates = certificatesRes.rows;
+
     const completedProjectsRes = await pool.query(
       `
       SELECT COUNT(*) FROM course_projects
@@ -343,16 +370,49 @@ exports.getDashboard = async (req, res) => {
       [studentId]
     );
 
+    // const certificatesRes = await pool.query(
+    //   `SELECT COUNT(*) FROM course_enrollments WHERE user_id = $1 AND progress = 100`,
+    //   [studentId]
+    // );
+    // const certificatesCount = parseInt(certificatesRes.rows[0].count);
+
     const certificatesRes = await pool.query(
-      `SELECT COUNT(*) FROM course_enrollments WHERE user_id = $1 AND progress = 100`,
+      `
+  SELECT c.id AS course_id, c.title AS course_title, uc.issued_at, uc.certificate_url
+  FROM user_certificates uc
+  JOIN courses c ON uc.course_id = c.id
+  WHERE uc.user_id = $1
+`,
       [studentId]
     );
-    const certificatesCount = parseInt(certificatesRes.rows[0].count);
 
+    const certificates = certificatesRes.rows;
+
+    // const xpRes = await pool.query(
+    //   `SELECT COALESCE(SUM(xp), 0) AS total FROM xp_history WHERE user_id = $1`,
+    //   [studentId]
+    // );
+    // const totalXP = xpRes.rows[0].total;
+
+    // const xpHistoryRes = await pool.query(
+    //   `SELECT * FROM xp_history WHERE user_id = $1 ORDER BY earned_at DESC LIMIT 10`,
+    //   [studentId]
+    // );
+
+    // const xpHistory = xpHistoryRes.rows;
+
+    // XP
     const xpHistoryRes = await pool.query(
       `SELECT * FROM xp_history WHERE user_id = $1 ORDER BY earned_at DESC LIMIT 10`,
       [studentId]
     );
+    const xpHistory = xpHistoryRes.rows;
+
+    const xpTotalRes = await pool.query(
+      `SELECT COALESCE(SUM(xp), 0) AS total FROM xp_history WHERE user_id = $1`,
+      [studentId]
+    );
+    const totalXP = xpTotalRes.rows[0].total;
 
     const engagementRes = await pool.query(
       `
@@ -477,12 +537,15 @@ exports.getDashboard = async (req, res) => {
       courseModules,
       moduleLessons,
       moduleAssignments,
+      enrolledCourses,
       lessonCounts,
       courses: enrolledCoursesRes.rows,
       completedCourses,
       completedProjects,
-      certificatesCount,
+      certificates,
+      certificatesCount: certificates.length,
       badges: badgesRes.rows,
+      totalXP,
       xpHistory: xpHistoryRes.rows,
       engagementData,
       selectedPathway: req.query.pathway || null,
@@ -679,6 +742,32 @@ exports.getEnrolledCourses = async (req, res) => {
     );
     const certificatesCount = parseInt(certificatesRes.rows[0].count);
 
+    // const courses = enrolledCoursesRes.rows;
+
+    // ✅ Calculate progress for each enrolled course
+    for (let course of courses) {
+      const totalLessonsRes = await pool.query(
+        `SELECT COUNT(*) FROM lessons l
+         JOIN modules m ON l.module_id = m.id
+         WHERE m.course_id = $1`,
+        [course.id]
+      );
+      const totalLessons = parseInt(totalLessonsRes.rows[0].count) || 1;
+
+      const completedLessonsRes = await pool.query(
+        `SELECT COUNT(DISTINCT ul.lesson_id) 
+         FROM user_lesson_progress ul
+         JOIN lessons l ON ul.lesson_id = l.id
+         JOIN modules m ON l.module_id = m.id
+         WHERE ul.user_id = $1 AND m.course_id = $2`,
+        [studentId, course.id]
+      );
+      const completedLessons = parseInt(completedLessonsRes.rows[0].count);
+
+      course.progress = Math.round((completedLessons / totalLessons) * 100);
+    }
+
+
     // Render
     res.render("student/dashboard", {
       student: studentRes.rows[0],
@@ -794,65 +883,142 @@ exports.completeLesson = async (req, res) => {
   const lessonId = req.params.lessonId;
 
   try {
-    // 1. Mark lesson as completed (if not already)
-    await pool.query(
-      `
-      INSERT INTO user_lesson_progress (user_id, lesson_id, completed_at)
-      VALUES ($1, $2, NOW())
-      ON CONFLICT DO NOTHING
-    `,
-      [userId, lessonId]
-    );
+    // // 1. Mark lesson as completed (if not already)
+    // await pool.query(
+    //   `
+    //   INSERT INTO user_lesson_progress (user_id, lesson_id, completed_at)
+    //   VALUES ($1, $2, NOW())
+    //   ON CONFLICT DO NOTHING
+    // `,
+    //   [userId, lessonId]
+    // );
 
     // 2. Award XP (say 10 XP per lesson)
-    const xpGained = 10;
-    const activity = `Completed lesson ${lessonId}`;
-    await pool.query(
-      "UPDATE users2 SET xp = COALESCE(xp, 0) + $1 WHERE id = $2",
-      [xpGained, userId]
-    );
+    // const xpGained = 10;
+    // const activity = `Completed lesson ${lessonId}`;
+    // await pool.query(
+    //   "UPDATE users2 SET xp = COALESCE(xp, 0) + $1 WHERE id = $2",
+    //   [xpGained, userId]
+    // );
 
     // 3. Log XP history
-    await pool.query(
-      `
-      INSERT INTO xp_history (user_id, xp, activity)
-      VALUES ($1, $2, $3)
-    `,
-      [userId, xpGained, activity]
-    );
+    // await pool.query(
+    //   `
+    //   INSERT INTO xp_history (user_id, xp, activity)
+    //   VALUES ($1, $2, $3)
+    // `,
+    //   [userId, xpGained, activity]
+    // );
 
     // 4. Count total completed lessons
-    const result = await pool.query(
-      `
-      SELECT COUNT(*) FROM user_lesson_progress
-      WHERE user_id = $1
-    `,
-      [userId]
-    );
+    // const result = await pool.query(
+    //   `
+    //   SELECT COUNT(*) FROM user_lesson_progress
+    //   WHERE user_id = $1
+    // `,
+    //   [userId]
+    // );
 
     const completedCount = parseInt(result.rows[0].count);
 
     // 5. Award badge based on threshold
-    const badgeThresholds = [
-      { count: 5, name: "Beginner Streak" },
-      { count: 10, name: "Learning Champ" },
-      { count: 20, name: "Knowledge Seeker" },
-    ];
+    // const badgeThresholds = [
+    //   { count: 5, name: "Beginner Streak" },
+    //   { count: 10, name: "Learning Champ" },
+    //   { count: 20, name: "Knowledge Seeker" },
+    // ];
 
-    for (const badge of badgeThresholds) {
-      if (completedCount >= badge.count) {
-        await pool.query(
-          `
-          INSERT INTO user_badges (user_id, badge_name)
-          VALUES ($1, $2)
-          ON CONFLICT DO NOTHING
-        `,
-          [userId, badge.name]
-        );
-      }
+    // const badgeThresholds = [
+    //   { count: 5, name: "Beginner Streak" },
+    //   { count: 10, name: "Learning Champ" },
+    //   { count: 20, name: "Knowledge Seeker" },
+    //   { count: 50, name: "Master Learner" },
+    //   { count: 100, name: "Legendary Scholar" },
+    // ];
+
+
+    // for (const badge of badgeThresholds) {
+    //   if (completedCount >= badge.count) {
+    //     await pool.query(
+    //       `
+    //       INSERT INTO user_badges (user_id, badge_name)
+    //       VALUES ($1, $2)
+    //       ON CONFLICT DO NOTHING
+    //     `,
+    //       [userId, badge.name]
+    //     );
+    //   }
+    // }
+    // res.json({ message: "Lesson completed, XP added, badge checked." });
+
+    // await pool.query(
+    //   `
+    //     UPDATE course_enrollments
+    //     SET progress = (
+    //       SELECT ROUND(100.0 * COUNT(DISTINCT ul.lesson_id) / COUNT(l.id))
+    //       FROM lessons l
+    //       LEFT JOIN unlocked_lessons ul 
+    //       ON l.id = ul.lesson_id AND ul.student_id = $1
+    //       WHERE l.module_id IN (
+    //         SELECT id FROM modules WHERE course_id = (
+    //           SELECT course_id FROM modules WHERE id = (
+    //             SELECT module_id FROM lessons WHERE id = $2
+    //           )
+    //         )
+    //       )
+    //     )
+    //     WHERE user_id = $1 
+    //     AND course_id = (SELECT course_id FROM modules WHERE id = (SELECT module_id FROM lessons WHERE id = $2))
+    //   `,
+    //   [userId, lessonId]
+    // );
+
+    await pool.query(
+      `UPDATE course_enrollments
+        SET progress = (
+          SELECT ROUND(100.0 * COUNT(DISTINCT cl.lesson_id) / COUNT(l.id))
+          FROM lessons l
+          LEFT JOIN user_lesson_progress cl
+            ON l.id = cl.lesson_id AND cl.user_id = $1
+          WHERE l.module_id IN (
+            SELECT id FROM modules WHERE course_id = (
+              SELECT course_id FROM modules WHERE id = (
+                SELECT module_id FROM lessons WHERE id = $2
+              )
+            )
+          )
+        )
+        WHERE user_id = $1
+        AND course_id = (
+          SELECT course_id FROM modules WHERE id = (SELECT module_id FROM lessons WHERE id = $2)
+        )
+
+      `
+    );
+    // After updating progress
+    const certCheck = await pool.query(
+      `
+  SELECT progress, course_id FROM course_enrollments
+  WHERE user_id = $1 AND course_id = (
+    SELECT course_id FROM modules WHERE id = (
+      SELECT module_id FROM lessons WHERE id = $2
+    )
+  )
+`,
+      [userId, lessonId]
+    );
+
+    if (certCheck.rows[0]?.progress === 100) {
+      const courseId = certCheck.rows[0].course_id;
+      await pool.query(
+        `
+    INSERT INTO user_certificates (user_id, course_id, certificate_url)
+    VALUES ($1, $2, $3)
+    ON CONFLICT (user_id, course_id) DO NOTHING
+  `,
+        [userId, courseId, `/certificates/${userId}_${courseId}.pdf`]
+      );
     }
-
-    res.json({ message: "Lesson completed, XP added, badge checked." });
   } catch (err) {
     console.error("Lesson completion error:", err.message);
     res.status(500).json({ error: "Server error completing lesson" });
@@ -1047,6 +1213,7 @@ exports.viewLesson = async (req, res) => {
       video_url: lesson.video_url,
       content: lesson.content,
       has_quiz: !!lesson.quiz_id,
+      
     });
   } catch (err) {
     console.error("Error loading lesson:", err);
@@ -1401,6 +1568,26 @@ Return only valid JSON in this format:
       [quizId, studentId, percent, percent >= 50, JSON.stringify(reviewData)]
     );
 
+    // ✅ Mark lesson as completed when quiz is submitted
+    await pool.query(
+      `INSERT INTO user_lesson_progress (user_id, lesson_id, completed_at)
+   VALUES ($1, $2, NOW())
+   ON CONFLICT (user_id, lesson_id) DO NOTHING`,
+      [studentId, lessonId]
+    );
+
+    const xpGained = 10;
+    await pool.query(
+      "UPDATE users2 SET xp = COALESCE(xp, 0) + $1 WHERE id = $2",
+      [xpGained, studentId]
+    );
+
+    await pool.query(
+      `INSERT INTO xp_history (user_id, xp, activity)
+   VALUES ($1, $2, $3)`,
+      [studentId, xpGained, `Completed quiz for lesson ${lessonId}`]
+    );
+
     // ✅ Unlock next lesson if passed
     // if (percent >= 50) {
     //   const nextLessonRes = await pool.query(
@@ -1458,6 +1645,54 @@ Return only valid JSON in this format:
          WHERE module_id=$2
          ON CONFLICT (student_id, assignment_id) DO NOTHING`,
         [studentId, moduleId]
+      );
+    }
+
+    // ✅ Count completed lessons
+    const completedRes = await pool.query(
+      `SELECT COUNT(*) FROM user_lesson_progress WHERE user_id = $1`,
+      [studentId]
+    );
+    const completedCount = parseInt(completedRes.rows[0].count);
+
+    // ✅ Count total lessons
+    const totalRes = await pool.query(`SELECT COUNT(*) FROM lessons`);
+    const totalLessons = parseInt(totalRes.rows[0].count) || 1;
+
+    // ✅ Calculate completion %
+    const completionRate = (completedCount / totalLessons) * 100;
+
+    // ✅ Award badges based on % completed
+    if (completionRate >= 20) {
+      await pool.query(
+        `INSERT INTO user_badges (user_id, badge_name, awarded_at)
+     VALUES ($1, 'Beginner', NOW()) 
+     ON CONFLICT DO NOTHING`,
+        [studentId]
+      );
+    }
+    if (completionRate >= 50) {
+      await pool.query(
+        `INSERT INTO user_badges (user_id, badge_name, awarded_at)
+     VALUES ($1, 'Intermediate', NOW()) 
+     ON CONFLICT DO NOTHING`,
+        [studentId]
+      );
+    }
+    if (completionRate >= 80) {
+      await pool.query(
+        `INSERT INTO user_badges (user_id, badge_name, awarded_at)
+     VALUES ($1, 'Advanced', NOW()) 
+     ON CONFLICT DO NOTHING`,
+        [studentId]
+      );
+    }
+    if (completionRate === 100) {
+      await pool.query(
+        `INSERT INTO user_badges (user_id, badge_name, awarded_at)
+     VALUES ($1, 'Master', NOW()) 
+     ON CONFLICT DO NOTHING`,
+        [studentId]
       );
     }
 
@@ -1798,6 +2033,22 @@ Return only JSON:
        ON CONFLICT (student_id, module_id) DO NOTHING`,
           [studentId, nextModuleId]
         );
+
+        // 🔑 Also auto-unlock the first lesson of that module
+        const firstLessonRes = await pool.query(
+          `SELECT id FROM lessons WHERE module_id = $1 ORDER BY id ASC LIMIT 1`,
+          [nextModuleId]
+        );
+
+        if (firstLessonRes.rows.length > 0) {
+          const firstLessonId = firstLessonRes.rows[0].id;
+          await pool.query(
+            `INSERT INTO unlocked_lessons (student_id, lesson_id)
+       VALUES ($1, $2)
+       ON CONFLICT (student_id, lesson_id) DO NOTHING`,
+            [studentId, firstLessonId]
+          );
+        }
       }
     }
   } catch (err) {
