@@ -1544,6 +1544,27 @@ canvas {
     border-radius: 4px;
 }
 
+.parent-section {
+    margin-top: 15px;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.parent-section h3 {
+    margin-bottom: 8px;
+}
+
+.parent-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.parent-section li {
+    padding: 4px 0;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .ai-tutor {

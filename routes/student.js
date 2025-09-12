@@ -97,6 +97,11 @@ router.get(
   studentController.getSubmissionById
 );
 
+// ✅ Parent request response (approve / reject)
+router.post(
+  "/parent-request/respond",
+  studentController.respondToParentRequest
+);
 
 
 module.exports = router;

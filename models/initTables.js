@@ -72,7 +72,8 @@ async function createTables() {
         reset_token_expires TIMESTAMP,
         dob DATE,
         wallet_balance2 NUMERIC DEFAULT 0,
-        xp INTEGER DEFAULT 0
+        xp INTEGER DEFAULT 0,
+        child_code TEXT UNIQUE
       )`
     );
 
@@ -450,12 +451,34 @@ async function createTables() {
 
       `
     );
+
+    // table for parents
     await pool.query(
-      `
+      `CREATE TABLE IF NOT EXISTS parent_children (
+        id SERIAL PRIMARY KEY,
+        parent_id INT REFERENCES users2(id) ON DELETE CASCADE,
+        child_id INT REFERENCES users2(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(parent_id, child_id)
+      );
       `
     );
+
+    // table for parent-child requests
     await pool.query(
+      `CREATE TABLE IF NOT EXISTS parent_child_requests (
+        id SERIAL PRIMARY KEY,
+        parent_id INT NOT NULL REFERENCES users2(id) ON DELETE CASCADE,
+        child_id INT NOT NULL REFERENCES users2(id) ON DELETE CASCADE,
+        status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (parent_id, child_id)
+      );
+
       `
+    );
+
+    await pool.query(`
       `
     );
 

@@ -28,6 +28,16 @@ exports.getDashboard = async (req, res) => {
     ]);
     const student = studentRes.rows[0];
 
+    // ✅ Parent requests
+    const requestsRes = await pool.query(
+      `SELECT r.id, u.fullname AS parent_name, u.email AS parent_email, r.status
+       FROM parent_child_requests r
+       JOIN users2 u ON r.parent_id = u.id
+       WHERE r.child_id = $1 AND r.status = 'pending'`,
+      [studentId]
+    );
+    const parentRequests = requestsRes.rows;
+
     // Enrolled Courses
     const enrolledCoursesRes = await pool.query(
       `
@@ -41,30 +51,30 @@ exports.getDashboard = async (req, res) => {
       [studentId]
     );
 
-        const enrolledCourses = enrolledCoursesRes.rows;
+    const enrolledCourses = enrolledCoursesRes.rows;
 
-        // ✅ Calculate progress for each enrolled course
-        for (let course of enrolledCourses) {
-          const totalLessonsRes = await pool.query(
-            `SELECT COUNT(*) FROM lessons l
+    // ✅ Calculate progress for each enrolled course
+    for (let course of enrolledCourses) {
+      const totalLessonsRes = await pool.query(
+        `SELECT COUNT(*) FROM lessons l
          JOIN modules m ON l.module_id = m.id
          WHERE m.course_id = $1`,
-            [course.id]
-          );
-          const totalLessons = parseInt(totalLessonsRes.rows[0].count) || 1;
+        [course.id]
+      );
+      const totalLessons = parseInt(totalLessonsRes.rows[0].count) || 1;
 
-          const completedLessonsRes = await pool.query(
-            `SELECT COUNT(DISTINCT ul.lesson_id) 
+      const completedLessonsRes = await pool.query(
+        `SELECT COUNT(DISTINCT ul.lesson_id) 
          FROM user_lesson_progress ul
          JOIN lessons l ON ul.lesson_id = l.id
          JOIN modules m ON l.module_id = m.id
          WHERE ul.user_id = $1 AND m.course_id = $2`,
-            [studentId, course.id]
-          );
-          const completedLessons = parseInt(completedLessonsRes.rows[0].count);
+        [studentId, course.id]
+      );
+      const completedLessons = parseInt(completedLessonsRes.rows[0].count);
 
-          course.progress = Math.round((completedLessons / totalLessons) * 100);
-        }
+      course.progress = Math.round((completedLessons / totalLessons) * 100);
+    }
 
     // Modules (🔑 with unlocked flag)
     const courseIds = enrolledCoursesRes.rows.map((c) => c.id);
@@ -523,6 +533,14 @@ exports.getDashboard = async (req, res) => {
       );
     }
 
+    const { rows: parents } = await pool.query(
+      `SELECT u.id, u.fullname, u.email
+      FROM users2 u
+      JOIN parent_children pc ON u.id = pc.parent_id
+      WHERE pc.child_id = $1 AND u.role = 'parent'`,
+      [studentId]
+    );
+
     // Render with unlocked flags
     res.render("student/dashboard", {
       student,
@@ -553,6 +571,8 @@ exports.getDashboard = async (req, res) => {
       moduleInfo,
       lessons,
       selectedLesson,
+      parentRequests,
+      parents,
     });
   } catch (err) {
     console.error("Dashboard Error:", err.message);
@@ -1897,239 +1917,6 @@ exports.viewAssignment = async (req, res) => {
   }
 };
 
-// ✅ Student submits an assignment
-// exports.submitAssignment = async (req, res) => {
-//   try {
-//     const assignmentId = req.params.assignmentId || req.body.assignmentId;
-
-//     // ✅ Try different sources for studentId
-//     let studentId =
-//       req.session?.student?.id || req.user?.id || req.body.studentId;
-//     const { description } = req.body;
-//     const file = req.file ? req.file.path : null; // multer file path
-
-//     if (!assignmentId || !description) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Assignment ID and description are required.",
-//       });
-//     }
-
-//     if (!studentId) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Student ID missing. Please log in again.",
-//       });
-//     }
-
-//     // ✅ Check assignment exists
-//     const aRes = await pool.query(
-//       `SELECT id, title, instructions FROM module_assignments WHERE id=$1`,
-//       [assignmentId]
-//     );
-//     if (aRes.rows.length === 0) {
-//       return res
-//         .status(404)
-//         .json({ success: false, message: "Assignment not found." });
-//     }
-//     const assignment = aRes.rows[0];
-
-//     // ✅ Save submission
-//     const save = await pool.query(
-//       `INSERT INTO assignment_submissions (assignment_id, student_id, description, file_url)
-//        VALUES ($1,$2,$3,$4) RETURNING *`,
-//       [assignmentId, studentId, description, file]
-//     );
-//     const submission = save.rows[0];
-
-//     // ✅ AI grading
-// //     const gradingPrompt = `
-// // You are an AI tutor. A student submitted an assignment.
-
-// // ASSIGNMENT TITLE: ${assignment.title}
-// // INSTRUCTIONS: ${assignment.instructions}
-
-// // STUDENT SUBMISSION:
-// // "${description}"
-
-// // TASK:
-// // - Grade the submission based on instructions.
-// // - Give a score out of 100.
-// // - Assign a grade (A, B, C, D, F).
-// // - Provide constructive, encouraging feedback (3–5 sentences).
-
-// // OUTPUT:
-// // Return only JSON:
-// // {
-// //   "score": 85,
-// //   "grade": "B",
-// //   "feedback": "..."
-// // }
-//     // `;
-    
-//     const gradingPrompt = `
-// You are an AI tutor grading a student's assignment.
-
-// --- ASSIGNMENT INSTRUCTIONS ---
-// ${assignment.instructions}
-
-// Inside the instructions, the "Evaluation Criteria" or "Marking Scheme" is described.
-// Extract those criteria and use them as the official rubric.
-
-// --- STUDENT SUBMISSION ---
-// "${description}"
-
-// --- TASK ---
-// 1. Parse the evaluation criteria from the assignment instructions.
-// 2. Check how well the student's submission meets each criterion.
-// 3. Assign a score for EACH criterion (out of its allocated weight).
-// 4. Sum up the weighted scores to a total (0–100).
-// 5. Assign a grade:
-//    - A (90–100)
-//    - B (75–89)
-//    - C (60–74)
-//    - D (40–59)
-//    - F (<40)
-// 6. Provide constructive feedback (3–5 sentences), explaining strengths and weaknesses.
-
-// --- OUTPUT FORMAT ---
-// Return ONLY valid JSON, e.g.:
-
-// {
-//   "criteria": {
-//     "Theoretical answers": 10,
-//     "Correct use of interface & tools": 0,
-//     "Part creation and arrangement": 0,
-//     "Obstacle Step build": 0,
-//     "Use of colors and materials": 0,
-//     "Proper saving and submission": 0
-//   },
-//   "total": 10,
-//   "grade": "F",
-//   "feedback": "The submission does not follow the required structure. Most parts of the task were missing..."
-// }
-// `;
-
-
-//     let score = null,
-//       grade = null,
-//       feedbackText = null;
-
-//     try {
-//       const raw = await askTutor({ question: gradingPrompt });
-//       console.log("AI Raw Response:", raw); // 🔍 debug what AI sends
-
-//       const jsonMatch = raw.match(/\{[\s\S]*\}/);
-//       if (jsonMatch) {
-//         const parsed = JSON.parse(jsonMatch[0]);
-
-//         score = parsed.score ?? null;
-//         grade = parsed.grade ?? null;
-//         feedbackText = parsed.feedback ?? null;
-//       }
-
-//       if (!feedbackText) {
-//         // fallback if AI didn’t provide feedback
-//         feedbackText =
-//           "Your assignment was graded, but detailed feedback was not generated. Please try again or ask your tutor.";
-//       }
-//     } catch (err) {
-//       console.error("AI grading failed:", err.message);
-//       feedbackText =
-//         "AI grading unavailable. Your assignment has been submitted.";
-//     }
-
-//     // ✅ Update submission with grading
-//     await pool.query(
-//       `UPDATE assignment_submissions
-//        SET score=$1, grade=$2, ai_feedback=$3
-//        WHERE id=$4`,
-//       [score, grade, feedbackText, submission.id]
-//     );
-
-//     res.json({
-//       success: true,
-//       message: "Assignment submitted and graded ✅",
-//       submissionId: submission.id,
-//       score,
-//       grade,
-//       feedbackText,
-//     });
-
-//     // ✅ Unlock next module after assignment is graded
-//     if (score !== null) {
-//       // grading happened
-//       const nextModuleRes = await pool.query(
-//         `SELECT id FROM modules
-//      WHERE course_id = (SELECT course_id FROM modules WHERE id=(SELECT module_id FROM module_assignments WHERE id=$1))
-//        AND id > (SELECT module_id FROM module_assignments WHERE id=$1)
-//      ORDER BY id ASC
-//      LIMIT 1`,
-//         [assignmentId]
-//       );
-
-//       if (nextModuleRes.rows.length > 0) {
-//         const nextModuleId = nextModuleRes.rows[0].id;
-
-//         await pool.query(
-//           `INSERT INTO unlocked_modules (student_id, module_id)
-//        VALUES ($1, $2)
-//        ON CONFLICT (student_id, module_id) DO NOTHING`,
-//           [studentId, nextModuleId]
-//         );
-
-//         // 🔑 Also auto-unlock the first lesson of that module
-//         const firstLessonRes = await pool.query(
-//           `SELECT id FROM lessons WHERE module_id = $1 ORDER BY id ASC LIMIT 1`,
-//           [nextModuleId]
-//         );
-
-//         if (firstLessonRes.rows.length > 0) {
-//           const firstLessonId = firstLessonRes.rows[0].id;
-//           await pool.query(
-//             `INSERT INTO unlocked_lessons (student_id, lesson_id)
-//        VALUES ($1, $2)
-//        ON CONFLICT (student_id, lesson_id) DO NOTHING`,
-//             [studentId, firstLessonId]
-//           );
-//         }
-//       }
-//     }
-//   } catch (err) {
-//     console.error("Assignment submit error:", err.message);
-//     res
-//       .status(500)
-//       .json({ success: false, message: "Failed to submit assignment" });
-//   }
-// };
-
-// StudentController.js
-// exports.getMyAssignments = async (req, res) => {
-//   try {
-//     const submissions = await pool.query(
-//       `SELECT s.id, s.assignment_id, s.description, s.file_url,
-//           s.score, s.grade, s.ai_feedback, s.submitted_at,
-//           ma.title AS assignment_title, ma.instructions,
-//           m.title AS module_title, c.title AS course_title
-//    FROM assignment_submissions s
-//    JOIN module_assignments ma ON s.assignment_id = ma.id
-//    JOIN modules m ON ma.module_id = m.id
-//    JOIN courses c ON m.course_id = c.id
-//    WHERE s.student_id = $1
-//    ORDER BY s.submitted_at DESC`,
-//       [req.user.id]
-//     );
-
-//     res.json({ success: true, submissions: submissions.rows });
-//   } catch (err) {
-//     console.error("Fetch submissions error:", err.message);
-//     res
-//       .status(500)
-//       .json({ success: false, message: "Failed to fetch submissions" });
-//   }
-// };
-
-// ✅ Student submits an assignment
 exports.submitAssignment = async (req, res) => {
   try {
     const assignmentId = req.params.assignmentId || req.body.assignmentId;
@@ -2306,66 +2093,6 @@ Return ONLY valid JSON, e.g.:
   }
 };
 
-// exports.getMyAssignments = async (req, res) => {
-//   try {
-//     const submissions = await pool.query(
-//       `SELECT s.id, s.assignment_id, s.description, s.file_url,
-//               s.score, s.total, s.grade, s.ai_feedback, s.criteria,
-//               s.created_at AS submitted_at,
-//               ma.title AS assignment_title, ma.instructions,
-//               m.title AS module_title, c.title AS course_title
-//        FROM assignment_submissions s
-//        JOIN module_assignments ma ON s.assignment_id = ma.id
-//        JOIN modules m ON ma.module_id = m.id
-//        JOIN courses c ON m.course_id = c.id
-//        WHERE s.student_id = $1
-//        ORDER BY s.created_at DESC`,
-//       [req.user.id]
-//     );
-
-//     res.json({ success: true, submissions: submissions.rows });
-//   } catch (err) {
-//     console.error("Fetch submissions error:", err.message);
-//     res
-//       .status(500)
-//       .json({ success: false, message: "Failed to fetch submissions" });
-//   }
-// };
-
-
-// exports.getSubmissionById = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const sub = await pool.query(
-//       `SELECT s.*,
-//           ma.title AS assignment_title, ma.instructions,
-//           m.title AS module_title, c.title AS course_title
-//    FROM assignment_submissions s
-//    JOIN module_assignments ma ON s.assignment_id = ma.id
-//    JOIN modules m ON ma.module_id = m.id
-//    JOIN courses c ON m.course_id = c.id
-//    WHERE s.id = $1 AND s.student_id = $2`,
-//       [id, req.user.id]
-//     );
-
-
-//     if (sub.rows.length === 0) {
-//       return res
-//         .status(404)
-//         .json({ success: false, message: "Submission not found" });
-//     }
-
-//     res.json({ success: true, submission: sub.rows[0] });
-//   } catch (err) {
-//     console.error("Fetch single submission error:", err.message);
-//     res
-//       .status(500)
-//       .json({ success: false, message: "Failed to load submission" });
-//   }
-// };
-
-
-
 exports.getMyAssignments = async (req, res) => {
   try {
     const submissions = await pool.query(
@@ -2432,5 +2159,49 @@ exports.getSubmissionById = async (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Failed to load submission" });
+  }
+};
+
+exports.respondToParentRequest = async (req, res) => {
+  const studentId = req.user.id;
+  const { requestId, action } = req.body;
+
+  try {
+    // Check if request exists and belongs to this student
+    const reqRes = await pool.query(
+      `SELECT * FROM parent_child_requests WHERE id=$1 AND child_id=$2`,
+      [requestId, studentId]
+    );
+    if (reqRes.rows.length === 0) {
+      return res.status(400).send("❌ Invalid request");
+    }
+
+    if (action === "approve") {
+      const parentId = reqRes.rows[0].parent_id;
+
+      // 1. Update request status
+      await pool.query(
+        `UPDATE parent_child_requests SET status='approved' WHERE id=$1`,
+        [requestId]
+      );
+
+      // 2. Create parent-child link
+      await pool.query(
+        `INSERT INTO parent_children (parent_id, child_id)
+         VALUES ($1,$2)
+         ON CONFLICT DO NOTHING`,
+        [parentId, studentId]
+      );
+    } else if (action === "reject") {
+      await pool.query(
+        `UPDATE parent_child_requests SET status='rejected' WHERE id=$1`,
+        [requestId]
+      );
+    }
+
+    res.redirect("/student/dashboard?section=profile");
+  } catch (err) {
+    console.error("Parent request response error:", err.message);
+    res.status(500).send("Server error responding to parent request");
   }
 };

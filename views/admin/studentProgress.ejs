@@ -162,7 +162,11 @@ th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         <% } %>
         <p><%= info?.company_name || 'Jaykirch Tech Hub' %></p>
     </div>
-    <a style="text-decoration: none; color: white;" href="/admin/students">⬅ Back to Students</a>
+    <!-- <a style="text-decoration: none; color: white;" href="/admin/students">⬅ Back to Students</a> -->
+     <a style="text-decoration: none; color: white;" 
+   href="<%= from === 'parent' ? '/parent/dashboard' : '/admin/students' %>">
+   ⬅ Back to Students
+</a>
   </header>
 
   <h1>📊 Progress Report for <%= student.fullname %></h1>

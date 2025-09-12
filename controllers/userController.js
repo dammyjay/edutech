@@ -4,7 +4,7 @@ const sendEmail = require("../utils/sendEmail");
 
 exports.showSignup = (req, res) => {
   // res.sendFile(path.join(__dirname, 'signup.html'));
-  res.render("signup", { error: null });
+  res.render("signup", { error: null , role: req.query.role || 'user'});
 };
 
 exports.showLogin = (req, res) => {
@@ -12,7 +12,7 @@ exports.showLogin = (req, res) => {
 };
 
 exports.signup = async (req, res) => {
-  const { email, username, phone, gender, password, dob } = req.body;
+  const { email, username, phone, gender, password, dob, role} = req.body;
   const file = req.file;
   const exists = await pool.query("SELECT * FROM users2 WHERE email = $1", [
     email,
@@ -29,7 +29,7 @@ exports.signup = async (req, res) => {
   const defaultImage = "/profile.webp"; // or any image path in your public folder
   const profile_picture = req.file ? req.file.path : defaultImage;
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const role = "user"; // Default role for new users
+  // const role = "user"; // Default role for new users
   const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
   const hashed = await bcrypt.hash(password, 10);
   const created_at = new Date(); // Create timestamp in JS
@@ -80,7 +80,7 @@ exports.verifyOtp = async (req, res) => {
       user.gender,
       user.password,
       user.profile_picture,
-      "user",
+      user.role,
       created_at,
       user.dob,
     ]
@@ -183,6 +183,141 @@ exports.showEvent = async (req, res) => {
     res.status(500).send("Server error");
   }
 };
+
+exports.getParentDashboard = async (req, res) => {
+  const user = req.session.user;
+  if (!user || user.role !== "parent") {
+    return res.redirect("/login");
+  }
+
+  try {
+    // Company Info
+        const infoResult = await pool.query(
+          "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
+        );
+        const info = infoResult.rows[0] || {};
+    const profilePic = req.session.user?.profile_picture || null;
+    
+    const children = await pool.query(
+      `SELECT u.id, u.fullname, u.email, u.profile_picture
+       FROM parent_children pc
+       JOIN users2 u ON pc.child_id = u.id
+       WHERE pc.parent_id = $1`,
+      [user.id]
+    );
+
+    res.render("parent/dashboard", {
+      parent: user,
+      children: children.rows,
+      info,
+      profilePic,
+      title: "Parent Dashboard",
+      isLoggedIn: !!req.session.user,
+      users: req.session.user,
+    });
+  } catch (err) {
+    console.error("Error loading parent dashboard:", err);
+    res.status(500).send("Failed to load dashboard");
+  }
+};
+
+// exports.addChild = async (req, res) => {
+//   const parent = req.session.user;
+//   if (!parent || parent.role !== "parent") {
+//     return res.status(403).send("Only parents can add children");
+//   }
+
+//   const { childEmail } = req.body;
+
+//   try {
+//     // Check if child exists
+//     const childRes = await pool.query(
+//       "SELECT id, fullname, email FROM users2 WHERE email = $1 AND role = 'user'",
+//       [childEmail]
+//     );
+
+//     if (childRes.rows.length === 0) {
+//       return res.status(404).send("No student found with that email.");
+//     }
+
+//     const child = childRes.rows[0];
+
+//     // Prevent duplicate
+//     await pool.query(
+//       `INSERT INTO parent_children (parent_id, child_id)
+//        VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+//       [parent.id, child.id]
+//     );
+
+//     res.redirect("/parent/dashboard");
+//   } catch (err) {
+//     console.error("Error adding child:", err);
+//     res.status(500).send("Failed to add child");
+//   }
+// };
+
+exports.addChild = async (req, res) => {
+  const parent = req.session.user;
+  if (!parent || parent.role !== "parent") {
+    return res.status(403).send("Only parents can add children");
+  }
+
+  const { childEmail } = req.body;
+
+  try {
+    const childRes = await pool.query(
+      "SELECT id, fullname FROM users2 WHERE email = $1 AND role = 'user'",
+      [childEmail]
+    );
+
+    if (childRes.rows.length === 0) {
+      return res.status(404).send("No student found with that email.");
+    }
+
+    const child = childRes.rows[0];
+
+    await pool.query(
+      `INSERT INTO parent_child_requests (parent_id, child_id)
+       VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [parent.id, child.id]
+    );
+
+    res.send("✅ Request sent! Waiting for the student’s approval.");
+  } catch (err) {
+    console.error("Error creating request:", err);
+    res.status(500).send("Failed to send request");
+  }
+};
+
+
+// Remove a child (parent self-service)
+// exports.removeChild = async (req, res) => {
+//   try {
+//     const parentId = req.session.user.id; // logged-in parent
+//     const { childId } = req.body;
+
+//     // Check if link exists
+//     const link = await pool.query(
+//       `SELECT * FROM parent_children WHERE parent_id = $1 AND child_id = $2`,
+//       [parentId, childId]
+//     );
+
+//     if (link.rowCount === 0) {
+//       return res.status(400).send("❌ Child not linked to you");
+//     }
+
+//     await pool.query(
+//       `DELETE FROM parent_children WHERE parent_id = $1 AND child_id = $2`,
+//       [parentId, childId]
+//     );
+
+//     res.redirect("/parent/dashboard");
+//   } catch (err) {
+//     console.error("Remove child error:", err.message);
+//     res.status(500).send("Server error removing child");
+//   }
+// };
+
 
 // exports.registerEvent = async (req, res) => {
 //   const { id: eventId } = req.params;

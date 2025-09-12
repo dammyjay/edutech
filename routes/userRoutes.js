@@ -3,6 +3,7 @@ const pool = require("../models/db");
 const router = express.Router();
 const userController = require("../controllers/userController");
 const upload = require("../middlewares/upload");
+const { ensureParent } = require("../middlewares/auth");
 
 router.post("/signup", upload.single("profile_picture"), userController.signup);
 router.get("/signup", userController.showSignup);
@@ -14,6 +15,26 @@ router.post(
   upload.single("profile_picture"),
   userController.updateUserProfile
 );
+
+router.get("/parent/dashboard", userController.getParentDashboard);
+
+// Optionally, add a way for admin to link parent ↔ child
+// router.post("/parent/add-child", async (req, res) => {
+//   const { parent_id, child_id } = req.body;
+//   try {
+//     await pool.query(
+//       "INSERT INTO parent_children (parent_id, child_id) VALUES ($1,$2) ON CONFLICT DO NOTHING",
+//       [parent_id, child_id]
+//     );
+//     res.redirect(`/parent/dashboard`);
+//   } catch (err) {
+//     console.error("Error linking child:", err.message);
+//     res.status(500).send("Failed to link child");
+//   }
+// });
+
+router.post("/parent/add-child", userController.addChild);
+
 
 router.get("/vapid-public-key", (req, res) => {
   res.send(process.env.VAPID_PUBLIC_KEY);
@@ -228,6 +249,7 @@ router.post("/register/:id", async (req, res) => {
 });
 
 
+// router.post("/remove-child", ensureParent, userController.removeChild);
 
 
 module.exports = router;

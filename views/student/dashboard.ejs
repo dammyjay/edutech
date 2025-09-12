@@ -22,6 +22,9 @@
         class="profile-pic"
       />
       <% } %>
+
+
+
     </div>
     <h2 style="font-size: 14px;">👤 <%= student.fullname %></h2>
     <h2 style="font-size: 14px; color: #e5f0ff;">🪙 Xp: <%= student.xp %> points</h2>
@@ -46,6 +49,70 @@
       <!-- <li><a href="/student/profile">👤 My Profile</a></li> -->
        <li><a href="/student/dashboard?section=profile">👤 My Profile</a></li>
        <p style="color: rgb(255, 255, 255);">💰 Wallet: ₦<%= walletBalance.toLocaleString() %></p>
+
+       
+      <% if (parents && parents.length > 0) { %>
+        <div class="parent-section">
+          <h3>👨‍👩‍👧 Linked Parent(s)</h3>
+          <ul>
+            <% parents.forEach(parent => { %>
+              <li>
+                <strong><%= parent.fullname %></strong> (<%= parent.email %>)
+              </li>
+            <% }) %>
+          </ul>
+        </div>
+      <% } else { %>
+        <p>No parent linked to this account yet.</p>
+      <% } %>
+
+      <% if (parentRequests && parentRequests.length > 0) { %>
+  <div class="parent-requests">
+    <h3>📩 Pending Parent Requests</h3>
+    <ul>
+      <% parentRequests.forEach(req => { %>
+        <li>
+          <strong><%= req.parent_name %></strong> (<%= req.parent_email %>)
+          <form class="parent-request-form" action="/student/parent-request/respond" method="POST" style="display:inline-flex; gap: 8px; align-items: center; margin-left: 10px;">
+            <input type="hidden" name="requestId" value="<%= req.id %>">
+            <button class="btn-approve" type="submit" name="action" value="approve">✅ Approve</button>
+            <button class="btn-reject" type="submit" name="action" value="reject">❌ Reject</button>
+          </form>
+        </li>
+        <style>
+          .parent-request-form .btn-approve {
+            background: #4CAF50;
+            color: #fff;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+          }
+          .parent-request-form .btn-approve:hover {
+            background: #388e3c;
+          }
+          .parent-request-form .btn-reject {
+            background: #f44336;
+            color: #fff;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+          }
+          .parent-request-form .btn-reject:hover {
+            background: #b71c1c;
+          }
+        </style>
+      <% }) %>
+    </ul>
+  </div>
+<% } else { %>
+  <p>No pending parent requests.</p>
+<% } %>
 
       <!-- Pathways / Courses -->
       <li>

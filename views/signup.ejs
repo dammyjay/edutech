@@ -95,6 +95,14 @@
             <i class="fa fa-eye"></i>
           </span>
         </div>
+        
+        <div class="container">
+          <label for="">Role</label>
+          <select name="role" required>
+            <option value="user">Student</option>
+            <option value="parent">Parent</option>
+          </select>
+        </div>
 
         <!-- File input for image upload -->
         <label style="font-size: 12px" for="profile-pic"
@@ -107,6 +115,9 @@
           accept="image/*"
           
         />
+        <!-- <input type="hidden" name="role" id="role" value="<%= role || 'user' %>" /> -->
+        
+
 
         <!-- Preview image container -->
         <div class="preview-container" id="preview-container">

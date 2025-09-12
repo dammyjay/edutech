@@ -147,10 +147,11 @@ exports.login = async (req, res) => {
     if (user.role === "admin") {
       console.log("Admin login successful");
       return res.redirect("/admin/dashboard");
+    } else if (user.role === "parent") {
+      console.log("Parent login successful");
+      return res.redirect("/parent/dashboard");
     } else {
       console.log("User login successful");
-      // return res.redirect("/home2");
-      // return res.redirect("/");
       return res.redirect("/student/dashboard");
     }
   } catch (err) {
@@ -295,320 +296,6 @@ exports.deleteUser = async (req, res) => {
     res.status(500).send("Server error");
   }
 };
-
-// // Show announcements page
-// exports.showAnnouncements = async (req, res) => {
-//   const infoResult = await pool.query(
-//     "SELECT * FROM ministry_info ORDER BY id DESC LIMIT 1"
-//   );
-//   const info = infoResult.rows[0] || {};
-//   const result = await pool.query(
-//     "SELECT * FROM announcements ORDER BY event_date DESC"
-//     // "SELECT * FROM announcements WHERE is_visible = true ORDER BY event_date DESC LIMIT 1"
-//   );
-//   res.render("admin/announcements", { info, announcements: result.rows });
-// };
-
-// // Create a new announcement
-// exports.createAnnouncement = async (req, res) => {
-//   const infoResult = await pool.query(
-//     "SELECT * FROM ministry_info ORDER BY id DESC LIMIT 1"
-//   );
-//   const info = infoResult.rows[0];
-//   const { title, message, event_date } = req.body;
-//   const is_visible = req.body.is_visible === "on";
-//   let flyer_url = req.file ? req.file.path : null; // Use existing URL if provided
-
-//   await pool.query(
-//     "INSERT INTO announcements (title, message, event_date, flyer_url, is_visible) VALUES ($1, $2, $3, $4, $5)",
-//     [title, message, event_date, flyer_url, is_visible]
-//   );
-//   res.redirect("/admin/announcements");
-// };
-
-// // Show the edit form for an announcement
-// exports.showEditAnnouncement = async (req, res) => {
-//   const { id } = req.params;
-//   const infoResult = await pool.query(
-//     "SELECT * FROM ministry_info ORDER BY id DESC LIMIT 1"
-//   );
-//   const info = infoResult.rows[0] || {};
-
-//   const annResult = await pool.query(
-//     "SELECT * FROM announcements WHERE id = $1",
-//     [id]
-//   );
-//   const announcement = annResult.rows[0];
-//   if (!announcement) return res.redirect("/admin/announcements");
-//   res.render("admin/editAnnouncement", { info, announcement });
-// };
-
-// // Handle the edit form submission
-// exports.editAnnouncement = async (req, res) => {
-//   const { id } = req.params;
-//   const { title, message, event_date } = req.body;
-//   const is_visible = req.body.is_visible === "on";
-//   let flyer_url = req.body.existing_flyer_url || null;
-
-//   // If a new flyer is uploaded, upload to cloudinary and use new URL
-//   if (req.file) {
-//     const result = await cloudinary.uploader.upload(req.file.path, {
-//       folder: "announcements",
-//     });
-//     flyer_url = result.secure_url;
-//     // fs.unlinkSync(req.file.path);
-//     if (req.file && req.file.path && fs.existsSync(req.file.path)) {
-//       fs.unlinkSync(req.file.path);
-//     }
-//   }
-
-//   await pool.query(
-//     "UPDATE announcements SET title = $1, message = $2, event_date = $3, flyer_url = $4, is_visible = $5 WHERE id = $6",
-//     [title, message, event_date, flyer_url, is_visible, id]
-//   );
-//   res.redirect("/admin/announcements");
-// };
-
-// // In adminController.js
-// exports.deleteAnnouncement = async (req, res) => {
-//   await pool.query("DELETE FROM announcements WHERE id = $1", [req.params.id]);
-//   res.redirect("/admin/announcements");
-// };
-
-// // Show the newsletter form
-// // exports.showNewsletterForm = async (req, res) => {
-// //   const infoResult = await pool.query(
-// //     "SELECT * FROM ministry_info ORDER BY id DESC LIMIT 1"
-// //   );
-// //   const info = infoResult.rows[0] || {};
-// //   const newslettersResult = await pool.query(
-// //     "SELECT * FROM newsletters ORDER BY created_at DESC"
-// //   );
-
-// //   res.render("admin/newsletter", {
-// //     info,
-// //     newsletters: newslettersResult.rows,
-// //    });
-// // };
-
-// exports.showNewsletterForm = async (req, res) => {
-//   const info =
-//     (await pool.query("SELECT * FROM ministry_info ORDER BY id DESC LIMIT 1"))
-//       .rows[0] || {};
-//   const newsletters = (
-//     await pool.query("SELECT * FROM newsletters ORDER BY created_at DESC")
-//   ).rows;
-
-//   res.render("admin/newsletter", { info, newsletters });
-// };
-
-// exports.handleNewsletterForm = async (req, res) => {
-//   const { subject, message, scheduled_at, action } = req.body;
-//   let imageUrl = null;
-
-//   if (req.file) {
-//     const result = await cloudinary.uploader.upload(req.file.path, {
-//       folder: "newsletters",
-//     });
-//     imageUrl = result.secure_url;
-//     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-//   }
-
-//   const sent = action === "send";
-//   const createdAt = new Date();
-
-//   if (sent) {
-//     // Get all user emails
-//     const resultUsers = await pool.query(
-//       "SELECT email FROM users2 WHERE email IS NOT NULL"
-//     );
-//     const testEmails = resultUsers.rows.map((row) => row.email);
-
-//     // const testEmails = [
-//     //   "jaykirchtechhub@gmail.com",
-//     //   "dammykirchhoff@gmail.com",
-//     //   "isaacbayo6@gmail.com",
-//     //   "imoledayoimmanuel@gmail.com",
-//     // ];
-
-//     let htmlMsg = `<div>${message}</div>`;
-//     if (imageUrl) {
-//       htmlMsg += `<div><img src="${imageUrl}" style="max-width:100%;border-radius:8px;"></div>`;
-//     }
-
-//     for (const email of testEmails) {
-//       await sendEmail(email, subject, htmlMsg);
-//     }
-//   }
-
-//   await pool.query(
-//     `INSERT INTO newsletters (subject, message, image_url, scheduled_at, sent, created_at)
-//      VALUES ($1, $2, $3, $4, $5, $6)`,
-//     [subject, message, imageUrl, scheduled_at || null, sent, createdAt]
-//   );
-
-//   const info =
-//     (await pool.query("SELECT * FROM ministry_info ORDER BY id DESC LIMIT 1"))
-//       .rows[0] || {};
-//   const newsletters = (
-//     await pool.query("SELECT * FROM newsletters ORDER BY created_at DESC")
-//   ).rows;
-
-//   res.render("admin/newsletter", {
-//     info,
-//     newsletters,
-//     success: sent ? "Newsletter sent!" : "Newsletter saved for later!",
-//   });
-// };
-
-// // Send the newsletter to all users
-// exports.sendNewsletter = async (req, res) => {
-//   const { subject, message } = req.body;
-//   let imageUrl = null;
-
-//   // Upload image to Cloudinary if provided
-//   if (req.file) {
-//     const result = await cloudinary.uploader.upload(req.file.path, {
-//       folder: "newsletters",
-//     });
-//     imageUrl = result.secure_url;
-//     if (req.file && req.file.path && fs.existsSync(req.file.path)) {
-//       fs.unlinkSync(req.file.path); // Remove temp file
-//     }
-//   }
-//   const infoResult = await pool.query(
-//     "SELECT * FROM ministry_info ORDER BY id DESC LIMIT 1"
-//   );
-//   const info = infoResult.rows[0] || {};
-
-//   const newslettersResult = await pool.query(
-//     "SELECT * FROM newsletters ORDER BY created_at DESC"
-//   );
-
-//   // Get all user emails
-//   const resultUsers = await pool.query(
-//     "SELECT email FROM users2 WHERE email IS NOT NULL"
-//   );
-//   // const emails = resultUsers.rows.map((row) => row.email);
-
-//   // ✅ Replace with test emails
-//   const emails = [
-//     "jaykirchtechhub@gmail.com",
-//     "dammykirchhoff@gmail.com",
-//     "dammykirchhoff2@gmail.com", // Replace with your own
-//   ];
-
-//   // Compose HTML message
-//   let htmlMsg = `<div>${message}</div>`;
-//   if (imageUrl) {
-//     htmlMsg += `<div style="margin-top:20px;"><img src="${imageUrl}" alt="Newsletter Image" style="max-width:100%;border-radius:8px;"></div>`;
-//   }
-
-//   // Send to all users
-//   for (const email of emails) {
-//     await sendEmail(email, subject, htmlMsg);
-//   }
-
-//   res.render("admin/newsletter", {
-//     info,
-//     newsletters: newslettersResult.rows,
-//     success: "Newsletter sent to all members!",
-//   });
-// };
-
-// exports.saveNewsletter = async (req, res) => {
-//   const { subject, message, scheduled_at } = req.body;
-//   let imageUrl = null;
-
-//   if (req.file) {
-//     const result = await cloudinary.uploader.upload(req.file.path, {
-//       folder: "newsletters",
-//     });
-//     imageUrl = result.secure_url;
-//     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-//   }
-
-//   await pool.query(
-//     `INSERT INTO newsletters (subject, message, image_url, scheduled_at, sent, created_at)
-//      VALUES ($1, $2, $3, $4, false, NOW())`,
-//     [subject, message, imageUrl, scheduled_at || null]
-//   );
-
-//   res.redirect("/admin/newsletter");
-// };
-
-// exports.showAllNewsletters = async (req, res) => {
-//   const infoResult = await pool.query(
-//     "SELECT * FROM ministry_info ORDER BY id DESC LIMIT 1"
-//   );
-//   const newslettersResult = await pool.query(
-//     "SELECT * FROM newsletters ORDER BY created_at DESC"
-//   );
-
-//   res.render("admin/newsletter", {
-//     info: infoResult.rows[0] || {},
-//     newsletters: newslettersResult.rows,
-//   });
-// };
-
-// // Send Now
-// exports.sendNow = async (req, res) => {
-//   const id = req.params.id;
-//   const newsletter = (
-//     await pool.query("SELECT * FROM newsletters WHERE id = $1", [id])
-//   ).rows[0];
-//   if (!newsletter || newsletter.sent) return res.redirect("/admin/newsletter");
-
-//   const testEmails = [
-//     "jaykirchtechhub@gmail.com",
-//     "dammykirchhoff@gmail.com",
-//     "dammykirchhoff2@gmail.com",
-//   ];
-
-//   let htmlMsg = `<div>${newsletter.message}</div>`;
-//   if (newsletter.image_url) {
-//     htmlMsg += `<div><img src="${newsletter.image_url}" style="max-width:100%;"></div>`;
-//   }
-
-//   for (const email of testEmails) {
-//     await sendEmail(email, newsletter.subject, htmlMsg);
-//   }
-
-//   await pool.query("UPDATE newsletters SET sent = true WHERE id = $1", [id]);
-//   res.redirect("/admin/newsletter");
-// };
-
-// exports.editNewsletter = async (req, res) => {
-//   const { id } = req.params;
-//   const { subject, message, scheduled_at } = req.body;
-
-//   let imageUrl = null;
-//   if (req.file) {
-//     const result = await cloudinary.uploader.upload(req.file.path, {
-//       folder: "newsletters",
-//     });
-//     imageUrl = result.secure_url;
-//     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-//   }
-
-//   const existing = (
-//     await pool.query("SELECT * FROM newsletters WHERE id = $1", [id])
-//   ).rows[0];
-//   if (!existing || existing.sent) return res.redirect("/admin/newsletter");
-
-//   await pool.query(
-//     `UPDATE newsletters SET subject = $1, message = $2, scheduled_at = $3, image_url = COALESCE($4, image_url) WHERE id = $5`,
-//     [subject, message, scheduled_at || null, imageUrl, id]
-//   );
-
-//   res.redirect("/admin/newsletter");
-// };
-
-// // Delete
-// exports.deleteNewsletter = async (req, res) => {
-//   await pool.query("DELETE FROM newsletters WHERE id = $1", [req.params.id]);
-//   res.redirect("/admin/newsletter");
-// };
 
 exports.getAdminProfile = async (req, res) => {
   const userId = req.session.user?.id;
@@ -1317,6 +1004,10 @@ exports.viewStudentDetails = async (req, res) => {
 
 // exports.viewStudentProgress = async (req, res) => {
 //   try {
+//     const infoResult = await pool.query(
+//       "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
+//     );
+//     const info = infoResult.rows[0];
 //     const { id } = req.params;
 
 //     // ✅ Get student info
@@ -1367,7 +1058,7 @@ exports.viewStudentDetails = async (req, res) => {
 //     // ✅ Quizzes
 //     const quizzesRes = await pool.query(
 //       `
-//       SELECT q.id, q.title, l.module_id, qs.score, qs.created_at AS taken_at
+//       SELECT q.id, q.title, l.module_id, qs.score, qs.created_at AS taken_at, l.title AS lesson_title
 //       FROM quiz_submissions qs
 //       JOIN quizzes q ON qs.quiz_id = q.id
 //       JOIN lessons l ON q.lesson_id = l.id
@@ -1439,6 +1130,7 @@ exports.viewStudentDetails = async (req, res) => {
 //           percent: modulePercent,
 //           quizAvg,
 //           assignmentAvg,
+//           assignments: moduleAssignments,
 //         };
 //       });
 
@@ -1461,6 +1153,7 @@ exports.viewStudentDetails = async (req, res) => {
 //       };
 //     });
 
+//     // --- Compute overall averages ---
 //     const allQuizzes = quizzesRes.rows;
 //     const allAssignments = assignmentsRes.rows;
 
@@ -1479,6 +1172,7 @@ exports.viewStudentDetails = async (req, res) => {
 //           )
 //         : null;
 
+//     // ✅ Pass everything to EJS
 //     res.render("admin/studentProgress", {
 //       student,
 //       courses,
@@ -1486,6 +1180,7 @@ exports.viewStudentDetails = async (req, res) => {
 //       assignments: allAssignments,
 //       quizAvg,
 //       assignmentAvg,
+//       info
 //     });
 //   } catch (err) {
 //     console.error("View student progress error:", err.message);
@@ -1500,6 +1195,11 @@ exports.viewStudentProgress = async (req, res) => {
     );
     const info = infoResult.rows[0];
     const { id } = req.params;
+
+    // detect where user came from (default admin)
+    const from =
+      req.query.from ||
+      (req.get("referer")?.includes("/parent") ? "parent" : "admin");
 
     // ✅ Get student info
     const studentRes = await pool.query(
@@ -1671,7 +1371,8 @@ exports.viewStudentProgress = async (req, res) => {
       assignments: allAssignments,
       quizAvg,
       assignmentAvg,
-      info
+      info,
+      from,
     });
   } catch (err) {
     console.error("View student progress error:", err.message);
@@ -1702,6 +1403,72 @@ exports.viewStudentEnrollments = async (req, res) => {
     res.status(500).send("Failed to fetch enrollments");
   }
 };
+
+
+exports.assignChildToParent = async (req, res) => {
+  const { parentId, childEmail } = req.body;
+
+  try {
+    // Verify parent exists
+    const parentRes = await pool.query(
+      "SELECT id FROM users2 WHERE id = $1 AND role = 'parent'",
+      [parentId]
+    );
+    if (parentRes.rows.length === 0) {
+      return res.status(404).send("Parent not found");
+    }
+
+    // Verify child exists
+    const childRes = await pool.query(
+      "SELECT id FROM users2 WHERE email = $1 AND role = 'user'",
+      [childEmail]
+    );
+    if (childRes.rows.length === 0) {
+      return res.status(404).send("Child not found");
+    }
+
+    const child = childRes.rows[0];
+
+    // Create link
+    await pool.query(
+      `INSERT INTO parent_children (parent_id, child_id)
+       VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [parentId, child.id]
+    );
+
+    res.redirect(`/admin/parents/${parentId}/children`);
+  } catch (err) {
+    console.error("Error assigning child:", err);
+    res.status(500).send("Failed to assign child");
+  }
+};
+
+// Remove child from parent (admin override)
+// exports.removeChildFromParent = async (req, res) => {
+//   try {
+//     const { parentId, childId } = req.body;
+
+//     const link = await pool.query(
+//       `SELECT * FROM parent_children WHERE parent_id = $1 AND child_id = $2`,
+//       [parentId, childId]
+//     );
+
+//     if (link.rowCount === 0) {
+//       return res.status(400).send("❌ No such parent-child link exists");
+//     }
+
+//     await pool.query(
+//       `DELETE FROM parent_children WHERE parent_id = $1 AND child_id = $2`,
+//       [parentId, childId]
+//     );
+
+//     res.redirect("/admin/students");
+//   } catch (err) {
+//     console.error("Admin remove child error:", err.message);
+//     res.status(500).send("Server error removing child");
+//   }
+// };
+
 
 
 

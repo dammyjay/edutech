@@ -1,102 +1,131 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>All Students</title>
-  <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-  <!-- Header -->
-  <header class="header">
-    <div class="logo-title">
-        <% info = info || {}; %> <% if (info.logo_url) { %>
-        <img src="<%= info.logo_url %>" alt="Logo" />
-        <% } %>
-        <p><%= info?.company_name || 'Jaykirch Tech Hub' %></p>
-    </div>
-    <a style="text-decoration: none; color: white;" href="/admin/dashboard">⬅ Back to Dashboard</a>
-  </header>
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>All Students</title>
+    <link rel="stylesheet" href="/css/style.css">
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-title">
+          <% info = info || {}; %> <% if (info.logo_url) { %>
+          <img src="<%= info.logo_url %>" alt="Logo" />
+          <% } %>
+          <p><%= info?.company_name || 'Jaykirch Tech Hub' %></p>
+      </div>
+      <a style="text-decoration: none; color: white;" href="/admin/dashboard">⬅ Back to Dashboard</a>
+    </header>
 
-  <h1>👩‍🎓 All Students</h1>
+    <h1>👩‍🎓 All Students</h1>
 
-  <div class="table-responsive">
-    <table class="user-table" style="width: 90%; margin-top: 20px;">
-      <thead>
-        <tr>
-          <th>Profile</th>
-          <th>Full Name</th>
-          <th>Email</th>
-          <th>Phone</th>
-          <th>Gender</th>
-          <th>Registered</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% users.forEach(student => { %>
+    <div class="table-responsive">
+      <table class="user-table" style="width: 90%; margin-top: 20px;">
+        <thead>
           <tr>
-            <td>
-              <img src="<%= student.profile_picture || '/profile.webp' %>" 
-                   alt="Profile"
-                   style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
-            </td>
-            <td><%= student.fullname %></td>
-            <td><%= student.email %></td>
-            <td><%= student.phone %></td>
-            <td><%= student.gender %></td>
-            <td><%= new Date(student.created_at).toLocaleDateString() %></td>
-            <td style="display:flex; gap:10px; justify-content:center; align-items:center;">
-              <!-- View Profile Modal -->
-              <button class="btn-edit" style="background:black;" onclick='openUserModal(<%- JSON.stringify(student) %>)'>👁️</button>
-
-              <!-- View Progress -->
-              <a href="/admin/students/<%= student.id %>/progress" class="btn-edit" style="background:green; color:#fff; padding:5px 8px; border-radius:4px; text-decoration:none;">
-                Progress
-              </a>
-
-              <!-- View Enrollments -->
-              <a href="/admin/students/<%= student.id %>/enrollments" class="btn-edit" style="background:blue; color:#fff; padding:5px 8px; border-radius:4px; text-decoration:none;">
-                Enrollments
-              </a>
-            </td>
+            <th>Profile</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Gender</th>
+            <th>Registered</th>
+            <th>Actions</th>
           </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          <% users.forEach(student => { %>
+            <tr>
+              <td>
+                <img src="<%= student.profile_picture || '/profile.webp' %>" 
+                    alt="Profile"
+                    style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
+              </td>
+              <td><%= student.fullname %></td>
+              <td><%= student.email %></td>
+              <td><%= student.phone %></td>
+              <td><%= student.gender %></td>
+              <td><%= new Date(student.created_at).toLocaleDateString() %></td>
+              <td style="display:flex; gap:10px; justify-content:center; align-items:center;">
+                <!-- View Profile Modal -->
+                <button class="btn-edit" style="background:black;" onclick='openUserModal(<%- JSON.stringify(student) %>)'>👁️</button>
 
-  <!-- User details modal (reuse your existing modal logic) -->
-  <div id="userModal" class="modal" style="display:none;">
-    <div class="modal-content" style="max-width: 500px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; text-align: left;">
-      <span onclick="closeUserModal()" class="close" style="float:right;cursor:pointer;">&times;</span>
-      <h2>User Details</h2>
-      <img id="modalProfilePic" src="" alt="Profile" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;"><br><br>
-      <p><strong>Full Name:</strong> <span id="modalFullName"></span></p>
-      <p><strong>Email:</strong> <span id="modalEmail"></span></p>
-      <p><strong>Phone:</strong> <span id="modalPhone"></span></p>
-      <p><strong>Date of Birth:</strong> <span id="modalDOB"></span></p>
-      <p><strong>Gender:</strong> <span id="modalGender"></span></p>
-      <p><strong>Role:</strong> <span id="modalRole"></span></p>
-      <p><strong>Date Registered:</strong> <span id="modalDate"></span></p>
+                <!-- View Progress -->
+                <!-- <a href="/admin/students/<%= student.id %>/progress" class="btn-edit" style="background:green; color:#fff; padding:5px 8px; border-radius:4px; text-decoration:none;">
+                  Progress
+                </a> -->
+                <a href="/admin/students/<%= student.id %>/progress?from=admin"
+                  class="btn-edit"
+                  style="background:green; color:#fff; padding:5px 8px; border-radius:4px; text-decoration:none;">
+                  Progress
+                </a>
+
+                <!-- View Enrollments -->
+                <a href="/admin/students/<%= student.id %>/enrollments" class="btn-edit" style="background:blue; color:#fff; padding:5px 8px; border-radius:4px; text-decoration:none;">
+                  Enrollments
+                </a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
     </div>
-  </div>
 
-  <script>
-    function openUserModal(user) {
-      document.getElementById("modalFullName").textContent = user.fullname;
-      document.getElementById("modalEmail").textContent = user.email;
-      document.getElementById("modalPhone").textContent = user.phone;
-      document.getElementById("modalDOB").textContent = user.dob || "N/A";
-      document.getElementById("modalGender").textContent = user.gender;
-      document.getElementById("modalRole").textContent = user.role;
-      document.getElementById("modalProfilePic").src = user.profile_picture || "/profile.webp";
-      document.getElementById("modalDate").textContent = new Date(user.created_at).toLocaleString();
-      document.getElementById("userModal").style.display = "block";
-    }
+    <!-- Assign Child to Parent -->
+  <h2 style="margin-top:40px;">👨‍👩‍👧 Assign Child to Parent</h2>
+  <form method="POST" action="/admin/assign-child" style="margin-top:15px;">
+    <label>Parent ID:</label>
+    <input type="number" name="parentId" placeholder="Parent user ID" required />
 
-    function closeUserModal() {
-      document.getElementById("userModal").style.display = "none";
-    }
-  </script>
-</body>
-</html>
+    <label>Child Email:</label>
+    <input type="email" name="childEmail" placeholder="Student email" required />
+
+    <button type="submit" style="margin-left:10px;">Link</button>
+  </form>
+
+  <!-- Remove Child from Parent -->
+  <h2 style="margin-top:30px;">❌ Remove Child from Parent</h2>
+  <!-- <form method="POST" action="/admin/remove-child" style="margin-top:15px;">
+    <label>Parent ID:</label>
+    <input type="number" name="parentId" placeholder="Parent user ID" required />
+
+    <label>Child ID:</label>
+    <input type="number" name="childId" placeholder="Child user ID" required />
+
+    <button type="submit" style="background:red; color:#fff; margin-left:10px;">Remove</button>
+  </form> -->
+
+    <!-- User details modal (reuse your existing modal logic) -->
+    <div id="userModal" class="modal" style="display:none;">
+      <div class="modal-content" style="max-width: 500px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; text-align: left;">
+        <span onclick="closeUserModal()" class="close" style="float:right;cursor:pointer;">&times;</span>
+        <h2>User Details</h2>
+        <img id="modalProfilePic" src="" alt="Profile" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;"><br><br>
+        <p><strong>Full Name:</strong> <span id="modalFullName"></span></p>
+        <p><strong>Email:</strong> <span id="modalEmail"></span></p>
+        <p><strong>Phone:</strong> <span id="modalPhone"></span></p>
+        <p><strong>Date of Birth:</strong> <span id="modalDOB"></span></p>
+        <p><strong>Gender:</strong> <span id="modalGender"></span></p>
+        <p><strong>Role:</strong> <span id="modalRole"></span></p>
+        <p><strong>Date Registered:</strong> <span id="modalDate"></span></p>
+      </div>
+    </div>
+
+    <script>
+      function openUserModal(user) {
+        document.getElementById("modalFullName").textContent = user.fullname;
+        document.getElementById("modalEmail").textContent = user.email;
+        document.getElementById("modalPhone").textContent = user.phone;
+        document.getElementById("modalDOB").textContent = user.dob || "N/A";
+        document.getElementById("modalGender").textContent = user.gender;
+        document.getElementById("modalRole").textContent = user.role;
+        document.getElementById("modalProfilePic").src = user.profile_picture || "/profile.webp";
+        document.getElementById("modalDate").textContent = new Date(user.created_at).toLocaleString();
+        document.getElementById("userModal").style.display = "block";
+      }
+
+      function closeUserModal() {
+        document.getElementById("userModal").style.display = "none";
+      }
+    </script>
+  </body>
+  </html>

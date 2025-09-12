@@ -1,0 +1,62 @@
+<%- include('../partials/header', { title: 'Dashboard' }) %>
+
+<h1>👨‍👩‍👧 Parent Dashboard</h1>
+<p>Welcome, <%= parent.fullname %></p>
+
+<!-- Add Child Form -->
+<h3>Add Child</h3>
+<form method="POST" action="/parent/add-child" style="margin-bottom:20px;">
+  <input type="email" name="childEmail" placeholder="Child's email" required />
+  <button type="submit">➕ Add</button>
+</form>
+
+<!-- List of Linked Children -->
+<h3>Your Children</h3>
+<% if (children.length) { %>
+  <div class="table-responsive">
+    <table class="user-table" style="width:90%; margin-top:20px;">
+      <thead>
+        <tr>
+          <th>Profile</th>
+          <th>Full Name</th>
+          <th>Email</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% children.forEach(child => { %>
+          <tr>
+            <td>
+              <img src="<%= child.profile_picture || '/profile.webp' %>" 
+                   alt="Profile"
+                   style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
+            </td>
+            <td><%= child.fullname %></td>
+            <td><%= child.email %></td>
+            <td style="display:flex; gap:10px; justify-content:center; align-items:center;">
+              <!-- View Progress -->
+              <a href="/admin/students/<%= child.id %>/progress?from=parent"
+                 class="btn-edit"
+                 style="background:green; color:#fff; padding:5px 8px; border-radius:4px; text-decoration:none;">
+                 📊View Progress
+              </a>
+
+              <!-- Remove child form -->
+              <!--
+              <form method="POST" action="/parent/remove-child" style="display:inline;">
+                <input type="hidden" name="childId" value="<%= child.id %>" />
+                <button type="submit" 
+                        style="background:red; color:#fff; border:none; padding:5px 8px; cursor:pointer; border-radius:4px;">
+                  ❌ Remove
+                </button>
+              </form>
+              -->
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+<% } else { %>
+  <p>No children linked yet.</p>
+<% } %>

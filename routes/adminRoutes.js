@@ -2,12 +2,13 @@ const express = require("express");
 const router = express.Router();
 // const parser = require("../middlewares/upload");
 // const upload = require("../middlewares/upload");
+const { ensureAdmin } = require("../middlewares/auth");
 
 const adminController = require("../controllers/adminController");
 const companyController = require("../controllers/companyController");
 const articleController = require("../controllers/articleController");
-const learningController = require("../controllers/learningController")
-const { getCourseById } = require('../models/courseModel'); // adjust path if needed
+const learningController = require("../controllers/learningController");
+const { getCourseById } = require("../models/courseModel"); // adjust path if needed
 const { getModulesByCourse } = require("../models/moduleModel"); // adjust path if needed
 const {
   getQuizzesByLesson,
@@ -23,7 +24,6 @@ const {
   createCourseProject,
   deleteCourseProject,
 } = require("../controllers/learningController");
-
 
 // const galleryController = require("../controllers/galleryController");
 // const devotionalController = require("../controllers/devotionalController");
@@ -88,7 +88,7 @@ router.post(
 // // Handle category edit form submission
 // router.post("/gallery/categories/edit/:id", galleryController.editCategory);
 
-router.get('/articles', articleController.showArticles);
+router.get("/articles", articleController.showArticles);
 router.get("/articles", articleController.showSearchArticles);
 router.post("/articles", upload.single("image"), articleController.saveArticle);
 // router.get('/articles/:id', articleController.showSingleArticle);
@@ -119,7 +119,11 @@ router.post("/pathways/delete/:id", adminController.deletePathway);
 
 // Courses
 router.get("/courses", adminController.showCourses);
-router.post("/courses", upload.single("thumbnail"), adminController.createCourse);
+router.post(
+  "/courses",
+  upload.single("thumbnail"),
+  adminController.createCourse
+);
 router.post(
   "/courses/edit/:id",
   upload.single("thumbnail"),
@@ -154,7 +158,6 @@ router.post(
 //   });
 // });
 
-
 //benefits
 // router.get("/admin/courses/:id", async (req, res) => {
 //   const courseId = req.params.id;
@@ -186,7 +189,11 @@ router.post("/admin/courses/:id/edit", learningController.updateCourse);
 // router.post("/admin/modules/:id/edit", learningController.editModule);
 // router.post("/admin/modules/:id/delete", learningController.deleteModule);
 
-router.post("/modules/create", upload.single("thumbnail"), learningController.createModule);
+router.post(
+  "/modules/create",
+  upload.single("thumbnail"),
+  learningController.createModule
+);
 router.post(
   "/modules/edit/:id",
   upload.single("thumbnail"),
@@ -212,16 +219,8 @@ router.post("/modules/delete/:id", learningController.deleteModule);
 //   learningController.editLesson
 // );
 
-router.post(
-  "/lessons/create",
-  upload.none(),
-  learningController.createLesson
-);
-router.post(
-  "/lessons/:id/edit",
-  upload.none(),
-  learningController.editLesson
-);
+router.post("/lessons/create", upload.none(), learningController.createLesson);
+router.post("/lessons/:id/edit", upload.none(), learningController.editLesson);
 router.post("/lessons/:id/delete", learningController.deleteLesson);
 
 // Quiz
@@ -229,9 +228,8 @@ router.post("/lessons/:id/delete", learningController.deleteLesson);
 // router.post("/admin/quizzes/:id/questions", learningController.addQuizQuestion);
 // router.post("/admin/quizzes/:id/delete", learningController.deleteQuiz);
 
-
 // Get or create quiz for lesson
-router.get('/lesson/:lessonId/quiz', learningController.getOrCreateLessonQuiz);
+router.get("/lesson/:lessonId/quiz", learningController.getOrCreateLessonQuiz);
 
 router.post(
   "/lessons/:lessonId/quiz/ai-generate",
@@ -268,8 +266,7 @@ router.post(
 );
 
 // Delete question
-router.post('/quiz-question/:id/delete', learningController.deleteQuizQuestion);
-
+router.post("/quiz-question/:id/delete", learningController.deleteQuizQuestion);
 
 // Handle lesson assignment
 // router.post("/admin/lessons/:id/assignment", learningController.createAssignment);
@@ -277,7 +274,6 @@ router.post('/quiz-question/:id/delete', learningController.deleteQuizQuestion);
 // Handle module assignment using same function
 // View single course with assignments tab support
 // router.get("/courses/:id", learningController.viewCourseWithAssignments);
-
 
 router.post(
   "/assignments/create",
@@ -291,16 +287,10 @@ router.post(
 );
 
 // Delete
-router.post('/assignments/:id/delete', learningController.deleteAssignment);
-
+router.post("/assignments/:id/delete", learningController.deleteAssignment);
 
 // Projects
-router.post(
-  "/admin/courses/:id/project",
-  learningController.createProject
-);
-
-
+router.post("/admin/courses/:id/project", learningController.createProject);
 
 router.get("/benefits", adminController.showBenefits);
 router.post("/benefits", upload.single("icon"), adminController.createBenefit);
@@ -312,7 +302,6 @@ router.post(
 );
 router.post("/benefits/delete/:id", adminController.deleteBenefit);
 
-
 // router.get("/admin/events", adminController.listEvents);
 // router.post("/events", upload.single("image"), adminController.createEvent);
 router.post(
@@ -321,10 +310,7 @@ router.post(
   adminController.createEvent
 );
 
-router.get(
-  "/events/registrations/:id",
-  adminController.viewEventRegistrations
-);
+router.get("/events/registrations/:id", adminController.viewEventRegistrations);
 router.get("/events", adminController.showEvents); // list all events
 router.get(
   "/events/registrations/:id/export",
@@ -343,5 +329,13 @@ router.get("/students/:id", adminController.viewStudentDetails);
 router.get("/students/:id/progress", adminController.viewStudentProgress);
 router.get("/students/:id/enrollments", adminController.viewStudentEnrollments);
 
+// Admin
+router.post("/admin/assign-child", adminController.assignChildToParent);
+
+// router.post(
+//   "/remove-child",
+//   ensureAdmin,
+//   adminController.removeChildFromParent
+// );
 
 module.exports = router;
