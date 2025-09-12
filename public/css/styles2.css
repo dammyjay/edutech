@@ -1547,9 +1547,10 @@ canvas {
 .parent-section {
     margin-top: 15px;
     padding: 10px;
-    background: #f9f9f9;
+    /* background: #f9f9f9; */
     border-radius: 6px;
     font-size: 14px;
+
 }
 
 .parent-section h3 {
@@ -1563,6 +1564,36 @@ canvas {
 
 .parent-section li {
     padding: 4px 0;
+}
+
+.parent-request-form .btn-approve {
+    background: #4CAF50;
+    color: #fff;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s;
+}
+
+.parent-request-form .btn-approve:hover {
+    background: #388e3c;
+}
+
+.parent-request-form .btn-reject {
+    background: #f44336;
+    color: #fff;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s;
+}
+
+.parent-request-form .btn-reject:hover {
+    background: #b71c1c;
 }
 
 /* Responsive design */

@@ -282,7 +282,8 @@ exports.addChild = async (req, res) => {
       [parent.id, child.id]
     );
 
-    res.send("✅ Request sent! Waiting for the student’s approval.");
+    // res.send("✅ Request sent! Waiting for the student’s approval.");
+    res.redirect("/parent/dashboard");
   } catch (err) {
     console.error("Error creating request:", err);
     res.status(500).send("Failed to send request");
