@@ -1406,13 +1406,13 @@ exports.viewStudentEnrollments = async (req, res) => {
 
 
 exports.assignChildToParent = async (req, res) => {
-  const { parentId, childEmail } = req.body;
+  const { parentEmail, childEmail } = req.body;
 
   try {
     // Verify parent exists
     const parentRes = await pool.query(
-      "SELECT id FROM users2 WHERE id = $1 AND role = 'parent'",
-      [parentId]
+      "SELECT email FROM users2 WHERE id = $1 AND role = 'parent'",
+      [parentEmail]
     );
     if (parentRes.rows.length === 0) {
       return res.status(404).send("Parent not found");
@@ -1428,6 +1428,7 @@ exports.assignChildToParent = async (req, res) => {
     }
 
     const child = childRes.rows[0];
+    const parentId = parentRes.rows[0].id;
 
     // Create link
     await pool.query(

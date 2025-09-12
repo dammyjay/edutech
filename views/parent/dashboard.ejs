@@ -3,6 +3,10 @@
 <h1>👨‍👩‍👧 Parent Dashboard</h1>
 <p>Welcome, <%= parent.fullname %></p>
 
+    <div style="margin-bottom:20px; text-align: right; width: 90%;">
+        <a  href="/admin/logout" style="text-decoration:none; color:white; background-color: red; padding: 5px 10px ; border-radius: 5px;">Logout</a>
+    </div>
+
 <!-- Add Child Form -->
 <h3>Add Child</h3>
 <form method="POST" action="/parent/add-child" style="margin-bottom:20px;">
