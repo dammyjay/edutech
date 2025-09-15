@@ -161,7 +161,7 @@
   <% Object.keys(courseModules).forEach(courseId => { %>
     <% courseModules[courseId].forEach(module => { %>
       <div class="module-block">
-        <button class="module-toggle no-bg" onclick="toggleModule(<%= module.id %>)">
+        <button style="text-align: left;" class="module-toggle no-bg" onclick="toggleModule(<%= module.id %>)">
           📦 <%= module.title %> ▾
         </button>
 
@@ -198,7 +198,7 @@
 
               <button class="lesson-toggle no-bg"
                       onclick="handleLessonClick(<%= lesson.id %>, <%= lesson.unlocked %>)"
-                      style="<%= lesson.unlocked ? '' : 'opacity:0.5; cursor:not-allowed;' %>">
+                      style="text-align: left; <%= lesson.unlocked ? '' : 'opacity:0.5; cursor:not-allowed;' %>">
                 <%= lesson.unlocked ? "📚" : "🔒" %> <%= lesson.title %> ▾
               </button>
 
