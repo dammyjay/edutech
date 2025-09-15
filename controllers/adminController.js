@@ -6,6 +6,8 @@ const sendEmail = require("../utils/sendEmail");
 const cloudinary = require("../utils/cloudinary");
 const fs = require("fs");
 const { Parser } = require("json2csv");
+const PDFDocument = require("pdfkit");
+const puppeteer = require("puppeteer");
 
 // Show forgot password form
 exports.showForgotPasswordForm = (req, res) => {
@@ -1229,7 +1231,7 @@ exports.viewStudentProgress = async (req, res) => {
       SELECT m.id, m.title AS module_title, m.course_id
       FROM modules m
       LEFT JOIN unlocked_modules um ON um.module_id = m.id AND um.student_id = $1
-      ORDER BY m.title;
+      ORDER BY m.id;
       `,
       [id]
     );
@@ -1241,7 +1243,7 @@ exports.viewStudentProgress = async (req, res) => {
       FROM lessons l
       LEFT JOIN user_lesson_progress ulp 
         ON ulp.lesson_id = l.id AND ulp.user_id = $1
-      ORDER BY l.title;
+      ORDER BY l.order_number;
       `,
       [id]
     );
@@ -1469,6 +1471,542 @@ exports.assignChildToParent = async (req, res) => {
 //     res.status(500).send("Server error removing child");
 //   }
 // };
+
+
+
+// exports.downloadCourseSummary = async (req, res) => {
+//   const { studentId, courseId } = req.params;
+
+//   try {
+//     // --- Student info
+//     const studentResult = await pool.query(
+//       "SELECT fullname, email FROM students WHERE id = $1",
+//       [studentId]
+//     );
+//     const student = studentResult.rows[0];
+
+//     // --- Course info
+//     const courseResult = await pool.query(
+//       `SELECT c.id, c.title AS course_title
+//        FROM student_courses sc
+//        JOIN courses c ON sc.course_id = c.id
+//        WHERE sc.student_id = $1 AND c.id = $2`,
+//       [studentId, courseId]
+//     );
+//     const course = courseResult.rows[0];
+
+//     // --- Modules + Lessons + Quizzes + Assignments
+//     const modulesResult = await pool.query(
+//       `SELECT m.id, m.title AS module_title,
+//               COALESCE(sm.percent, 0) AS percent
+//        FROM modules m
+//        LEFT JOIN student_modules sm ON sm.module_id = m.id AND sm.student_id = $1
+//        WHERE m.course_id = $2`,
+//       [studentId, courseId]
+//     );
+//     const modules = modulesResult.rows;
+
+//     // --- Lessons
+//     const lessonsResult = await pool.query(
+//       `SELECT l.id, l.title AS lesson_title, l.module_id,
+//               sl.completed_at
+//        FROM lessons l
+//        LEFT JOIN student_lessons sl ON sl.lesson_id = l.id AND sl.student_id = $1
+//        WHERE l.course_id = $2
+//        ORDER BY l.module_id, l.id`,
+//       [studentId, courseId]
+//     );
+
+//     // --- Quizzes
+//     const quizzesResult = await pool.query(
+//       `SELECT q.id, q.title, q.lesson_id, sq.score, sq.taken_at
+//        FROM quizzes q
+//        LEFT JOIN student_quizzes sq ON sq.quiz_id = q.id AND sq.student_id = $1
+//        WHERE q.course_id = $2
+//        ORDER BY q.lesson_id, q.id`,
+//       [studentId, courseId]
+//     );
+
+//     // --- Assignments
+//     const assignmentsResult = await pool.query(
+//       `SELECT a.id, a.title, a.module_id,
+//               sa.total AS score, sa.grade, sa.ai_feedback, sa.submitted_at
+//        FROM assignments a
+//        LEFT JOIN student_assignments sa ON sa.assignment_id = a.id AND sa.student_id = $1
+//        WHERE a.course_id = $2
+//        ORDER BY a.module_id, a.id`,
+//       [studentId, courseId]
+//     );
+
+//     const lessons = lessonsResult.rows;
+//     const quizzes = quizzesResult.rows;
+//     const assignments = assignmentsResult.rows;
+
+//     // ✅ Create PDF
+//     const doc = new PDFDocument({ margin: 40 });
+//     res.setHeader("Content-Type", "application/pdf");
+//     res.setHeader(
+//       "Content-Disposition",
+//       `attachment; filename=${course.course_title}-summary.pdf`
+//     );
+//     doc.pipe(res);
+
+//     // --- Header
+//     doc.fontSize(20).text("📊 Student Course Summary", { align: "center" });
+//     doc.moveDown();
+//     doc.fontSize(14).text(`👤 Student: ${student.fullname}`);
+//     doc.text(`📧 Email: ${student.email}`);
+//     doc.text(`🎓 Course: ${course.course_title}`);
+//     doc.moveDown();
+
+//     // --- Modules with details
+//     for (const m of modules) {
+//       doc
+//         .fontSize(16)
+//         .fillColor("blue")
+//         .text(`📦 ${m.module_title} — ${m.percent}% complete`);
+//       doc.moveDown(0.3);
+
+//       // Lessons under module
+//       const moduleLessons = lessons.filter((l) => l.module_id === m.id);
+//       if (moduleLessons.length) {
+//         doc.fontSize(13).fillColor("black").text("📚 Lessons:");
+//         moduleLessons.forEach((l) => {
+//           doc
+//             .fontSize(12)
+//             .text(
+//               `- ${l.lesson_title} — ${
+//                 l.completed_at ? "✅ Completed" : "❌ Not completed"
+//               }`
+//             );
+
+//           // Quizzes for this lesson
+//           const lessonQuizzes = quizzes.filter((q) => q.lesson_id === l.id);
+//           if (lessonQuizzes.length) {
+//             lessonQuizzes.forEach((q) => {
+//               doc
+//                 .fontSize(11)
+//                 .fillColor("darkgreen")
+//                 .text(
+//                   `   📝 Quiz: ${q.title} — Score: ${q.score ?? "N/A"} (${
+//                     q.taken_at
+//                       ? new Date(q.taken_at).toLocaleDateString()
+//                       : "Not taken"
+//                   })`
+//                 );
+//             });
+//           }
+//         });
+//         doc.moveDown(0.5);
+//       }
+
+//       // Assignments under module
+//       const moduleAssignments = assignments.filter((a) => a.module_id === m.id);
+//       if (moduleAssignments.length) {
+//         doc.fontSize(13).fillColor("black").text("📑 Assignments:");
+//         moduleAssignments.forEach((a) => {
+//           doc
+//             .fontSize(11)
+//             .fillColor("purple")
+//             .text(
+//               `- ${a.title} — Score: ${a.score ?? "Pending"}, Grade: ${
+//                 a.grade ?? "-"
+//               }, Feedback: ${a.ai_feedback ?? "No feedback"}, Submitted: ${
+//                 a.submitted_at
+//                   ? new Date(a.submitted_at).toLocaleDateString()
+//                   : "Not submitted"
+//               }`
+//             );
+//         });
+//         doc.moveDown(0.5);
+//       }
+
+//       doc.moveDown();
+//     }
+
+//     doc.end();
+//   } catch (err) {
+//     console.error("PDF Error:", err);
+//     res.status(500).send("Error generating summary PDF");
+//   }
+// };
+
+// exports.downloadCourseSummary = async (req, res) => {
+//   const { studentId, courseId } = req.params;
+
+//   try {
+//     // --- Student info
+//     const studentRes = await pool.query(
+//       `SELECT fullname, email FROM users2 WHERE id = $1`,
+//       [studentId]
+//     );
+//     const student = studentRes.rows[0];
+
+//     // --- Course info
+//     const courseRes = await pool.query(
+//       `SELECT title FROM courses WHERE id = $1`,
+//       [courseId]
+//     );
+//     const course = courseRes.rows[0];
+
+//     // --- Modules
+//     const modulesRes = await pool.query(
+//       `SELECT id, title FROM modules WHERE course_id = $1`,
+//       [courseId]
+//     );
+//     const modules = modulesRes.rows;
+
+//     // --- Lessons
+//     const lessonsRes = await pool.query(
+//       `SELECT l.id, l.title, l.module_id, ulp.completed_at
+//        FROM lessons l
+//        LEFT JOIN user_lesson_progress ulp
+//          ON ulp.lesson_id = l.id AND ulp.user_id = $1
+//        WHERE l.course_id = $2
+//        ORDER BY l.id`,
+//       [studentId, courseId]
+//     );
+//     const lessons = lessonsRes.rows;
+
+//     // --- Quizzes
+//     const quizzesRes = await pool.query(
+//       `SELECT q.id, q.title, l.module_id, qs.score, qs.created_at AS taken_at
+//        FROM quizzes q
+//        LEFT JOIN quiz_submissions qs
+//          ON qs.quiz_id = q.id AND qs.student_id = $1
+//        JOIN lessons l ON q.lesson_id = l.id
+//        WHERE q.course_id = $2
+//        ORDER BY q.id`,
+//       [studentId, courseId]
+//     );
+//     const quizzes = quizzesRes.rows;
+
+//     // --- Assignments
+//     const assignmentsRes = await pool.query(
+//       `SELECT ma.id, ma.title, ma.module_id, s.total, s.grade, s.ai_feedback, s.created_at AS submitted_at
+//        FROM module_assignments ma
+//        LEFT JOIN assignment_submissions s
+//          ON s.assignment_id = ma.id AND s.student_id = $1
+//        WHERE ma.course_id = $2
+//        ORDER BY ma.id`,
+//       [studentId, courseId]
+//     );
+//     const assignments = assignmentsRes.rows;
+
+//     // --- PDF headers
+//     res.setHeader(
+//       "Content-Disposition",
+//       `attachment; filename=${course.title.replace(/\s+/g, "_")}_report.pdf`
+//     );
+//     res.setHeader("Content-Type", "application/pdf");
+
+//     // --- Create streaming PDF
+//     const doc = new PDFDocument({ margin: 40 });
+//     doc.pipe(res);
+
+//     // --- Title
+//     doc.fontSize(20).text("📊 Student Progress Report", { align: "center" });
+//     doc.moveDown();
+//     doc.fontSize(12).text(`👤 Student: ${student.fullname}`);
+//     doc.text(`📧 Email: ${student.email}`);
+//     doc.text(`🎓 Course: ${course.title}`);
+//     doc.moveDown();
+
+//     // --- Loop through modules
+//     for (const m of modules) {
+//       doc
+//         .fontSize(14)
+//         .fillColor("blue")
+//         .text(`📦 Module: ${m.title}`, { underline: true });
+//       doc.moveDown(0.3);
+
+//       // Lessons
+//       const moduleLessons = lessons.filter((l) => l.module_id === m.id);
+//       if (moduleLessons.length) {
+//         doc.fontSize(12).fillColor("black").text("📚 Lessons:");
+//         moduleLessons.forEach((l) => {
+//           doc
+//             .fontSize(11)
+//             .text(
+//               `- ${l.title} — ${
+//                 l.completed_at ? "✅ Completed" : "❌ Not completed"
+//               }`
+//             );
+//         });
+//         doc.moveDown(0.5);
+//       }
+
+//       // Quizzes
+//       const moduleQuizzes = quizzes.filter((q) => q.module_id === m.id);
+//       if (moduleQuizzes.length) {
+//         doc.fontSize(12).fillColor("black").text("📝 Quizzes:");
+//         moduleQuizzes.forEach((q) => {
+//           doc
+//             .fontSize(11)
+//             .fillColor("darkgreen")
+//             .text(
+//               `- ${q.title} — Score: ${q.score ?? "N/A"} (${
+//                 q.taken_at
+//                   ? new Date(q.taken_at).toLocaleDateString()
+//                   : "Not taken"
+//               })`
+//             );
+//         });
+//         doc.moveDown(0.5);
+//       }
+
+//       // Assignments
+//       const moduleAssignments = assignments.filter((a) => a.module_id === m.id);
+//       if (moduleAssignments.length) {
+//         doc.fontSize(12).fillColor("black").text("📑 Assignments:");
+//         moduleAssignments.forEach((a) => {
+//           doc
+//             .fontSize(11)
+//             .fillColor("purple")
+//             .text(
+//               `- ${a.title} — Score: ${a.total ?? "Pending"}, Grade: ${
+//                 a.grade ?? "-"
+//               }, Feedback: ${a.ai_feedback ?? "No feedback"}, Submitted: ${
+//                 a.submitted_at
+//                   ? new Date(a.submitted_at).toLocaleDateString()
+//                   : "Not submitted"
+//               }`
+//             );
+//         });
+//         doc.moveDown(0.5);
+//       }
+
+//       doc.moveDown();
+//     }
+
+//     doc.end(); // ✅ end the PDF stream
+//   } catch (err) {
+//     console.error("PDF Error:", err);
+//     res.status(500).send("Error generating summary PDF");
+//   }
+// };
+
+
+
+exports.downloadCourseSummary = async (req, res) => {
+  const { studentId, courseId } = req.params;
+
+  try {
+    // --- Student info
+    const studentRes = await pool.query(
+      `SELECT fullname, email FROM users2 WHERE id = $1`,
+      [studentId]
+    );
+    const student = studentRes.rows[0];
+
+    // --- Course info
+    const courseRes = await pool.query(
+      `SELECT id, title FROM courses WHERE id = $1`,
+      [courseId]
+    );
+    const course = courseRes.rows[0];
+
+    // --- Modules
+    const modulesRes = await pool.query(
+      `SELECT id, title FROM modules WHERE course_id = $1`,
+      [courseId]
+    );
+    const modules = modulesRes.rows;
+
+    // --- Lessons
+    const lessonsRes = await pool.query(
+      `SELECT l.id, l.title, l.module_id, ulp.completed_at
+       FROM lessons l
+       JOIN modules m ON l.module_id = m.id
+       LEFT JOIN user_lesson_progress ulp 
+         ON ulp.lesson_id = l.id AND ulp.user_id = $1
+       WHERE m.course_id = $2
+       ORDER BY l.id`,
+      [studentId, courseId]
+    );
+    const lessons = lessonsRes.rows;
+
+    // --- Quizzes
+    const quizzesRes = await pool.query(
+      `SELECT q.id, q.title, l.module_id, qs.score, qs.created_at AS taken_at
+       FROM quizzes q
+       LEFT JOIN quiz_submissions qs 
+         ON qs.quiz_id = q.id AND qs.student_id = $1
+       JOIN lessons l ON q.lesson_id = l.id
+       JOIN modules m ON l.module_id = m.id
+       WHERE m.course_id = $2
+       ORDER BY q.id`,
+      [studentId, courseId]
+    );
+    const quizzes = quizzesRes.rows;
+
+    // --- Assignments
+    const assignmentsRes = await pool.query(
+      `SELECT ma.id, ma.title, ma.module_id, s.total, s.grade, s.ai_feedback, s.created_at AS submitted_at
+       FROM module_assignments ma
+       JOIN modules m ON ma.module_id = m.id
+       LEFT JOIN assignment_submissions s 
+         ON s.assignment_id = ma.id AND s.student_id = $1
+       WHERE m.course_id = $2
+       ORDER BY ma.id`,
+      [studentId, courseId]
+    );
+    const assignments = assignmentsRes.rows;
+
+    // --- Summary stats
+    const totalLessons = lessons.length;
+    const completedLessons = lessons.filter((l) => l.completed_at).length;
+    const lessonPercent = totalLessons
+      ? Math.round((completedLessons / totalLessons) * 100)
+      : 0;
+
+    const quizAvg =
+      quizzes.length > 0
+        ? Math.round(
+            quizzes.reduce((a, q) => a + (q.score || 0), 0) / quizzes.length
+          )
+        : "N/A";
+
+    const assignmentAvg =
+      assignments.length > 0
+        ? Math.round(
+            assignments.reduce((a, x) => a + (x.total || 0), 0) /
+              assignments.length
+          )
+        : "N/A";
+
+    // --- Build HTML template
+    const html = `
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 30px; color: #2c3e50; }
+            h1 { text-align: center; color: #34495e; }
+            h2 { margin-top: 30px; color: #2980b9; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
+            h3 { margin-top: 20px; color: #8e44ad; }
+            .summary { margin: 20px 0; padding: 10px; background: #ecf0f1; border-radius: 8px; }
+            table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+            th, td { border: 1px solid #ddd; padding: 8px; font-size: 12px; }
+            th { background: #2c3e50; color: white; text-align: left; }
+            tr:nth-child(even) { background: #f9f9f9; }
+            .footer { margin-top: 30px; font-size: 10px; text-align: center; color: gray; }
+          </style>
+        </head>
+        <body>
+          <h1>📊 Student Progress Report</h1>
+          <p style="text-align:center; color: gray;">Generated on: ${new Date().toLocaleString()}</p>
+
+          <h2>👤 Student Info</h2>
+          <p><strong>Name:</strong> ${student.fullname}</p>
+          <p><strong>Email:</strong> ${student.email}</p>
+          <p><strong>Course:</strong> ${course.title}</p>
+
+          <div class="summary">
+            <h2>📌 Summary Statistics</h2>
+            <ul>
+              <li>Total Lessons: ${totalLessons}</li>
+              <li>Completed Lessons: ${completedLessons}</li>
+              <li>Progress: ${lessonPercent}%</li>
+              <li>Quiz Average: ${quizAvg}</li>
+              <li>Assignment Average: ${assignmentAvg}</li>
+            </ul>
+          </div>
+
+          ${modules
+            .map(
+              (m) => `
+            <h2>📦 Module: ${m.title}</h2>
+            
+            <h3>📚 Lessons</h3>
+            <table>
+              <tr><th>Lesson</th><th>Status</th></tr>
+              ${lessons
+                .filter((l) => l.module_id === m.id)
+                .map(
+                  (l) => `
+                <tr>
+                  <td>${l.title}</td>
+                  <td>${
+                    l.completed_at ? "✅ Completed" : "❌ Not completed"
+                  }</td>
+                </tr>`
+                )
+                .join("")}
+            </table>
+
+            <h3>📝 Quizzes</h3>
+            <table>
+              <tr><th>Quiz</th><th>Score</th><th>Date</th></tr>
+              ${quizzes
+                .filter((q) => q.module_id === m.id)
+                .map(
+                  (q) => `
+                <tr>
+                  <td>${q.title}</td>
+                  <td>${q.score ?? "N/A"}</td>
+                  <td>${
+                    q.taken_at
+                      ? new Date(q.taken_at).toLocaleDateString()
+                      : "Not taken"
+                  }</td>
+                </tr>`
+                )
+                .join("")}
+            </table>
+
+            <h3>📑 Assignments</h3>
+            <table>
+              <tr><th>Assignment</th><th>Score</th><th>Grade</th><th>Feedback</th><th>Submitted</th></tr>
+              ${assignments
+                .filter((a) => a.module_id === m.id)
+                .map(
+                  (a) => `
+                <tr>
+                  <td>${a.title}</td>
+                  <td>${a.total ?? "Pending"}</td>
+                  <td>${a.grade ?? "-"}</td>
+                  <td>${a.ai_feedback ?? "No feedback"}</td>
+                  <td>${
+                    a.submitted_at
+                      ? new Date(a.submitted_at).toLocaleDateString()
+                      : "Not submitted"
+                  }</td>
+                </tr>`
+                )
+                .join("")}
+            </table>
+          `
+            )
+            .join("")}
+
+          <div class="footer">© ${new Date().getFullYear()} Student Progress Report</div>
+        </body>
+      </html>
+    `;
+
+    // --- Generate PDF with Puppeteer
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
+    await browser.close();
+
+    // --- Send PDF response
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=${course.title.replace(/\s+/g, "_")}_report.pdf`
+    );
+    res.setHeader("Content-Type", "application/pdf");
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error("PDF Error:", err);
+    res.status(500).send("Error generating summary PDF");
+  }
+};
+
 
 
 

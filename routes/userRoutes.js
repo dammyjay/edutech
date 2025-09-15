@@ -248,8 +248,16 @@ router.post("/register/:id", async (req, res) => {
   }
 });
 
+router.get(
+  "/student/:studentId/course-summary/:courseId/download",
+  ensureParent,
+  userController.downloadCourseSummary
+);
+
 
 // router.post("/remove-child", ensureParent, userController.removeChild);
+
+
 
 
 module.exports = router;

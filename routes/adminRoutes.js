@@ -340,4 +340,10 @@ router.post("/admin/assign-child", adminController.assignChildToParent);
 //   adminController.removeChildFromParent
 // );
 
+// Download student course summary
+router.get(
+  "/student/:studentId/course-summary/:courseId/download",
+  adminController.downloadCourseSummary
+);
+
 module.exports = router;
