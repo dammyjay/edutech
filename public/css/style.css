@@ -574,6 +574,16 @@ form button {
         box-sizing: border-box;
     }
 
+        /* .article-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 320px);
+            gap: 32px;
+            margin-top: 24px;
+            width: 100%;
+            box-sizing: border-box;
+            justify-content: center;
+        } */
+
     .article-grid img {
             width: 100%;
             height: 200px;

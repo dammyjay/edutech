@@ -287,12 +287,12 @@ exports.getLessonsPage = async (req, res) => {
 // CREATE LESSON
 exports.createLesson = async (req, res) => {
   try {
-    const { title, content, module_id, course_id, video_url } = req.body;
+    const { title, content, module_id, course_id, video_url, order_number } = req.body;
 
     await pool.query(
-      `INSERT INTO lessons (title, content, module_id, video_url)
-       VALUES ($1, $2, $3, $4)`,
-      [title, content, module_id, video_url]
+      `INSERT INTO lessons (title, content, module_id, video_url, order_number)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [title, content, module_id, video_url, order_number]
     );
 
     res.redirect(`/admin/courses/${course_id}?tab=lessons`);
@@ -337,20 +337,20 @@ exports.createLesson = async (req, res) => {
 
 exports.editLesson = async (req, res) => {
   const { id } = req.params;
-  const { title, content, video_url } = req.body; // remove course_id from body
+  const { title, content, video_url, order_number, module_id } = req.body;
 
   try {
-    // Update lesson
+    // Update lesson, including order_number and module_id
     await pool.query(
       `UPDATE lessons
-       SET title=$1, content=$2, video_url=$3
-       WHERE id=$4`,
-      [title, content, video_url, id]
+       SET title = $1, content = $2, video_url = $3, order_number = $4, module_id = $5
+       WHERE id = $6`,
+      [title, content, video_url, order_number, module_id, id]
     );
 
-    // Get module_id + course_id for redirect
+    // Get course_id for redirect
     const result = await pool.query(
-      `SELECT m.id AS module_id, m.course_id
+      `SELECT m.course_id
        FROM lessons l
        JOIN modules m ON l.module_id = m.id
        WHERE l.id = $1`,
@@ -403,7 +403,7 @@ exports.getLessonJSON = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT l.id, l.title, l.content, l.video_url, l.module_id, m.course_id
+      `SELECT l.id, l.title, l.content, l.video_url, l.order_number, l.module_id, m.course_id
        FROM lessons l
        JOIN modules m ON l.module_id = m.id
        WHERE l.id = $1`,
@@ -1150,6 +1150,7 @@ exports.viewSingleCourse = async (req, res) => {
       lessonsQuery += " AND m.id = $2";
       params.push(selectedModuleId);
     }
+    lessonsQuery += " ORDER BY l.order_number";
     const lessons = await pool.query(lessonsQuery, params);
 
     // Get module assignments

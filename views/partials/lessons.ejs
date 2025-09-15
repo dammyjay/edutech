@@ -176,18 +176,21 @@
     <h2>Create Lesson</h2>
     <input type="text" name="course_id" value="<%= course.id %>">
 
-    <label>Title</label>
-    <input type="text" name="title" required>
-
-    <label>Content</label>
-    <textarea name="content" id="createLessonContent"></textarea>
-
     <label>Module</label>
     <select name="module_id" required>
       <% modules.forEach(mod => { %>
         <option value="<%= mod.id %>"><%= mod.title %></option>
       <% }) %>
     </select>
+
+    <label>Title</label>
+    <input type="text" name="title" required>
+
+    <label>Order Number</label>
+    <input type="number" name="order_number" min="1" required>
+
+    <label>Content</label>
+    <textarea name="content" id="createLessonContent"></textarea>
 
     <label>Video Link (YouTube/Vimeo)</label>
     <input type="url" name="video_url" placeholder="https://www.youtube.com/...">
@@ -231,6 +234,9 @@
 
     <label>Title</label>
     <input type="text" name="title" id="editLessonTitle" required>
+
+    <label>Order Number</label>
+    <input type="number" name="order_number" id="editLessonOrder" min="1" required>
 
     <label>Content</label>
     <textarea name="content" id="editLessonContent"></textarea>
@@ -636,8 +642,41 @@ async function openEditLessonModal(lessonId) {
     form.action = `/admin/lessons/${lesson.id}/edit`;
 
     document.getElementById('editLessonTitle').value = lesson.title;
-    // document.getElementById('editLessonCourseId').value = lesson.course_id;
-    // document.getElementById('editLessonCourseId').value = lesson.course_id || '';
+    document.getElementById('editLessonOrder').value = lesson.order_number || '';
+
+    // Dynamically create/select module dropdown
+    let moduleSelect = document.getElementById('editLessonModule');
+    if (!moduleSelect) {
+      // Create select if not present
+      moduleSelect = document.createElement('select');
+      moduleSelect.name = 'module_id';
+      moduleSelect.id = 'editLessonModule';
+      moduleSelect.required = true;
+
+      // Insert before the title label/input
+      const titleLabel = document.querySelector('#editLessonForm label[for="editLessonTitle"]') ||
+                         document.querySelector('#editLessonForm input[name="title"]');
+      form.insertBefore(moduleSelect, titleLabel);
+    }
+
+    // Populate module dropdown
+    moduleSelect.innerHTML = '';
+    if (window.modules && Array.isArray(window.modules)) {
+      window.modules.forEach(mod => {
+        const opt = document.createElement('option');
+        opt.value = mod.id;
+        opt.textContent = mod.title;
+        if (lesson.module_id == mod.id) opt.selected = true;
+        moduleSelect.appendChild(opt);
+      });
+    } else {
+      // fallback: just set current value
+      const opt = document.createElement('option');
+      opt.value = lesson.module_id;
+      opt.textContent = lesson.module_title || `Module ${lesson.module_id}`;
+      opt.selected = true;
+      moduleSelect.appendChild(opt);
+    }
 
     document.getElementById('editLessonVideo').value = lesson.video_url || '';
 
