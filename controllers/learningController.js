@@ -303,11 +303,44 @@ exports.createLesson = async (req, res) => {
 };
 
 // EDIT LESSON
+// exports.editLesson = async (req, res) => {
+//   const { id } = req.params;
+//   const { title, content, course_id, video_url } = req.body;
+
+//   console.log("Edit Lesson body:", req.body); // <--- check this
+
+//   // if (!course_id) {
+//   //   console.error("Missing course_id in editLesson form submission");
+//   //   return res.status(400).send("Missing course ID");
+//   // }
+
+//   try {
+//     await pool.query(
+//       `UPDATE lessons
+//        SET title=$1, content=$2, video_url=$3
+//        WHERE id=$4`,
+//       [title, content, video_url, id]
+//     );
+
+//     const courseResult = await pool.query(
+//       `SELECT course_id FROM modules WHERE id = $1`,
+//       [module_id]
+//     );
+//     const courseId = courseResult.rows[0].course_id;
+
+//     res.redirect(`/admin/courses/${course_id}?tab=lessons`);
+//   } catch (err) {
+//     console.error("Edit Lesson Error:", err.message);
+//     res.status(500).send("Error editing lesson");
+//   }
+// };
+
 exports.editLesson = async (req, res) => {
   const { id } = req.params;
-  const { title, content, course_id, video_url } = req.body;
+  const { title, content, video_url } = req.body; // remove course_id from body
 
   try {
+    // Update lesson
     await pool.query(
       `UPDATE lessons
        SET title=$1, content=$2, video_url=$3
@@ -315,12 +348,27 @@ exports.editLesson = async (req, res) => {
       [title, content, video_url, id]
     );
 
-    res.redirect(`/admin/courses/${course_id}?tab=lessons`);
+    // Get module_id + course_id for redirect
+    const result = await pool.query(
+      `SELECT m.id AS module_id, m.course_id
+       FROM lessons l
+       JOIN modules m ON l.module_id = m.id
+       WHERE l.id = $1`,
+      [id]
+    );
+
+    if (!result.rows[0]) throw new Error("Lesson or module not found");
+
+    const courseId = result.rows[0].course_id;
+
+    // Redirect to course lessons tab
+    res.redirect(`/admin/courses/${courseId}?tab=lessons`);
   } catch (err) {
     console.error("Edit Lesson Error:", err.message);
     res.status(500).send("Error editing lesson");
   }
 };
+
 
 
 exports.deleteLesson = async (req, res) => {
@@ -335,6 +383,42 @@ exports.deleteLesson = async (req, res) => {
     res.status(500).send("Server error");
   }
 };
+
+// GET lesson as JSON for edit modal
+// exports.getLessonJSON = async (req, res) => {
+//   const { id } = req.params;
+//   try {
+//     const { rows } = await pool.query('SELECT * FROM lessons WHERE id=$1', [id]);
+//     if (rows.length === 0) return res.status(404).json(null);
+//     res.json(rows[0]);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json(null);
+//   }
+// };
+
+// GET /admin/lessons/:id/json
+exports.getLessonJSON = async (req, res) => {
+  const lessonId = req.params.id;
+
+  try {
+    const result = await pool.query(
+      `SELECT l.id, l.title, l.content, l.video_url, l.module_id, m.course_id
+       FROM lessons l
+       JOIN modules m ON l.module_id = m.id
+       WHERE l.id = $1`,
+      [lessonId]
+    );
+
+    if (!result.rows[0]) return res.status(404).json({ error: "Lesson not found" });
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
 
 
 // exports.createQuiz = async (req, res) => {

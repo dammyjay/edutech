@@ -557,12 +557,21 @@ form button {
 
 
     .article-grid {
-        display: grid;
+        /* display: grid; */
         /* grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); */
-        grid-template-columns: repeat(3, 360px);
+        /* grid-template-columns: repeat(3, 360px);
         gap: 20px;    
         margin-top: 20px;
+        width: 100%; */
+    }
+
+        .article-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 32px;
+        margin-top: 24px;
         width: 100%;
+        box-sizing: border-box;
     }
 
     .article-grid img {

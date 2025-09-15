@@ -222,6 +222,8 @@ router.post("/modules/delete/:id", learningController.deleteModule);
 router.post("/lessons/create", upload.none(), learningController.createLesson);
 router.post("/lessons/:id/edit", upload.none(), learningController.editLesson);
 router.post("/lessons/:id/delete", learningController.deleteLesson);
+router.get("/lessons/:id/json", learningController.getLessonJSON);
+
 
 // Quiz
 // router.post("/admin/lessons/:id/quiz", learningController.createQuiz);
