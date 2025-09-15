@@ -229,7 +229,8 @@ async function createTables() {
         title TEXT NOT NULL,
         content TEXT,
         video_url TEXT,
-        created_at TIMESTAMP DEFAULT NOW()
+        created_at TIMESTAMP DEFAULT NOW(),
+        order_number INTEGER
       );
       `
     );
