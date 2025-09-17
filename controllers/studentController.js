@@ -28,6 +28,86 @@ exports.getDashboard = async (req, res) => {
     ]);
     const student = studentRes.rows[0];
 
+    // --- Role from user_school (important for EJS condition checks)
+    const roleRes = await pool.query(
+      `SELECT role_in_school FROM user_school 
+       WHERE user_id = $1 AND approved = true 
+       LIMIT 1`,
+      [studentId]
+    );
+    if (roleRes.rows.length) {
+      student.role = roleRes.rows[0].role_in_school;
+    }
+
+    // --- School (via user_school)
+    const schoolRes = await pool.query(
+      `SELECT s.id, s.name
+       FROM schools s
+       JOIN user_school us ON s.id = us.school_id
+       WHERE us.user_id = $1
+         AND us.role_in_school = 'student'
+         AND us.approved = true
+       LIMIT 1`,
+      [studentId]
+    );
+    const school = schoolRes.rows[0] || null;
+
+    // --- Classroom (via user_school)
+    const classroomRes = await pool.query(
+      `SELECT c.id, c.name
+       FROM classrooms c
+       JOIN user_school us ON c.id = us.classroom_id
+       WHERE us.user_id = $1
+         AND us.role_in_school = 'student'
+         AND us.approved = true
+       LIMIT 1`,
+      [studentId]
+    );
+    const classroom = classroomRes.rows[0] || null;
+
+    // --- Teacher(s) for classroom
+    let teacher = null;
+    if (classroom) {
+      const teacherRes = await pool.query(
+        `SELECT u.id, u.fullname, u.email
+         FROM users2 u
+         JOIN classroom_teachers ct ON ct.teacher_id = u.id
+         WHERE ct.classroom_id = $1
+         LIMIT 1`,
+        [classroom.id]
+      );
+      teacher = teacherRes.rows[0] || null;
+    }
+
+    let classmates = [];
+    let teachers = [];
+    if (classroom) {
+      if (req.query.section === "classroom") {
+        const matesRes = await pool.query(
+          `SELECT u.id, u.fullname, u.email
+       FROM users2 u
+       JOIN user_school us ON us.user_id = u.id
+       WHERE us.classroom_id = $1
+         AND us.role_in_school = 'student'
+         AND us.approved = true
+         AND u.id != $2`,
+          [classroom.id, studentId]
+        );
+        classmates = matesRes.rows;
+      }
+
+      if (req.query.section === "teacher") {
+        const tRes = await pool.query(
+          `SELECT u.id, u.fullname, u.email
+       FROM users2 u
+       JOIN classroom_teachers ct ON ct.teacher_id = u.id
+       WHERE ct.classroom_id = $1`,
+          [classroom.id]
+        );
+        teachers = tRes.rows;
+      }
+    }
+
     // ✅ Parent requests
     const requestsRes = await pool.query(
       `SELECT r.id, u.fullname AS parent_name, u.email AS parent_email, r.status
@@ -398,21 +478,7 @@ exports.getDashboard = async (req, res) => {
 
     const certificates = certificatesRes.rows;
 
-    // const xpRes = await pool.query(
-    //   `SELECT COALESCE(SUM(xp), 0) AS total FROM xp_history WHERE user_id = $1`,
-    //   [studentId]
-    // );
-    // const totalXP = xpRes.rows[0].total;
-
-    // const xpHistoryRes = await pool.query(
-    //   `SELECT * FROM xp_history WHERE user_id = $1 ORDER BY earned_at DESC LIMIT 10`,
-    //   [studentId]
-    // );
-
-    // const xpHistory = xpHistoryRes.rows;
-
-    // XP
-    const xpHistoryRes = await pool.query(
+   const xpHistoryRes = await pool.query(
       `SELECT * FROM xp_history WHERE user_id = $1 ORDER BY earned_at DESC LIMIT 10`,
       [studentId]
     );
@@ -445,37 +511,6 @@ exports.getDashboard = async (req, res) => {
     let moduleInfo = null;
     let lessons = [];
     let selectedLesson = null;
-    // if (req.query.section === "module" && req.query.moduleId) {
-    //   const moduleRes = await pool.query(
-    //     `SELECT * FROM modules WHERE id = $1 LIMIT 1`,
-    //     [req.query.moduleId]
-    //   );
-    //   moduleInfo = moduleRes.rows[0] || null;
-
-    //   const lessonsRes = await pool.query(
-    //     `
-    //     SELECT l.*,
-    //            EXISTS(
-    //              SELECT 1 FROM unlocked_lessons ul
-    //              WHERE ul.student_id = $2 AND ul.lesson_id = l.id
-    //            ) AS unlocked,
-    //            EXISTS(SELECT 1 FROM quizzes q WHERE q.lesson_id = l.id) AS has_quiz
-    //     FROM lessons l
-    //     WHERE module_id = $1
-    //     ORDER BY l.id ASC
-    //     `,
-    //     [req.query.moduleId, studentId]
-    //   );
-    //   lessons = lessonsRes.rows;
-
-    //   if (req.query.lessonId) {
-    //     const lessonRes = await pool.query(
-    //       `SELECT * FROM lessons WHERE id = $1 LIMIT 1`,
-    //       [req.query.lessonId]
-    //     );
-    //     selectedLesson = lessonRes.rows[0] || null;
-    //   }
-    // }
 
     if (req.query.section === "module" && req.query.moduleId) {
       const moduleRes = await pool.query(
@@ -549,6 +584,11 @@ exports.getDashboard = async (req, res) => {
       users: req.session.user,
       info,
       walletBalance,
+      school, // ✅ Added
+      classroom, // ✅ Added
+      teacher, // ✅ Added
+      classmates, // <- new
+      teachers, // <- new
       subscribed: req.query.subscribed,
       enrolledCourses: enrolledCoursesRes.rows,
       pathwayCourses,
@@ -2205,3 +2245,82 @@ exports.respondToParentRequest = async (req, res) => {
     res.status(500).send("Server error responding to parent request");
   }
 };
+
+// controllers/studentController.js
+exports.getClassroom = async (req, res) => {
+  const studentId = req.user.id;
+
+  try {
+    // find the student’s classroom
+    const classroomRes = await pool.query(
+      `SELECT c.id, c.name
+       FROM classrooms c
+       JOIN user_school us ON c.id = us.classroom_id
+       WHERE us.user_id = $1
+         AND us.role_in_school = 'student'
+         AND us.approved = true
+       LIMIT 1`,
+      [studentId]
+    );
+    const classroom = classroomRes.rows[0];
+    if (!classroom) return res.send("You are not assigned to a classroom yet.");
+
+    // fetch classmates
+    const classmatesRes = await pool.query(
+      `SELECT u.id, u.fullname, u.email
+       FROM users2 u
+       JOIN user_school us ON u.id = us.user_id
+       WHERE us.classroom_id = $1
+         AND us.role_in_school = 'student'
+         AND us.approved = true
+         AND u.id != $2`,
+      [classroom.id, studentId]
+    );
+
+    res.render("student/classroom", {
+      classroom,
+      classmates: classmatesRes.rows,
+    });
+  } catch (err) {
+    console.error("Classroom Error:", err.message);
+    res.status(500).send("Server Error");
+  }
+};
+
+// controllers/studentController.js
+exports.getTeacher = async (req, res) => {
+  const studentId = req.user.id;
+
+  try {
+    // find the student’s classroom
+    const classroomRes = await pool.query(
+      `SELECT c.id
+       FROM classrooms c
+       JOIN user_school us ON c.id = us.classroom_id
+       WHERE us.user_id = $1
+         AND us.role_in_school = 'student'
+         AND us.approved = true
+       LIMIT 1`,
+      [studentId]
+    );
+    const classroom = classroomRes.rows[0];
+    if (!classroom) return res.send("You are not assigned to a classroom yet.");
+
+    // fetch teacher(s) for that classroom
+    const teacherRes = await pool.query(
+      `SELECT u.id, u.fullname, u.email
+       FROM users2 u
+       JOIN classroom_teachers ct ON ct.teacher_id = u.id
+       WHERE ct.classroom_id = $1`,
+      [classroom.id]
+    );
+
+    res.render("student/teacher", {
+      teachers: teacherRes.rows,
+    });
+  } catch (err) {
+    console.error("Teacher Error:", err.message);
+    res.status(500).send("Server Error");
+  }
+};
+

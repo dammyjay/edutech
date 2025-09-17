@@ -1,42 +1,3 @@
-<!-- <h2>🏫 Classrooms</h2>
-<button class="btn-edit" onclick="openModal('createClassroomModal')">➕ Create Classroom</button>
-
-<div class="table-responsive">
-  <table class="user-table">
-    <thead>
-      <tr>
-        <th>Classroom Name</th>
-        <th>Teacher(s)</th>
-        <th>Students</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% if (classrooms.length) { %>
-        <% classrooms.forEach(c => { %>
-          <tr>
-            <td><%= c.name %></td>
-            <td><%= c.teacher_names %></td>
-            <td><%= c.student_count %></td>
-            <td>
-              <div class="article-button">
-                <button class="btn-view" onclick="window.location.href='/school-admin/classrooms/<%= c.id %>'">👁 View</button>
-                <button class="btn-edit" onclick="openEditModal(<%= c.id %>, '<%= c.name %>', <%- JSON.stringify(c.teacher_ids || []) %>)">✏ Edit</button>
-                <form method="POST" action="/school-admin/classrooms/<%= c.id %>/delete" onsubmit="return confirm('Delete this classroom?')">
-                  <button type="submit" class="btn-delete">🗑 Delete</button>
-                </form>
-              </div>
-            </td>
-          </tr>
-        <% }) %>
-      <% } else { %>
-        <tr><td colspan="4" style="text-align:center;">No classrooms yet</td></tr>
-      <% } %>
-    </tbody>
-  </table>
-</div> -->
-
-
 <h2>🏫 Classrooms</h2>
 <button class="btn-edit" onclick="openModal('createClassroomModal')">➕ Create Classroom</button>
 
@@ -100,13 +61,13 @@
 
         <!-- Add student form -->
         <form method="POST" action="/school-admin/classrooms/<%= c.id %>/add-student">
-        <!-- Search box -->
+        
         <input type="text" 
                 placeholder="🔍 Search by email..." 
                 onkeyup="filterStudents('<%= c.id %>', this.value)" 
                 class="student-search">
 
-        <!-- Dropdown -->
+        
         <select name="student_id" id="student-select-<%= c.id %>" size="5" required>
             <option value="">-- Select Student --</option>
             <% c.availableStudents.forEach(st => { %>
@@ -117,6 +78,25 @@
         <button type="submit" class="btn-edit">➕ Add Student</button>
         </form>
 
+        <!-- Add student form -->
+        <!-- <form onsubmit="addStudent(event, <%= c.id %>)">
+        
+        <input type="text" 
+                placeholder="🔍 Search by email..." 
+                onkeyup="filterStudents('<%= c.id %>', this.value)" 
+                class="student-search">
+
+        
+        <select name="student_id" id="student-select-<%= c.id %>" size="5" required>
+            <option value="">-- Select Student --</option>
+            <% c.availableStudents.forEach(st => { %>
+            <option value="<%= st.id %>"><%= st.fullname %> (<%= st.email %>)</option>
+            <% }) %>
+        </select>
+
+        <button type="submit" class="btn-edit">➕ Add Student</button>
+        </form> -->
+
         </div>
       </div>
     <% }) %>
@@ -124,6 +104,8 @@
     <p>No classrooms yet</p>
   <% } %>
 </div>
+
+<div id="studentAlert" class="alert-overlay">Student added successfully ✅</div>
 
 <script>
 async function addStudent(event, classroomId) {
@@ -142,28 +124,58 @@ async function addStudent(event, classroomId) {
 
     const data = await res.json();
 
-    if (data.success) {
-      // ✅ Add new row into the table dynamically
-      const tbody = document.querySelector(`#classroom-${classroomId} table tbody`);
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${data.student.fullname}</td>
-        <td>${data.student.email}</td>
-        <td>${new Date(data.student.joined_at).toDateString()}</td>
-        <td>
-          <form method="POST" action="/school-admin/students/${data.student.id}/delete" style="display:inline;" onsubmit="return confirm('Remove this student?')">
-            <button class="btn-delete">🗑 Remove</button>
-          </form>
-        </td>
-      `;
-      tbody.appendChild(tr);
+    // if (data.success) {
+    //   // ✅ Add new row into the table dynamically
+    //   const tbody = document.querySelector(`#classroom-${classroomId} table tbody`);
+    //   const tr = document.createElement("tr");
+    //   tr.innerHTML = `
+    //     <td>${data.student.fullname}</td>
+    //     <td>${data.student.email}</td>
+    //     <td>${new Date(data.student.joined_at).toDateString()}</td>
+    //     <td>
+    //       <form method="POST" action="/school-admin/students/${data.student.id}/delete" style="display:inline;" onsubmit="return confirm('Remove this student?')">
+    //         <button class="btn-delete">🗑 Remove</button>
+    //       </form>
+    //     </td>
+    //   `;
+    //   tbody.appendChild(tr);
 
-      // Reset dropdown
-      select.value = "";
-    } else {
-      alert(data.message || "Error adding student.");
-    }
-  } catch (err) {
+    //   // Reset dropdown
+    //   select.value = "";
+    // } else {
+    //   alert(data.message || "Error adding student.");
+    // }
+    if (data.success) {
+  // Add row...
+  const tbody = document.querySelector(`#classroom-${classroomId} table tbody`);
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${data.student.fullname}</td>
+    <td>${data.student.email}</td>
+    <td>${new Date(data.student.joined_at).toDateString()}</td>
+    <td>
+      <form method="POST" action="/school-admin/students/${data.student.id}/delete" 
+            style="display:inline;" 
+            onsubmit="return confirm('Remove this student?')">
+        <button class="btn-delete">🗑 Remove</button>
+      </form>
+    </td>
+  `;
+  tbody.appendChild(tr);
+
+  // Reset dropdown
+  select.value = "";
+
+  // ✅ Show overlay alert
+  const alertBox = document.getElementById("studentAlert");
+  alertBox.style.display = "block";
+  setTimeout(() => {
+    alertBox.style.display = "none";
+  }, 3000);
+}
+
+
+} catch (err) {
     console.error(err);
     alert("Server error while adding student.");
   }

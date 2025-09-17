@@ -27,7 +27,19 @@
 
     </div>
     <h2 style="font-size: 14px;">👤 <%= student.fullname %></h2>
-    <% if (student.role === 'student' && school) { %>
+    
+
+    <h2 style="font-size: 14px; color: #e5f0ff;">🪙 Xp: <%= student.xp %> points</h2>
+
+    <ul class="sidebar-nav">
+      <li><a href="/student/dashboard">🏠 Dashboard</a></li>
+
+      <!-- Profile -->
+      <!-- <li><a href="/student/profile">👤 My Profile</a></li> -->
+       <li><a href="/student/dashboard?section=profile">👤 My Profile</a></li>
+       <p style="color: rgb(255, 255, 255);">💰 Wallet: ₦<%= walletBalance.toLocaleString() %></p>
+
+       <% if (student.role === 'student' && school) { %>
       <section class="school-context" style="margin-top:20px;">
         <h2>🏫 School Info</h2>
         <div class="school-box" style="border:1px solid #ddd; padding:15px; border-radius:8px;">
@@ -41,36 +53,16 @@
           <p><strong>Teacher:</strong> <%= teacher?.fullname || 'Unassigned' %></p>
 
           <div style="margin-top:10px;">
-            <a href="/student/classroom" class="btn-edit">👥 View Classmates</a>
-            <a href="/student/teacher" class="btn-edit">👨‍🏫 Your Teacher</a>
+            <!-- <a href="/student/classroom" class="btn-edit">👥 View Classmates</a>
+            <a href="/student/teacher" class="btn-edit">👨‍🏫 Your Teacher</a> -->
+            <div  style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <a href="/student/dashboard?section=classroom" class="btn-view" style="text-decoration: none;">👥Classmates</a>
+              <a href="/student/dashboard?section=teacher" class="btn-edit" style="text-decoration: none;">👨‍🏫 Your Teacher</a>
+            </div>
           </div>
         </div>
       </section>
     <% } %>
-
-    <h2 style="font-size: 14px; color: #e5f0ff;">🪙 Xp: <%= student.xp %> points</h2>
-
-    <!-- <ul>
-      <li>
-        <button class="nav-tab" data-section="dashboard">🏠 Dashboard</button>
-      </li>
-      <li>
-        <button class="nav-tab" data-section="courses">📚 My Courses</button>
-      </li>
-      <li>
-        <button class="nav-tab" data-section="progress">📈 Progress</button>
-      </li>
-      <li><button class="nav-tab" data-section="badges">🎖️ Badges</button></li>
-      <li><a href="/admin/logout">🚪 Logout</a></li>
-    </ul> -->
-    <ul class="sidebar-nav">
-      <li><a href="/student/dashboard">🏠 Dashboard</a></li>
-
-      <!-- Profile -->
-      <!-- <li><a href="/student/profile">👤 My Profile</a></li> -->
-       <li><a href="/student/dashboard?section=profile">👤 My Profile</a></li>
-       <p style="color: rgb(255, 255, 255);">💰 Wallet: ₦<%= walletBalance.toLocaleString() %></p>
-
        
       <% if (parents && parents.length > 0) { %>
         <div class="parent-section">
@@ -171,6 +163,61 @@
         </div>
       </div>
     </div>
+
+  <% } else if (section === 'classroom' && classroom) { %>
+  <h2>👥 Your Classmates in <%= classroom.name %></h2>
+  <% if (classmates.length > 0) { %>
+    <div class="table-responsive">
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>Profile</th>
+            <th>Full Name</th>
+            <th>Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% classmates.forEach(c => { %>
+            <tr>
+              <td>
+                <img src="<%= c.profile_picture || '/images/profile male.png' %>" 
+                    alt="Profile" 
+                    style="width:40px; height:40px; border-radius:50%;">
+              </td>
+              <td><%= c.fullname %></td>
+              <td><%= c.email %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <p>No classmates found in this classroom.</p>
+  <% } %>
+
+<% } else if (section === 'teacher' && classroom) { %>
+  <h2>👨‍🏫 Your Teacher(s) for <%= classroom.name %></h2>
+  <% if (teachers.length > 0) { %>
+    <div class="card-container">
+      <% teachers.forEach(t => { %>
+        <div class="card">
+          <div class="card-header">
+            <img src="<%= t.profile_picture || '/images/profile male.png' %>" 
+                 alt="Teacher" 
+                 class="card-avatar" style=" object-fit:contain;">
+            <h3><%= t.fullname %></h3>
+          </div>
+          <div class="card-body">
+            <p><strong>Email:</strong> <%= t.email %></p>
+            <p><strong>Role:</strong> Teacher</p>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <p>No teacher assigned to this classroom yet.</p>
+  <% } %>
+
 
   <% } else if (section === 'module' && moduleInfo) { %>
   <!-- LEARNING VIEW -->

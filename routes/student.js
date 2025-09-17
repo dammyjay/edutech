@@ -103,5 +103,12 @@ router.post(
   studentController.respondToParentRequest
 );
 
+// routes/student.js
+router.get("/classroom", studentController.getClassroom);
+
+// routes/student.js
+router.get("/teacher", studentController.getTeacher);
+
+
 
 module.exports = router;
