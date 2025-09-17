@@ -6,143 +6,183 @@
   (<%= school.name %>)
 </p>
 
+<!-- Collapsible Section Template -->
+<style>
+  .collapsible-header {
+    background: #1270b0;
+    color: #fff;
+    padding: 10px;
+    cursor: pointer;
+    margin: 5px 0;
+    border-radius: 5px;
+    width: 100%;
+  }
+  .collapsible-content {
+    display: none;
+    margin-bottom: 15px;
+    width: 100%;
+  }
+  .collapsible-content.active {
+    display: block;
+  }
+</style>
+
+<script>
+  function toggleCollapse(id) {
+    const section = document.getElementById(id);
+    section.classList.toggle("active");
+  }
+</script>
+
 <!-- Pending Approvals -->
-<h2>Pending Teacher/Student Approvals</h2>
-<div class="table-responsive">
-  <table class="user-table">
-    <thead>
-      <tr>
-        <th>Profile</th>
-        <th>Full Name</th>
-        <th>Email</th>
-        <th>Role in School</th>
-        <th>Applied On</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% if (pendingUsers.length) { %>
-        <% pendingUsers.forEach(user => { %>
-          <tr>
-            <td>
-              <img src="<%= user.profile_picture || '/profile.webp' %>" 
-                   alt="Profile"
-                   style="width:50px; height:50px; border-radius:50%;">
-            </td>
-            <td><%= user.fullname %></td>
-            <td><%= user.email %></td>
-            <td><%= user.role_in_school %></td>
-            <td><%= new Date(user.joined_at).toDateString() %></td>
-            <td style="display:flex; gap:10px;">
-              <form method="POST" action="/school-admin/approve/<%= user.id %>">
-                <button class="btn-edit" style="background:green; color:white;">✔ Approve</button>
-              </form>
-              <form method="POST" action="/school-admin/reject/<%= user.id %>">
-                <button class="btn-delete" style="background:red; color:white;">✖ Reject</button>
-              </form>
-            </td>
-          </tr>
-        <% }) %>
-      <% } else { %>
+<div class="collapsible-header" onclick="toggleCollapse('pending-users')">
+  ⏳ Pending Teacher/Student Approvals
+</div>
+<div id="pending-users" class="collapsible-content">
+  <div class="table-responsive">
+    <table class="user-table">
+      <thead>
         <tr>
-          <td colspan="6" style="text-align:center;">No pending approvals</td>
+          <th>Profile</th>
+          <th>Full Name</th>
+          <th>Email</th>
+          <th>Role in School</th>
+          <th>Applied On</th>
+          <th>Actions</th>
         </tr>
-      <% } %>
-    </tbody>
-  </table>
-
-  <!-- Teachers -->
-<h2>Approved Teachers</h2>
-<div class="table-responsive">
-  <table class="user-table">
-    <thead>
-      <tr>
-        <th>Full Name</th>
-        <th>Email</th>
-        <th>Joined On</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% if (teachers.length) { %>
-        <% teachers.forEach(t => { %>
+      </thead>
+      <tbody>
+        <% if (pendingUsers.length) { %>
+          <% pendingUsers.forEach(user => { %>
+            <tr>
+              <td>
+                <img src="<%= user.profile_picture || '/profile.webp' %>" 
+                     alt="Profile"
+                     style="width:50px; height:50px; border-radius:50%;">
+              </td>
+              <td><%= user.fullname %></td>
+              <td><%= user.email %></td>
+              <td><%= user.role_in_school %></td>
+              <td><%= new Date(user.joined_at).toDateString() %></td>
+              <td style="display:flex; gap:10px;">
+                <form method="POST" action="/school-admin/approve/<%= user.id %>">
+                  <button class="btn-edit" style="background:green; color:white;">✔ Approve</button>
+                </form>
+                <form method="POST" action="/school-admin/reject/<%= user.id %>">
+                  <button class="btn-delete" style="background:red; color:white;">✖ Reject</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        <% } else { %>
           <tr>
-            <td><%= t.fullname %></td>
-            <td><%= t.email %></td>
-            <td><%= new Date(t.joined_at).toDateString() %></td>
+            <td colspan="6" style="text-align:center;">No pending approvals</td>
           </tr>
-        <% }) %>
-      <% } else { %>
-        <tr><td colspan="3" style="text-align:center;">No teachers yet</td></tr>
-      <% } %>
-    </tbody>
-  </table>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<!-- Students -->
-<h2>Approved Students</h2>
-<div class="table-responsive">
-  <table class="user-table">
-    <thead>
-      <tr>
-        <th>Full Name</th>
-        <th>Email</th>
-        <th>Joined On</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% if (students.length) { %>
-        <% students.forEach(s => { %>
-          <tr>
-            <td><%= s.fullname %></td>
-            <td><%= s.email %></td>
-            <td><%= new Date(s.joined_at).toDateString() %></td>
-          </tr>
-        <% }) %>
-      <% } else { %>
-        <tr><td colspan="3" style="text-align:center;">No students yet</td></tr>
-      <% } %>
-    </tbody>
-  </table>
+<!-- Approved Teachers -->
+<div class="collapsible-header" onclick="toggleCollapse('teachers')">
+  👨‍🏫 Approved Teachers
 </div>
-
-</div>
-
-<!-- Classroom Management -->
-<h2>Classrooms</h2>
-<a href="/school-admin/classrooms/new" class="btn-edit">➕ Create Classroom</a>
-
-<div class="table-responsive">
-  <table class="user-table">
-    <thead>
-      <tr>
-        <th>Classroom Name</th>
-        <th>Teacher</th>
-        <th>Students</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% if (classrooms.length) { %>
-        <% classrooms.forEach(c => { %>
-          <tr>
-            <td><%= c.name %></td>
-            <td><%= c.teacher_name || 'Unassigned' %></td>
-            <td><%= c.student_count %></td>
-            <td style="display:flex; gap:10px;">
-              <a href="/school-admin/classrooms/<%= c.id %>" class="btn-edit">👁 View</a>
-              <a href="/school-admin/classrooms/<%= c.id %>/edit" class="btn-edit">✏ Edit</a>
-              <form method="POST" action="/school-admin/classrooms/<%= c.id %>/delete" 
-                    onsubmit="return confirm('Delete this classroom?')">
-                <button class="btn-delete">🗑 Delete</button>
-              </form>
-            </td>
-          </tr>
-        <% }) %>
-      <% } else { %>
+<div id="teachers" class="collapsible-content">
+  <div class="table-responsive">
+    <table class="user-table">
+      <thead>
         <tr>
-          <td colspan="4" style="text-align:center;">No classrooms yet</td>
+          <th>Full Name</th>
+          <th>Email</th>
+          <th>Joined On</th>
         </tr>
-      <% } %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% if (teachers.length) { %>
+          <% teachers.forEach(t => { %>
+            <tr>
+              <td><%= t.fullname %></td>
+              <td><%= t.email %></td>
+              <td><%= new Date(t.joined_at).toDateString() %></td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="3" style="text-align:center;">No teachers yet</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Approved Students -->
+<div class="collapsible-header" onclick="toggleCollapse('students')">
+  🎓 Approved Students
+</div>
+<div id="students" class="collapsible-content">
+  <div class="table-responsive">
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>Full Name</th>
+          <th>Email</th>
+          <th>Joined On</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (students.length) { %>
+          <% students.forEach(s => { %>
+            <tr>
+              <td><%= s.fullname %></td>
+              <td><%= s.email %></td>
+              <td><%= new Date(s.joined_at).toDateString() %></td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="3" style="text-align:center;">No students yet</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Classrooms -->
+<div class="collapsible-header" onclick="toggleCollapse('classrooms')">
+  🏫 Classrooms
+</div>
+<div id="classrooms" class="collapsible-content">
+  <a href="/school-admin/classrooms/new" class="btn-edit">➕ Create Classroom</a>
+  <div class="table-responsive">
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>Classroom Name</th>
+          <th>Teacher</th>
+          <th>Students</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (classrooms.length) { %>
+          <% classrooms.forEach(c => { %>
+            <tr>
+              <td><%= c.name %></td>
+              <td><%= c.teacher_name || 'Unassigned' %></td>
+              <td><%= c.student_count %></td>
+              <td style="display:flex; gap:10px;">
+                <a href="/school-admin/classrooms/<%= c.id %>" class="btn-edit">👁 View</a>
+                <a href="/school-admin/classrooms/<%= c.id %>/edit" class="btn-edit">✏ Edit</a>
+                <form method="POST" action="/school-admin/classrooms/<%= c.id %>/delete" 
+                      onsubmit="return confirm('Delete this classroom?')">
+                  <button class="btn-delete">🗑 Delete</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="4" style="text-align:center;">No classrooms yet</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
 </div>
