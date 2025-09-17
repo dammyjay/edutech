@@ -571,8 +571,14 @@ async function createTables() {
 
 
     await pool.query(`
-      `
-    );
+      CREATE TABLE IF NOT EXISTS classroom_teachers (
+        id SERIAL PRIMARY KEY,
+        classroom_id INT REFERENCES classrooms(id) ON DELETE CASCADE,
+        teacher_id INT REFERENCES users2(id) ON DELETE CASCADE,
+        UNIQUE (classroom_id, teacher_id)
+      );
+
+      `);
 
     console.log("✅ All tables are updated and ready.");
   } catch (err) {

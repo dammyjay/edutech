@@ -17,5 +17,9 @@ router.get("/classrooms/:id", schoolAdminController.viewClassroom);
 router.get("/classrooms/:id/edit", schoolAdminController.editClassroomForm);
 router.post("/classrooms/:id/edit", schoolAdminController.updateClassroom);
 router.post("/classrooms/:id/delete", schoolAdminController.deleteClassroom);
+router.get("/section/:section", schoolAdminController.loadSection);
+// Add student to a classroom
+router.post("/classrooms/:id/add-student", schoolAdminController.addStudentToClassroom);
+
 
 module.exports = router;

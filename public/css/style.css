@@ -1128,6 +1128,15 @@ nav a:hover {
     border-radius: 4px;
 }
 
+.btn-view {
+    background-color: #000000;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
 .btn-edit:hover {
     background-color: #45a049;
 }

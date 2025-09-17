@@ -1,0 +1,38 @@
+<h2>⏳ Pending Teacher/Student Approvals</h2>
+<div class="table-responsive">
+  <table class="user-table">
+    <thead>
+      <tr>
+        <th>Profile</th>
+        <th>Full Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Applied On</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (pendingUsers.length) { %>
+        <% pendingUsers.forEach(user => { %>
+          <tr>
+            <td><img src="<%= user.profile_picture || '/profile.webp' %>" style="width:50px;height:50px;border-radius:50%;"></td>
+            <td><%= user.fullname %></td>
+            <td><%= user.email %></td>
+            <td><%= user.role_in_school %></td>
+            <td><%= new Date(user.joined_at).toDateString() %></td>
+            <td>
+              <form method="POST" action="/school-admin/approve/<%= user.id %>" style="display:inline;">
+                <button class="btn-edit" style="background:green;color:white;">✔ Approve</button>
+              </form>
+              <form method="POST" action="/school-admin/reject/<%= user.id %>" style="display:inline;">
+                <button class="btn-delete" style="background:red;color:white;">✖ Reject</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      <% } else { %>
+        <tr><td colspan="6" style="text-align:center;">No pending approvals</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,25 @@
+<h2>🎓 Approved Students</h2>
+<div class="table-responsive">
+  <table class="user-table">
+    <thead>
+      <tr>
+        <th>Full Name</th>
+        <th>Email</th>
+        <th>Joined On</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (students.length) { %>
+        <% students.forEach(s => { %>
+          <tr>
+            <td><%= s.fullname %></td>
+            <td><%= s.email %></td>
+            <td><%= new Date(s.joined_at).toDateString() %></td>
+          </tr>
+        <% }) %>
+      <% } else { %>
+        <tr><td colspan="3" style="text-align:center;">No students yet</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>

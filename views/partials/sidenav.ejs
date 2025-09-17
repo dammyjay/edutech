@@ -1,0 +1,212 @@
+<div id="sidenav" class="sidenav">
+  <h2>📌 Admin Menu</h2>
+  <ul>
+    <li><a href="#" onclick="loadSection('overview')">🏠 Overview</a></li>
+    <li><a href="#" onclick="loadSection('teachers')">👨‍🏫 Teachers</a></li>
+    <li><a href="#" onclick="loadSection('students')">🎓 Students</a></li>
+    <li><a href="#" onclick="loadSection('classrooms')">🏫 Classrooms</a></li>
+    <li><a href="#" onclick="loadSection('approvals')">⏳ Approvals</a></li>
+  </ul>
+</div>
+
+<button id="toggleBtn" class="toggle-btn">☰</button>
+
+<style>
+  /* Sidebar */
+  .sidenav {
+    width: 220px;
+    background: #1270b0;
+    color: #fff;
+    height: 100vh;
+    padding: 15px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transition: transform 0.3s ease-in-out;
+    z-index: 1000;
+  }
+
+  .sidenav h2 {
+    margin-bottom: 20px;
+  }
+
+  .sidenav ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .sidenav ul li {
+    margin: 10px 0;
+  }
+
+  .sidenav ul li a {
+    color: #fff;
+    text-decoration: none;
+    display: block;
+    padding: 8px;
+    border-radius: 4px;
+  }
+
+  .sidenav ul li a:hover {
+    background: #0b4e7a;
+  }
+
+  /* Main content */
+  .main-content {
+    margin-left: 240px;
+    padding: 20px;
+    transition: margin-left 0.3s ease-in-out;
+  }
+
+  /* Toggle button (for mobile) */
+  .toggle-btn {
+    display: none;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #1270b0;
+    color: #fff;
+    border: none;
+    padding: 10px 14px;
+    font-size: 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    z-index: 1100;
+    
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sidenav {
+      transform: translateX(-100%);
+    }
+    .sidenav.active {
+      transform: translateX(0);
+    }
+    .main-content {
+      margin-left: 0;
+    }
+    .toggle-btn {
+      display: block;
+    }
+      .main-content {
+    margin-left: 0;   /* remove the offset on mobile */
+    padding: 15px;    /* reduce padding for smaller screens */
+  }
+
+  /* Make content full width */
+  .main-content,
+  .collapsible-header,
+  .collapsible-content,
+  table.user-table {
+    width: 100%;
+  }
+  }
+</style>
+
+<style>
+    .classroom-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.classroom-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #f9f9f9;
+  overflow: hidden;
+}
+
+.classroom-header {
+  background: #1270b0;
+  color: #fff;
+  padding: 15px;
+  cursor: pointer;
+}
+
+.classroom-header h3 {
+  margin: 0 0 5px;
+}
+
+.classroom-body {
+  padding: 15px;
+  display: none;
+}
+
+.classroom-body.active {
+  display: block;
+}
+
+.classroom-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.student-search {
+  width: 100%;
+  padding: 6px;
+  margin-bottom: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+  .collapsible-header {
+    background: #1270b0;
+    color: #fff;
+    padding: 10px;
+    cursor: pointer;
+    margin: 5px 0;
+    border-radius: 5px;
+    /* width: 100%; */
+  }
+  .collapsible-content {
+    display: none;
+    margin-bottom: 15px;
+    /* width: 100%; */
+  }
+  .collapsible-content.active {
+    display: block;
+  }
+
+  /* Modal overlay hidden by default */
+  .modal-overlay {
+    display: none; /* 🔥 ensures it doesn't open automatically */
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .modal-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 400px;
+    max-width: 90%;
+    position: relative;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 22px;
+    cursor: pointer;
+  }
+  .article-button form {
+  display: inline;   /* keeps the form inline */
+  margin: 0;         /* remove extra spacing */
+  padding: 0;        /* no extra padding */
+}
+
+</style>
+
+<script>
+  document.getElementById("toggleBtn").addEventListener("click", function() {
+    document.getElementById("sidenav").classList.toggle("active");
+  });
+</script>
