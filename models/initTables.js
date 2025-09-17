@@ -479,6 +479,97 @@ async function createTables() {
       `
     );
 
+    // tables for schools
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS schools (
+        id SERIAL PRIMARY KEY,
+        school_id VARCHAR(20) UNIQUE NOT NULL, -- generated e.g. SCH-123456
+        name TEXT NOT NULL,
+        address TEXT,
+        email TEXT,
+        phone TEXT,
+        created_by INT REFERENCES users2(id) ON DELETE CASCADE, -- school_admin
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    
+    // junction table for users and schools
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS user_school (
+          id SERIAL PRIMARY KEY,
+          user_id INT REFERENCES users2(id) ON DELETE CASCADE,
+          school_id INT REFERENCES schools(id) ON DELETE CASCADE,
+          role_in_school TEXT CHECK (role_in_school IN ('teacher', 'student')),
+          classroom_id INT,
+          joined_at TIMESTAMP DEFAULT NOW(),
+          UNIQUE(user_id, school_id),
+          approved BOOLEAN DEFAULT false
+        );
+      `);
+
+      // table for classrooms
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS classrooms (
+          id SERIAL PRIMARY KEY,
+          school_id INT REFERENCES schools(id) ON DELETE CASCADE,
+          name TEXT NOT NULL, -- e.g. "JSS1A"
+          created_at TIMESTAMP DEFAULT NOW()
+        );
+      `);
+
+      // junction table for quotes
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS quotes (
+        id SERIAL PRIMARY KEY,
+        school_id INT REFERENCES schools(id) ON DELETE CASCADE,
+        requested_students INT NOT NULL,
+        price_quote NUMERIC(12,2),
+        status VARCHAR(20) DEFAULT 'pending', -- pending, approved, rejected, negotiated
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // table for school payments
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS school_payments (
+          id SERIAL PRIMARY KEY,
+          school_id INT REFERENCES schools(id) ON DELETE CASCADE,
+          quote_id INT REFERENCES quotes(id) ON DELETE SET NULL,
+          student_limit INT NOT NULL, -- max students covered by this payment
+          amount NUMERIC(12,2) NOT NULL,
+          start_date DATE NOT NULL,
+          end_date DATE NOT NULL,
+          status VARCHAR(20) DEFAULT 'pending', -- pending, paid, overdue
+          created_at TIMESTAMP DEFAULT NOW()
+        );
+
+      `);
+    
+    // table for school payment adjustments
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS school_payment_adjustments (
+        id SERIAL PRIMARY KEY,
+        school_payment_id INT REFERENCES school_payments(id) ON DELETE CASCADE,
+        extra_students INT NOT NULL,
+        extra_amount NUMERIC(12,2) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        status VARCHAR(20) DEFAULT 'pending' -- pending, paid
+      );
+    `);
+    
+    // junction table for school courses
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS school_courses (
+            id SERIAL PRIMARY KEY,
+            school_id INT REFERENCES schools(id) ON DELETE CASCADE,
+            course_id INT REFERENCES courses(id) ON DELETE CASCADE,
+            assigned_at TIMESTAMP DEFAULT NOW(),
+            UNIQUE(school_id, course_id)
+          );
+        `);
+
+
+
     await pool.query(`
       `
     );

@@ -3,6 +3,8 @@ const pool = require("../models/db");
 const sendEmail = require("../utils/sendEmail");
 const PDFDocument = require("pdfkit");
 const puppeteer = require("puppeteer");
+const crypto = require("crypto");
+
 
 exports.showSignup = (req, res) => {
   // res.sendFile(path.join(__dirname, 'signup.html'));
@@ -13,83 +15,307 @@ exports.showLogin = (req, res) => {
   res.render("admin/login", { error: null });
 };
 
+// exports.signup = async (req, res) => {
+//   const { email, username, phone, gender, password, dob, role} = req.body;
+//   const file = req.file;
+//   const exists = await pool.query("SELECT * FROM users2 WHERE email = $1", [
+//     email,
+//   ]);
+//   if (exists.rows.length > 0) {
+//     return res.status(400).send("Email already registered.");
+//   }
+
+//   // Delete previous pending record
+//   await pool.query("DELETE FROM pending_users WHERE email = $1", [email]);
+
+//   //this code below that will store the file in the cloudinary to the database
+//   // const profile_picture = req.file ? req.file.path : null;
+//   const defaultImage = "/profile.webp"; // or any image path in your public folder
+//   const profile_picture = req.file ? req.file.path : defaultImage;
+//   const otp = Math.floor(100000 + Math.random() * 900000).toString();
+//   // const role = "user"; // Default role for new users
+//   const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+//   const hashed = await bcrypt.hash(password, 10);
+//   const created_at = new Date(); // Create timestamp in JS
+//   console.log("📷 Filename to save in DB:", profile_picture);
+
+//   await pool.query(
+//     "INSERT INTO pending_users (fullname, email, phone, gender, password, otp_code, otp_expires, profile_picture,role,created_at, dob) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
+//     // 'INSERT INTO pending_users (username, email, phone)
+//     [
+//       username,
+//       email,
+//       phone,
+//       gender,
+//       hashed,
+//       otp,
+//       expires,
+//       profile_picture,
+//       role,
+//       created_at,
+//       dob,
+//     ]
+//   );
+//   // await sendEmail(email, "Your OTP Code", `Your code is: ${otp}`);
+//   await sendEmail("dammykirchhoff@gmail.com", "Your OTP Code", `Your code is: ${otp}`);
+//   res.status(200).send("OTP sent to your email.");
+// };
+
+// exports.verifyOtp = async (req, res) => {
+//   const { email, otp } = req.body;
+//   const created_at = new Date(); // Create timestamp in JS
+//   const result = await pool.query(
+//     "SELECT * FROM pending_users WHERE email = $1 AND otp_code = $2",
+//     [email, otp]
+//   );
+
+//   if (result.rows.length === 0) return res.status(400).send("Invalid OTP");
+
+//   const user = result.rows[0];
+//   if (new Date(user.otp_expires) < new Date())
+//     return res.status(400).send("OTP expired");
+
+//   await pool.query(
+//     "INSERT INTO users2 (fullname, email, phone, gender, password, profile_picture, role,created_at, dob) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",
+//     [
+//       user.fullname,
+//       user.email,
+//       user.phone,
+//       user.gender,
+//       user.password,
+//       user.profile_picture,
+//       user.role,
+//       created_at,
+//       user.dob,
+//     ]
+//   );
+
+//   await pool.query("DELETE FROM pending_users WHERE email = $1", [email]);
+//   res.status(200).send("Verification success");
+// };
+
+
 exports.signup = async (req, res) => {
-  const { email, username, phone, gender, password, dob, role} = req.body;
-  const file = req.file;
-  const exists = await pool.query("SELECT * FROM users2 WHERE email = $1", [
+  const {
     email,
-  ]);
-  if (exists.rows.length > 0) {
-    return res.status(400).send("Email already registered.");
-  }
+    username,
+    phone,
+    gender,
+    password,
+    dob,
+    role,
+    schoolName,
+    schoolAddress,
+    schoolId,
+  } = req.body;
+  const file = req.file;
 
-  // Delete previous pending record
-  await pool.query("DELETE FROM pending_users WHERE email = $1", [email]);
-
-  //this code below that will store the file in the cloudinary to the database
-  // const profile_picture = req.file ? req.file.path : null;
-  const defaultImage = "/profile.webp"; // or any image path in your public folder
-  const profile_picture = req.file ? req.file.path : defaultImage;
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  // const role = "user"; // Default role for new users
-  const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-  const hashed = await bcrypt.hash(password, 10);
-  const created_at = new Date(); // Create timestamp in JS
-  console.log("📷 Filename to save in DB:", profile_picture);
-
-  await pool.query(
-    "INSERT INTO pending_users (fullname, email, phone, gender, password, otp_code, otp_expires, profile_picture,role,created_at, dob) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
-    // 'INSERT INTO pending_users (username, email, phone)
-    [
-      username,
+  try {
+    const exists = await pool.query("SELECT * FROM users2 WHERE email = $1", [
       email,
-      phone,
-      gender,
-      hashed,
-      otp,
-      expires,
-      profile_picture,
-      role,
-      created_at,
-      dob,
-    ]
-  );
-  // await sendEmail(email, "Your OTP Code", `Your code is: ${otp}`);
-  await sendEmail("dammykirchhoff@gmail.com", "Your OTP Code", `Your code is: ${otp}`);
-  res.status(200).send("OTP sent to your email.");
+    ]);
+    if (exists.rows.length > 0) {
+      return res.status(400).send("Email already registered.");
+    }
+
+    await pool.query("DELETE FROM pending_users WHERE email = $1", [email]);
+
+    const defaultImage = "/profile.webp";
+    const profile_picture = file ? file.path : defaultImage;
+    const hashed = await bcrypt.hash(password, 10);
+    const created_at = new Date();
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date(Date.now() + 10 * 60 * 1000);
+
+    // ====== CASE 1: OTP roles (admin, parent, individual student) ======
+    if (["school_admin", "parent", "individual_student"].includes(role)) {
+      await pool.query(
+        `INSERT INTO pending_users 
+          (fullname, email, phone, gender, password, otp_code, otp_expires, profile_picture, role, created_at, dob) 
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+        [
+          username,
+          email,
+          phone,
+          gender,
+          hashed,
+          otp,
+          expires,
+          profile_picture,
+          role,
+          created_at,
+          dob,
+        ]
+      );
+
+      // stash school info if admin
+      if (role === "school_admin") {
+        await pool.query(
+          `UPDATE pending_users SET otp_code = $1 WHERE email = $2`,
+          [otp + "|" + JSON.stringify({ schoolName, schoolAddress }), email]
+        );
+      }
+
+      //stash school info if admin
+      // if (role === "school_admin") {
+      //   await pool.query(
+      //     `UPDATE pending_users SET otp_code = $1 WHERE email = $2`,
+      //     [otp, email]
+      //   );
+      // }
+
+      await sendEmail(
+        "dammykirchhoff@gmail.com",
+        "Your OTP Code",
+        `Your code is: ${otp}`
+      );
+      return res.status(200).send("OTP sent to your email.");
+    }
+
+    // ====== CASE 2: Teacher / School Student ======
+    if (role === "teacher" || role === "student") {
+      if (!schoolId) {
+        return res
+          .status(400)
+          .send("School ID is required for teachers/students");
+      }
+
+      // check school exists
+      const schoolCheck = await pool.query(
+        "SELECT * FROM schools WHERE school_id = $1",
+        [schoolId]
+      );
+      if (schoolCheck.rowCount === 0) {
+        return res.status(400).send("Invalid School ID");
+      }
+      const school = schoolCheck.rows[0];
+
+      // insert directly into users2 with "pending_admin_approval"
+      const newUser = await pool.query(
+        `INSERT INTO users2 (fullname, email, phone, gender, password, profile_picture, role, created_at, dob) 
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+        [
+          username,
+          email,
+          phone,
+          gender,
+          hashed,
+          profile_picture,
+          role,
+          created_at,
+          dob,
+        ]
+      );
+
+      // link user to school
+      await pool.query(
+        `INSERT INTO user_school (user_id, school_id, role_in_school) VALUES ($1,$2,$3)`,
+        [newUser.rows[0].id, school.id, role]
+      );
+
+      // return res
+      //   .status(200)
+      //   .send("Signup successful, pending school admin approval.");
+
+      return res.status(200).json({
+        message: "Signup successful, pending school admin approval.",
+        needsOtp: false,
+      });
+    }
+
+    res.status(400).send("Invalid role.");
+  } catch (err) {
+    console.error("❌ Signup error:", err.message);
+    res.status(500).send("Internal server error");
+  }
 };
+
 
 exports.verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
-  const created_at = new Date(); // Create timestamp in JS
-  const result = await pool.query(
-    "SELECT * FROM pending_users WHERE email = $1 AND otp_code = $2",
-    [email, otp]
-  );
+  const created_at = new Date();
 
-  if (result.rows.length === 0) return res.status(400).send("Invalid OTP");
+  try {
+    const result = await pool.query(
+      "SELECT * FROM pending_users WHERE email = $1",
+      [email]
+    );
+    if (result.rows.length === 0)
+      return res.status(400).send("Invalid request");
 
-  const user = result.rows[0];
-  if (new Date(user.otp_expires) < new Date())
-    return res.status(400).send("OTP expired");
+    const user = result.rows[0];
 
-  await pool.query(
-    "INSERT INTO users2 (fullname, email, phone, gender, password, profile_picture, role,created_at, dob) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",
-    [
-      user.fullname,
-      user.email,
-      user.phone,
-      user.gender,
-      user.password,
-      user.profile_picture,
-      user.role,
-      created_at,
-      user.dob,
-    ]
-  );
+    //handle otp check
+    let cleanOtp = user.otp_code;
+    let extraData = {};
+    if (user.otp_code.includes("|")) {
+      const [pureOtp, jsonString] = user.otp_code.split("|");
+      cleanOtp = pureOtp;
+      console.log("Extracted pure OTP:", pureOtp);
+      try {
+        extraData = JSON.parse(jsonString);
+      } catch {}
+    }
 
-  await pool.query("DELETE FROM pending_users WHERE email = $1", [email]);
-  res.status(200).send("Verification success");
+    if (cleanOtp !== otp) return res.status(400).send("Invalid OTP");
+    if (new Date(user.otp_expires) < new Date())
+      return res.status(400).send("OTP expired");
+
+    // if (result.rows.length === 0) return res.status(400).send("Invalid OTP");
+
+    //   const user = result.rows[0];
+    //   if (new Date(user.otp_expires) < new Date())
+    //     return res.status(400).send("OTP expired");
+
+    // insert into users2
+    const newUserResult = await pool.query(
+      `INSERT INTO users2 (fullname, email, phone, gender, password, profile_picture, role, created_at, dob) 
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [
+        user.fullname,
+        user.email,
+        user.phone,
+        user.gender,
+        user.password,
+        user.profile_picture,
+        user.role,
+        created_at,
+        user.dob,
+      ]
+    );
+    const newUser = newUserResult.rows[0];
+
+    // if admin, create school
+    if (user.role === "school_admin") {
+      const schoolId =
+        "SCH-" + crypto.randomBytes(3).toString("hex").toUpperCase();
+      await pool.query(
+        `INSERT INTO schools (school_id, name, address, email, phone, created_by) 
+         VALUES ($1,$2,$3,$4,$5,$6)`,
+        [
+          schoolId,
+          extraData.schoolName,
+          extraData.schoolAddress,
+          newUser.email,
+          newUser.phone,
+          newUser.id,
+        ]
+      );
+
+      await sendEmail(
+        "dammykirchhoff@gmail.com",
+        "For your teacher and student to register ",
+        `Your SchoolID is: ${schoolId}`
+      );
+      return res.status(200).send("School ID sent to your email.");
+    }
+
+    await pool.query("DELETE FROM pending_users WHERE email = $1", [email]);
+    res.status(200).send("Verification success");
+  } catch (err) {
+    console.error("❌ Verify OTP error:", err.message);
+    res.status(500).send("Internal server error");
+  }
 };
 
 
@@ -900,6 +1126,93 @@ exports.downloadCourseSummary = async (req, res) => {
     res.status(500).send("Error generating summary PDF");
   }
 };
+
+
+// exports.getPendingUsers = async (req, res) => {
+//   const { schoolId } = req.params;
+//   try {
+//     const result = await pool.query(
+//       `SELECT u.id, u.fullname, u.email, us.role_in_school, us.joined_at
+//        FROM users2 u
+//        JOIN user_school us ON u.id = us.user_id
+//        JOIN schools s ON us.school_id = s.id
+//        WHERE s.school_id = $1 AND us.approved = false`,
+//       [schoolId]
+//     );
+//     res.render("school-admin/pending-users", { users: result.rows });
+//   } catch (err) {
+//     console.error("❌ Error fetching pending users:", err.message);
+//     res.status(500).send("Internal server error");
+//   }
+// };
+
+
+// exports.approveUser = async (req, res) => {
+//   const { schoolId, userId } = req.params;
+//   try {
+//     await pool.query(
+//       `UPDATE user_school 
+//        SET approved = true 
+//        WHERE user_id = $1 AND school_id = (SELECT id FROM schools WHERE school_id = $2)`,
+//       [userId, schoolId]
+//     );
+//     res.redirect(`/school-admin/${schoolId}/pending-users`);
+//   } catch (err) {
+//     console.error("❌ Approve user error:", err.message);
+//     res.status(500).send("Internal server error");
+//   }
+// };
+
+
+
+// exports.rejectUser = async (req, res) => {
+//   const { schoolId, userId } = req.params;
+//   try {
+//     await pool.query(
+//       `DELETE FROM user_school 
+//        WHERE user_id = $1 
+//        AND school_id = (SELECT id FROM schools WHERE school_id = $2)`,
+//       [userId, schoolId]
+//     );
+//     res.redirect(`/school-admin/${schoolId}/pending-users`);
+//   } catch (err) {
+//     console.error("❌ Reject user error:", err.message);
+//     res.status(500).send("Internal server error");
+//   }
+// };
+
+// exports.createClassroom = async (req, res) => {
+//   const { schoolId } = req.params;
+//   const { name } = req.body;
+//   try {
+//     await pool.query(
+//       `INSERT INTO classrooms (school_id, name) 
+//        VALUES ((SELECT id FROM schools WHERE school_id = $1), $2)`,
+//       [schoolId, name]
+//     );
+//     res.redirect(`/school-admin/${schoolId}/classrooms`);
+//   } catch (err) {
+//     console.error("❌ Create classroom error:", err.message);
+//     res.status(500).send("Internal server error");
+//   }
+// };
+
+
+// exports.assignToClassroom = async (req, res) => {
+//   const { schoolId, classroomId, userId } = req.params;
+//   try {
+//     await pool.query(
+//       `UPDATE user_school
+//        SET classroom_id = $1
+//        WHERE user_id = $2 AND school_id = (SELECT id FROM schools WHERE school_id = $3)`,
+//       [classroomId, userId, schoolId]
+//     );
+//     res.redirect(`/school-admin/${schoolId}/classrooms/${classroomId}`);
+//   } catch (err) {
+//     console.error("❌ Assign classroom error:", err.message);
+//     res.status(500).send("Internal server error");
+//   }
+// };
 
 
 

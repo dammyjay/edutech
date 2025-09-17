@@ -96,12 +96,42 @@
           </span>
         </div>
         
-        <div class="container">
+        <!-- <div class="container">
           <label for="">Role</label>
           <select name="role" required>
             <option value="user">Student</option>
             <option value="parent">Parent</option>
           </select>
+        </div> -->
+
+        <div class="container">
+          <label for="">Role</label>
+          <select name="role" id="role" required>
+            <option value="">-- Select Role --</option>
+            <option value="school_admin">School Admin</option>
+            <option value="teacher">Teacher</option>
+            <option value="student">School Student</option>
+            <option value="individual_student">Individual Student</option>
+            <option value="parent">Parent</option>
+          </select>
+        </div>
+
+        <!-- Extra fields for School Admin -->
+        <div id="school-admin-fields" style="display:none;">
+          <div class="container">
+            <input type="text" name="schoolName" placeholder="School Name" />
+          </div>
+          <div class="container">
+            <input type="text" name="schoolAddress" placeholder="School Address" />
+          </div>
+        </div>
+
+        <!-- Extra fields for Teacher/School Student -->
+        <div id="school-id-field" style="display:none;">
+          <div class="container">
+            <input type="text" id="schoolId" name="schoolId" placeholder="Enter School ID" />
+          </div>
+          <p id="school-name-display" style="color:green; font-size:13px;"></p>
         </div>
 
         <!-- File input for image upload -->
@@ -163,23 +193,7 @@
     </div>
 
     <script>
-      // document.getElementById("signup-form").onsubmit = async (e) => {
-      //   e.preventDefault();
-      //   const formData = new FormData(e.target);
-      //   const payload = Object.fromEntries(formData.entries());
 
-      //   const res = await fetch("/signup", {
-      //     method: "POST",
-      //     headers: { "Content-Type": "application/json" },
-      //     body: JSON.stringify(payload),
-      //   });
-
-      //   if (res.ok) {
-      //     document.getElementById("otp-modal").style.display = "block";
-      //   } else {
-      //     alert("Signup failed: " + await res.text());
-      //   }
-      // };
 
       document.getElementById("signup-form").onsubmit = async (e) => {
         e.preventDefault();
@@ -190,12 +204,26 @@
           body: formData, // ✅ Send raw FormData
         });
 
+        // if (res.ok) {
+        //   document.getElementById("otp-modal").style.display = "block";
+        //   document.getElementById("signup-form").style.display = "none"; // Hide the signup form
+        // } else {
+        //   alert("Signup failed: " + (await res.text()));
+        // }
+
         if (res.ok) {
-          document.getElementById("otp-modal").style.display = "block";
-          document.getElementById("signup-form").style.display = "none"; // Hide the signup form
+          const data = await res.json();
+          if (data.needsOtp) {
+            document.getElementById("otp-modal").style.display = "block";
+            document.getElementById("signup-form").style.display = "none";
+          } else {
+            alert(data.message);
+            window.location.href = "/admin/login"; // or redirect somewhere else
+          }
         } else {
           alert("Signup failed: " + (await res.text()));
         }
+
       };
 
       async function verifyOtp() {
@@ -250,6 +278,45 @@
           previewContainer.style.display = "none"; // Hide the preview if no file is selected
         }
       });
+    
+      const roleSelect = document.getElementById("role");
+      const schoolAdminFields = document.getElementById("school-admin-fields");
+      const schoolIdField = document.getElementById("school-id-field");
+      const schoolNameDisplay = document.getElementById("school-name-display");
+      const schoolIdInput = document.getElementById("schoolId");
+
+      roleSelect.addEventListener("change", () => {
+        const role = roleSelect.value;
+        schoolAdminFields.style.display = "none";
+        schoolIdField.style.display = "none";
+
+        if (role === "school_admin") {
+          schoolAdminFields.style.display = "block";
+        } else if (role === "teacher" || role === "student") {
+          schoolIdField.style.display = "block";
+        }
+      });
+
+      // Auto-check school name when schoolId is entered
+      schoolIdInput?.addEventListener("blur", async () => {
+        const schoolId = schoolIdInput.value.trim();
+        if (!schoolId) return;
+
+        try {
+          const res = await fetch(`/api/check-school/${schoolId}`);
+          if (res.ok) {
+            const data = await res.json();
+            schoolNameDisplay.textContent = `✅ School found: ${data.name}`;
+            schoolNameDisplay.style.color = "green";
+          } else {
+            schoolNameDisplay.textContent = "❌ School not found";
+            schoolNameDisplay.style.color = "red";
+          }
+        } catch (err) {
+          console.error("Error checking school:", err);
+        }
+      });
+
     </script>
   </body>
 </html>

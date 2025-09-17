@@ -101,37 +101,32 @@ app.use("/", galleryRoutes);
 const studentRoutes = require("./routes/student");
 app.use("/student", studentRoutes);
 
+const schoolAdminRoutes = require("./routes/schoolAdmin");
+app.use("/school-admin", schoolAdminRoutes);
 
 app.get("/test", (req, res) => {
   res.send("✅ Test route works");
 });
 
-// const subscribeRoutes = require("./routes/subscribeRoutes");
-// app.use("/", subscribeRoutes);
+app.get("/api/check-school/:schoolId", async (req, res) => {
+  try {
+    const { schoolId } = req.params;
+    const result = await pool.query(
+      "SELECT name FROM schools WHERE school_id = $1",
+      [schoolId]
+    );
 
-// const publicFaqRoutes = require("./routes/publicFaqRoutes.js");
-// app.use("/", publicFaqRoutes);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "School not found" });
+    }
 
-// const adminFaqRoutes = require("./routes/adminFaqRoutes");
-// app.use("/", adminFaqRoutes);
+    res.json({ name: result.rows[0].name });
+  } catch (err) {
+    console.error("❌ Error checking school:", err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
-// const publicArticleRoutes = require("./routes/publicArticleRoutes");
-// app.use("/", publicArticleRoutes);
-
-// const publicVideoRoutes = require("./routes/publicVideoRoutes");
-// app.use("/", publicVideoRoutes);
-
-// const interactionRoutes = require("./routes/interactionRoutes");
-// app.use("/interaction", interactionRoutes);
-
-// // Example in your routes file
-// router.get('/login', (req, res) => {
-//   res.render('admin/login'); // note: include 'admin/' because login.ejs is inside admin folder
-// });
-
-
-
-// app.use("/notifications", notificationRoutes);
 
 runNewsletterScheduler();
 

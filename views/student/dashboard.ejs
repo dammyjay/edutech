@@ -27,6 +27,27 @@
 
     </div>
     <h2 style="font-size: 14px;">👤 <%= student.fullname %></h2>
+    <% if (student.role === 'student' && school) { %>
+      <section class="school-context" style="margin-top:20px;">
+        <h2>🏫 School Info</h2>
+        <div class="school-box" style="border:1px solid #ddd; padding:15px; border-radius:8px;">
+          <% if (school.logo_url) { %>
+            <img src="<%= school.logo_url %>" 
+                alt="School Logo" 
+                style="height:60px; margin-bottom:10px;">
+          <% } %>
+          <p><strong>School:</strong> <%= school.name %></p>
+          <p><strong>Classroom:</strong> <%= classroom?.name || 'Not assigned yet' %></p>
+          <p><strong>Teacher:</strong> <%= teacher?.fullname || 'Unassigned' %></p>
+
+          <div style="margin-top:10px;">
+            <a href="/student/classroom" class="btn-edit">👥 View Classmates</a>
+            <a href="/student/teacher" class="btn-edit">👨‍🏫 Your Teacher</a>
+          </div>
+        </div>
+      </section>
+    <% } %>
+
     <h2 style="font-size: 14px; color: #e5f0ff;">🪙 Xp: <%= student.xp %> points</h2>
 
     <!-- <ul>

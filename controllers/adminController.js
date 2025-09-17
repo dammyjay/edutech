@@ -146,16 +146,53 @@ exports.login = async (req, res) => {
       return res.redirect(redirectUrl);
     }
 
+    // if (user.role === "admin") {
+    //   console.log("Admin login successful");
+    //   return res.redirect("/admin/dashboard");
+    // } else if (user.role === "parent") {
+    //   console.log("Parent login successful");
+    //   return res.redirect("/parent/dashboard");
+    // } else {
+    //   console.log("User login successful");
+    //   return res.redirect("/student/dashboard");
+    // }
+
     if (user.role === "admin") {
-      console.log("Admin login successful");
       return res.redirect("/admin/dashboard");
-    } else if (user.role === "parent") {
-      console.log("Parent login successful");
+    } else if (user.role === "school_admin") {
+      // 🔍 find the school linked to this admin
+      const schoolRow = await pool.query(
+        "SELECT id, school_id, name FROM schools WHERE created_by = $1",
+        [user.id]
+      );
+
+      let school_id = null;
+      let school_name = null;
+
+      if (schoolRow.rows.length) {
+        school_id = schoolRow.rows[0].id;        // numeric PK
+        school_name = schoolRow.rows[0].name;    // display name
+      }
+
+      // overwrite session with school info
+      req.session.user = {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        profile_pic: user.profile_picture,
+        school_id,
+        school_name,
+      };
+
+      return res.redirect("/school-admin/dashboard");
+    }
+    else if (user.role === "parent") {
       return res.redirect("/parent/dashboard");
-    } else {
-      console.log("User login successful");
+    } else if (user.role === "individual_student" || user.role === "student") {
       return res.redirect("/student/dashboard");
     }
+
+
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).send("Server error");
