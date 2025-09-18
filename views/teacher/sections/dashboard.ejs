@@ -1,0 +1,43 @@
+<h1>👨‍🏫 Teacher Dashboard</h1>
+
+<!-- Stats Cards -->
+<div class="cards">
+  <% classStats.forEach(stat => { %>
+    <div class="card">
+      <h3><%= stat.classroom_name %></h3>
+      <p>👥 Students: <%= stat.total_students %></p>
+      <p>📚 Lessons: <%= stat.completed_lessons %> / <%= stat.total_lessons %></p>
+      <p>📝 Avg Quiz: <%= stat.avg_quiz %></p>
+      <p>📑 Avg Assignment: <%= stat.avg_assignment %></p>
+      <a class="btn" href="/teacher/classroom/<%= stat.classroom_id %>/students">View Students</a>
+    </div>
+  <% }) %>
+</div>
+
+<!-- Charts -->
+<h2>📈 Class Progress</h2>
+<canvas id="lessonChart"></canvas>
+<canvas id="quizChart"></canvas>
+
+<script>
+  const lessonLabels = <%- JSON.stringify(classStats.map(c => c.classroom_name)) %>;
+  const lessonData = <%- JSON.stringify(classStats.map(c => Math.round((c.completed_lessons / (c.total_lessons || 1)) * 100))) %>;
+  new Chart(document.getElementById('lessonChart'), {
+    type: 'bar',
+    data: {
+      labels: lessonLabels,
+      datasets: [{ label: 'Lesson Completion %', data: lessonData, backgroundColor: '#27ae60' }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+
+  const quizData = <%- JSON.stringify(classStats.map(c => c.avg_quiz || 0)) %>;
+  new Chart(document.getElementById('quizChart'), {
+    type: 'line',
+    data: {
+      labels: lessonLabels,
+      datasets: [{ label: 'Average Quiz Score', data: quizData, borderColor: '#2980b9', fill: false }]
+    },
+    options: { responsive: true }
+  });
+</script>

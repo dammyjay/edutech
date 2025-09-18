@@ -146,17 +146,6 @@ exports.login = async (req, res) => {
       return res.redirect(redirectUrl);
     }
 
-    // if (user.role === "admin") {
-    //   console.log("Admin login successful");
-    //   return res.redirect("/admin/dashboard");
-    // } else if (user.role === "parent") {
-    //   console.log("Parent login successful");
-    //   return res.redirect("/parent/dashboard");
-    // } else {
-    //   console.log("User login successful");
-    //   return res.redirect("/student/dashboard");
-    // }
-
     if (user.role === "admin") {
       return res.redirect("/admin/dashboard");
     } else if (user.role === "school_admin") {
@@ -170,8 +159,8 @@ exports.login = async (req, res) => {
       let school_name = null;
 
       if (schoolRow.rows.length) {
-        school_id = schoolRow.rows[0].id;        // numeric PK
-        school_name = schoolRow.rows[0].name;    // display name
+        school_id = schoolRow.rows[0].id; // numeric PK
+        school_name = schoolRow.rows[0].name; // display name
       }
 
       // overwrite session with school info
@@ -185,11 +174,35 @@ exports.login = async (req, res) => {
       };
 
       return res.redirect("/school-admin/dashboard");
-    }
-    else if (user.role === "parent") {
+    } else if (user.role === "teacher") {
+      // 🔍 Get classrooms assigned to this teacher
+      const classroomsRes = await pool.query(
+        `SELECT c.id, c.name
+     FROM classrooms c
+     JOIN classroom_teachers ct ON ct.classroom_id = c.id
+     WHERE ct.teacher_id = $1`,
+        [user.id]
+      );
+
+      const classrooms = classroomsRes.rows || [];
+
+      // Add teacher + classrooms to session
+      req.session.user = {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        profile_pic: user.profile_picture,
+        classrooms, // 👈 keep assigned classes in session
+      };
+
+      return res.redirect("/teacher/dashboard");
+
+    } else if (user.role === "parent") {
       return res.redirect("/parent/dashboard");
+
     } else if (user.role === "individual_student" || user.role === "student") {
       return res.redirect("/student/dashboard");
+      
     }
 
 

@@ -1,0 +1,27 @@
+<h2>📚 My Classes</h2>
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Class Name</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if (classes.length > 0) { %>
+      <% classes.forEach(cls => { %>
+        <tr>
+          <td><%= cls.id %></td>
+          <td><%= cls.name %></td>
+          <td>
+            <a href="/teacher/classroom/<%= cls.id %>/students">👀 View Students</a>
+          </td>
+        </tr>
+      <% }) %>
+    <% } else { %>
+      <tr>
+        <td colspan="3">No classes assigned.</td>
+      </tr>
+    <% } %>
+  </tbody>
+</table>

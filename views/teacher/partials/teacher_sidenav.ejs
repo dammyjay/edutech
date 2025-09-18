@@ -1,0 +1,259 @@
+<!-- Teacher Sidenav Partial
+<div id="sidenav" class="sidenav">
+  <h2>📌 Teacher Menu</h2>
+  <ul>
+    <li><a href="#" onclick="loadSection('dashboard')">🏠 Overview</a></li>
+    <li><a href="#" onclick="loadSection('classes')">📚 My Classes</a></li>
+    <li><a href="#" onclick="loadSection('students')">🎓 Students</a></li>
+    <li><a href="#" onclick="loadSection('reports')">📑 Reports</a></li>
+    <li><a href="/teacher/logout">🚪 Logout</a></li>
+  </ul>
+</div>
+
+<button id="toggleBtn" class="toggle-btn">☰</button>
+
+<style>
+  /* Sidebar */
+  .sidenav {
+    width: 220px;
+    background: #1270b0;
+    color: #fff;
+    height: 100vh;
+    padding: 15px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transition: transform 0.3s ease-in-out;
+    z-index: 1000;
+  }
+
+  .sidenav h2 {
+    margin-bottom: 20px;
+  }
+
+  .sidenav ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .sidenav ul li {
+    margin: 10px 0;
+  }
+
+  .sidenav ul li a {
+    color: #fff;
+    text-decoration: none;
+    display: block;
+    padding: 8px;
+    border-radius: 4px;
+  }
+
+  .sidenav ul li a:hover {
+    background: #0b4e7a;
+  }
+
+  /* Main content */
+  .main-content {
+    margin-left: 240px;
+    padding: 20px;
+    transition: margin-left 0.3s ease-in-out;
+  }
+
+  /* Toggle button */
+  .toggle-btn {
+    display: none;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #1270b0;
+    color: #fff;
+    border: none;
+    padding: 10px 14px;
+    font-size: 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    z-index: 1100;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sidenav {
+      transform: translateX(-100%);
+    }
+    .sidenav.active {
+      transform: translateX(0);
+    }
+    .main-content {
+      margin-left: 0;
+      padding: 15px;
+    }
+    .toggle-btn {
+      display: block;
+    }
+  }
+</style>
+
+<script>
+  const sidenav = document.getElementById("sidenav");
+  const toggleBtn = document.getElementById("toggleBtn");
+
+  // Toggle open/close
+  toggleBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    sidenav.classList.toggle("active");
+  });
+
+  // Close when clicking a link inside sidenav
+  sidenav.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      if (window.innerWidth <= 768) {
+        sidenav.classList.remove("active");
+      }
+    });
+  });
+
+  // Close when clicking outside
+  document.addEventListener("click", (e) => {
+    if (
+      window.innerWidth <= 768 &&
+      sidenav.classList.contains("active") &&
+      !sidenav.contains(e.target) &&
+      e.target !== toggleBtn
+    ) {
+      sidenav.classList.remove("active");
+    }
+  });
+
+  // Close if resized to desktop
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 768) {
+      sidenav.classList.remove("active");
+    }
+  });
+</script>
+
+
+ -->
+
+
+ <div id="sidenav" class="sidenav">
+  <h2>📌 Teacher Menu</h2>
+  <ul>
+    <li><a href="javascript:void(0)" onclick="loadSection('dashboard')">Dashboard</a></li>
+    <li><a href="javascript:void(0)" onclick="loadSection('classes')">Classes</a></li>
+    <li><a href="javascript:void(0)" onclick="loadSection('students')">Students</a></li>
+    <li><a href="javascript:void(0)" onclick="loadSection('reports')">Reports</a></li>
+    <li><a href="/teacher/logout">🚪 Logout</a></li>
+  </ul>
+</div>
+
+<button id="toggleBtn" class="toggle-btn">☰</button>
+
+
+<style>
+  /* Sidebar */
+  .sidenav {
+    width: 220px;
+    background: #1270b0;
+    color: #fff;
+    height: 100vh;
+    padding: 15px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transition: transform 0.3s ease-in-out;
+    z-index: 1000;
+  }
+
+  .sidenav h2 {
+    margin-bottom: 20px;
+  }
+
+  .sidenav ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .sidenav ul li {
+    margin: 10px 0;
+  }
+
+  .sidenav ul li a {
+    color: #fff;
+    text-decoration: none;
+    display: block;
+    padding: 8px;
+    border-radius: 4px;
+  }
+
+  .sidenav ul li a:hover {
+    background: #0b4e7a;
+  }
+
+  /* Main content */
+  .main-content {
+    margin-left: 240px;
+    padding: 20px;
+    transition: margin-left 0.3s ease-in-out;
+  }
+
+  /* Toggle button */
+  .toggle-btn {
+    display: none;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #1270b0;
+    color: #fff;
+    border: none;
+    padding: 10px 14px;
+    font-size: 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    z-index: 1100;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sidenav {
+      transform: translateX(-100%);
+    }
+    .sidenav.active {
+      transform: translateX(0);
+    }
+    .main-content {
+      margin-left: 0;
+      padding: 15px;
+    }
+    .toggle-btn {
+      display: block;
+    }
+  }
+</style>
+
+<script>
+  const sidenav = document.getElementById("sidenav");
+  const toggleBtn = document.getElementById("toggleBtn");
+  const mainContent = document.querySelector(".main-content");
+
+  toggleBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    sidenav.classList.toggle("active");
+  });
+
+  // load section dynamically
+  async function loadSection(section) {
+    try {
+      const res = await fetch(`/teacher/section/${section}`);
+      const html = await res.text();
+      mainContent.innerHTML = html;
+      if (window.innerWidth <= 768) sidenav.classList.remove("active");
+    } catch (err) {
+      mainContent.innerHTML = "<p style='color:red'>Error loading section</p>";
+    }
+  }
+
+  // load dashboard on page load
+  window.addEventListener("DOMContentLoaded", () => loadSection("dashboard"));
+</script>
+

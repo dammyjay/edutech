@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Teacher Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- sidenav -->
+  <%- include('./partials/teacher_sidenav') %>
+
+  <!-- AJAX-loaded content -->
+  <div class="main-content" id="main-content">
+    <p>Welcome, <%= teacher.fullname %> 👋</p>
+    <p>Select a section from the menu</p>
+  </div>
+
+  <script>
+    // Load a section dynamically
+    function loadSection(section) {
+      fetch(`/teacher/section/${section}`)
+        .then(res => res.text())
+        .then(html => {
+          document.getElementById("main-content").innerHTML = html;
+        })
+        .catch(err => {
+          document.getElementById("main-content").innerHTML = "<p>Error loading section</p>";
+          console.error(err);
+        });
+    }
+  </script>
+
+  <script>
+  // Load dashboard section immediately on page load
+  window.addEventListener("DOMContentLoaded", () => {
+    loadSection("dashboard");
+  });
+
+  function loadSection(section) {
+    fetch(`/teacher/section/${section}`)
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById("main-content").innerHTML = html;
+      })
+      .catch(err => {
+        document.getElementById("main-content").innerHTML = "<p>Error loading section</p>";
+        console.error(err);
+      });
+  }
+</script>
+
+</body>
+</html>

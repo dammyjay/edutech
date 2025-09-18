@@ -104,6 +104,9 @@ app.use("/student", studentRoutes);
 const schoolAdminRoutes = require("./routes/schoolAdmin");
 app.use("/school-admin", schoolAdminRoutes);
 
+const teacherRoutes = require("./routes/teacher");
+app.use("/teacher", teacherRoutes);
+
 app.get("/test", (req, res) => {
   res.send("✅ Test route works");
 });
