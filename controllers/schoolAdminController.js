@@ -624,26 +624,59 @@ exports.loadSection = async (req, res) => {
   }
 
   // === Classroom ↔ Courses ===
-  if (section === "classroom-courses") {
-    const classrooms = await pool.query(
-      "SELECT id, name FROM classrooms WHERE school_id=$1",
-      [schoolId]
-    );
-    const courses = await pool.query("SELECT id, title FROM courses");
-    const classroomCourses = await pool.query(
-      `SELECT cc.id, c.name AS classroom, cr.title AS course
-       FROM classroom_courses cc
-       JOIN classrooms c ON cc.classroom_id = c.id
-       JOIN courses cr ON cc.course_id = cr.id
-       WHERE c.school_id=$1`,
-      [schoolId]
-    );
-    return res.render("partials/classroom-courses", {
-      classrooms: classrooms.rows,
-      courses: courses.rows,
-      classroomCourses: classroomCourses.rows,
-    });
-  }
+//   if (section === "classroom-courses") {
+//     const classrooms = await pool.query(
+//       "SELECT id, name FROM classrooms WHERE school_id=$1",
+//       [schoolId]
+//     );
+//     const courses = await pool.query("SELECT id, title FROM courses");
+//     const classroomCourses = await pool.query(
+//       `SELECT cc.id, c.name AS classroom, cr.title AS course
+//        FROM classroom_courses cc
+//        JOIN classrooms c ON cc.classroom_id = c.id
+//        JOIN courses cr ON cc.course_id = cr.id
+//        WHERE c.school_id=$1`,
+//       [schoolId]
+//     );
+//     return res.render("partials/classroom-courses", {
+//       classrooms: classrooms.rows,
+//       courses: courses.rows,
+//       classroomCourses: classroomCourses.rows,
+//     });
+//   }
+
+    if (section === "classroom-courses") {
+      const classrooms = await pool.query(
+        "SELECT id, name FROM classrooms WHERE school_id=$1",
+        [schoolId]
+      );
+
+      // ✅ Only fetch courses assigned to this school
+      const courses = await pool.query(
+        `SELECT c.id, c.title
+     FROM courses c
+     INNER JOIN school_courses sc ON c.id = sc.course_id
+     WHERE sc.school_id = $1
+     ORDER BY c.title`,
+        [schoolId]
+      );
+
+      const classroomCourses = await pool.query(
+        `SELECT cc.id, c.name AS classroom, cr.title AS course
+     FROM classroom_courses cc
+     JOIN classrooms c ON cc.classroom_id = c.id
+     JOIN courses cr ON cc.course_id = cr.id
+     WHERE c.school_id=$1`,
+        [schoolId]
+      );
+
+      return res.render("partials/classroom-courses", {
+        classrooms: classrooms.rows,
+        courses: courses.rows, // ✅ now only school courses
+        classroomCourses: classroomCourses.rows,
+      });
+    }
+
 
   if (section === "overview") {
     const pendingUsers = await pool.query(
@@ -853,19 +886,65 @@ exports.updatePayment = async (req, res) => {
 };
 
 // ------------------ CLASSROOM ↔ COURSES ------------------ //
+// exports.getClassroomCourses = async (req, res) => {
+//   try {
+//     const schoolId = req.session.user.school_id;
+
+//     const classrooms = await pool.query(
+//       "SELECT id, name FROM classrooms WHERE school_id=$1",
+//       [schoolId]
+//     );
+
+//     const courses = await pool.query(
+//       "SELECT id, title FROM courses ORDER BY title"
+//     );
+
+//     const classroomCourses = await pool.query(
+//       `SELECT cc.id, c.name AS classroom, cr.title AS course
+//        FROM classroom_courses cc
+//        JOIN classrooms c ON cc.classroom_id = c.id
+//        JOIN courses cr ON cc.course_id = cr.id
+//        WHERE c.school_id=$1
+//        ORDER BY c.name, cr.title`,
+//       [schoolId]
+//     );
+
+//     res.render("partials/classroom-courses", {
+//       classrooms: classrooms.rows,
+//       courses: courses.rows,
+//       classroomCourses: classroomCourses.rows,
+//     });
+//   } catch (err) {
+//     console.error("Error fetching classroom courses:", err);
+//     res.status(500).send("Server Error");
+//   }
+// };
+
+// 📌 School Admin: Manage classroom-course assignments
 exports.getClassroomCourses = async (req, res) => {
   try {
     const schoolId = req.session.user.school_id;
+    console.log("School Admin Dashboard -> School ID:", schoolId);
 
+    // ✅ Only classrooms for this school
     const classrooms = await pool.query(
       "SELECT id, name FROM classrooms WHERE school_id=$1",
       [schoolId]
     );
 
+    // ✅ Only fetch courses assigned to this school (via school_courses)
     const courses = await pool.query(
-      "SELECT id, title FROM courses ORDER BY title"
+      `SELECT c.id, c.title
+       FROM courses c
+       INNER JOIN school_courses sc ON c.id = sc.course_id
+       WHERE sc.school_id = $1
+       ORDER BY c.title`,
+      [schoolId]
     );
 
+    console.log("Allowed Courses for this school:", courses.rows);
+
+    // ✅ Classroom-course assignments only for this school
     const classroomCourses = await pool.query(
       `SELECT cc.id, c.name AS classroom, cr.title AS course
        FROM classroom_courses cc
@@ -878,7 +957,7 @@ exports.getClassroomCourses = async (req, res) => {
 
     res.render("partials/classroom-courses", {
       classrooms: classrooms.rows,
-      courses: courses.rows,
+      courses: courses.rows, // ✅ filtered by school
       classroomCourses: classroomCourses.rows,
     });
   } catch (err) {
@@ -887,17 +966,53 @@ exports.getClassroomCourses = async (req, res) => {
   }
 };
 
+
+
+// exports.assignCourseToClassroom = async (req, res) => {
+//   try {
+//     const { classroomId, courseId } = req.body;
+
+//     // prevent duplicate assignment
+//     const exists = await pool.query(
+//       "SELECT 1 FROM classroom_courses WHERE classroom_id=$1 AND course_id=$2",
+//       [classroomId, courseId]
+//     );
+
+//     if (exists.rows.length === 0) {
+//       await pool.query(
+//         "INSERT INTO classroom_courses (classroom_id, course_id) VALUES ($1, $2)",
+//         [classroomId, courseId]
+//       );
+//     }
+
+//     res.redirect("/school-admin/dashboard");
+//   } catch (err) {
+//     console.error("Error assigning course:", err);
+//     res.status(500).send("Server Error");
+//   }
+// };
+
 exports.assignCourseToClassroom = async (req, res) => {
   try {
     const { classroomId, courseId } = req.body;
+    const schoolId = req.session.user.school_id;
 
-    // prevent duplicate assignment
+    // ✅ Check that this course actually belongs to the school
+    const validCourse = await pool.query(
+      "SELECT 1 FROM school_courses WHERE school_id=$1 AND course_id=$2",
+      [schoolId, courseId]
+    );
+    if (!validCourse.rows.length) {
+      return res.status(403).send("Not allowed to assign this course.");
+    }
+
+    // ✅ Prevent duplicates
     const exists = await pool.query(
       "SELECT 1 FROM classroom_courses WHERE classroom_id=$1 AND course_id=$2",
       [classroomId, courseId]
     );
 
-    if (exists.rows.length === 0) {
+    if (!exists.rows.length) {
       await pool.query(
         "INSERT INTO classroom_courses (classroom_id, course_id) VALUES ($1, $2)",
         [classroomId, courseId]
@@ -910,6 +1025,7 @@ exports.assignCourseToClassroom = async (req, res) => {
     res.status(500).send("Server Error");
   }
 };
+
 
 exports.updateClassroomCourse = async (req, res) => {
   try {

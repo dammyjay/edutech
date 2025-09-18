@@ -1867,8 +1867,6 @@ exports.getSchoolCourses = async (req, res) => {
 };
 
 
-
-
 exports.approveQuote = async (req, res) => {
   try {
     const { id } = req.params;

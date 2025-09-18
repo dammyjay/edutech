@@ -42,10 +42,10 @@ router.post(
   "/classroom-courses/delete/:id",
   schoolAdminController.deleteClassroomCourse
 );
-router.post(
-  "/classroom-courses/assign",
-  schoolAdminController.addPaymentAdjustment
-);
+// router.post(
+//   "/classroom-courses/assign",
+//   schoolAdminController.addPaymentAdjustment
+// );
 
 
 

@@ -569,8 +569,7 @@ async function createTables() {
           );
         `);
 
-
-
+      // junction table for classroom teachers
     await pool.query(`
       CREATE TABLE IF NOT EXISTS classroom_teachers (
         id SERIAL PRIMARY KEY,
@@ -581,6 +580,7 @@ async function createTables() {
 
       `);
 
+    // junction table for classroom courses
     await pool.query(`
       CREATE TABLE IF NOT EXISTS classroom_courses (
         id SERIAL PRIMARY KEY,
