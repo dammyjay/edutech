@@ -1,0 +1,97 @@
+
+
+
+<%- include('../partials/teacher_sidenav') %>
+
+<div class="main-content">
+  <h2>📊 Student Progress: <%= student.fullname %></h2>
+  <p><strong>Email:</strong> <%= student.email %></p>
+
+  <% if (courses.length) { %>
+    <% courses.forEach(c => { %>
+      <div class="course-card">
+        <h3>🎓 <%= c.course_title %> — <%= c.percent %>% complete</h3>
+
+        <% c.modules.forEach(m => { %>
+          <div class="module-card">
+            <h4 class="collapsible">
+              📦 <%= m.module_title %> — <%= m.percent %>% complete
+            </h4>
+
+            <div class="content" style="display: none; padding: 10px; border: 1px solid #ddd; margin-top: 5px;">
+              <!-- Lessons + Quizzes -->
+              <table class="user-table" border="1" cellpadding="8" cellspacing="0" width="100%">
+                <thead>
+                  <tr>
+                    <th>Lesson</th>
+                    <th>Status</th>
+                    <th>Quiz</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% m.lessons.forEach(l => { %>
+                    <tr>
+                      <td><%= l.title %></td>
+                      <td><%= l.completed ? "✅ Completed" : "❌ Not Completed" %></td>
+                     <td>
+  <% 
+    const lessonQuizzes = m.quizzes.filter(q => q.lesson_id === l.id); 
+  %>
+  <% if (lessonQuizzes.length) { %>
+    <ul>
+      <% lessonQuizzes.forEach(q => { %>
+        <li>
+          <%= q.title %> — 
+          <% if (q.score !== null) { %>
+            Score: <%= q.score %> | 
+            <a href="/teacher/student/<%= student.id %>/quizzes/<%= q.id %>/download">📥 Download</a>
+          <% } else { %>
+            Score: N/A
+          <% } %>
+        </li>
+      <% }) %>
+    </ul>
+  <% } else { %>
+    N/A
+  <% } %>
+</td>
+
+
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+
+              <!-- Module Assignments -->
+              <div class="module-assignments" style="margin-top:15px;">
+                <h5>📑 Module Assignments</h5>
+                <% if (m.assignments.length) { %>
+                  <ul>
+                    <% m.assignments.forEach(a => { %>
+                      <li><%= a.title %> — Grade: <%= a.grade ?? "Pending" %> (Total: <%= a.total ?? "-" %>)</li>
+                    <% }) %>
+                  </ul>
+                <% } else { %>
+                  <p>No assignments for this module.</p>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <p>No progress data available.</p>
+  <% } %>
+</div>
+
+<script>
+  // Simple collapsible toggle
+  document.querySelectorAll(".collapsible").forEach(header => {
+    header.style.cursor = "pointer";
+    header.addEventListener("click", () => {
+      const content = header.nextElementSibling;
+      content.style.display = content.style.display === "none" ? "block" : "none";
+    });
+  });
+</script>

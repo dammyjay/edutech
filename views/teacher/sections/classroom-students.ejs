@@ -1,0 +1,31 @@
+ <%- include('../partials/teacher_sidenav') %>
+
+ <div class="main-content">
+    <h2>👥 Classroom Students</h2>
+    <div class="table-responsive">
+        <table class="user-table"  border="1" cellpadding="8" cellspacing="0" width="100%">
+        <thead>
+            <tr>
+            <th>ID</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (students.length > 0) { %>
+            <% students.forEach(stu => { %>
+                <tr>
+                <td><%= stu.id %></td>
+                <td><%= stu.fullname %></td>
+                <td><%= stu.email %></td>
+                </tr>
+            <% }) %>
+            <% } else { %>
+            <tr>
+                <td colspan="3">No students found in this class.</td>
+            </tr>
+            <% } %>
+        </tbody>
+        </table>
+    </div>
+</div>

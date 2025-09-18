@@ -13,20 +13,26 @@
     </div>
   <% }) %>
 </div>
-
-<!-- Charts -->
 <h2>📈 Class Progress</h2>
 <canvas id="lessonChart"></canvas>
 <canvas id="quizChart"></canvas>
 
+<!-- Load Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
   const lessonLabels = <%- JSON.stringify(classStats.map(c => c.classroom_name)) %>;
   const lessonData = <%- JSON.stringify(classStats.map(c => Math.round((c.completed_lessons / (c.total_lessons || 1)) * 100))) %>;
+
   new Chart(document.getElementById('lessonChart'), {
     type: 'bar',
     data: {
       labels: lessonLabels,
-      datasets: [{ label: 'Lesson Completion %', data: lessonData, backgroundColor: '#27ae60' }]
+      datasets: [{
+        label: 'Lesson Completion %',
+        data: lessonData,
+        backgroundColor: '#27ae60'
+      }]
     },
     options: { responsive: true, plugins: { legend: { display: false } } }
   });
@@ -36,7 +42,12 @@
     type: 'line',
     data: {
       labels: lessonLabels,
-      datasets: [{ label: 'Average Quiz Score', data: quizData, borderColor: '#2980b9', fill: false }]
+      datasets: [{
+        label: 'Average Quiz Score',
+        data: quizData,
+        borderColor: '#2980b9',
+        fill: false
+      }]
     },
     options: { responsive: true }
   });

@@ -44,4 +44,11 @@ router.get("/student/:id/report", (req, res) => {
   teacherController.downloadStudentReport(req, res);
 });
 
+// Teacher quiz download
+router.get(
+  "/student/:studentId/quizzes/:quizId/download",
+  teacherController.downloadQuizReport
+);
+
+
 module.exports = router;

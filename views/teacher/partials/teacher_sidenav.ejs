@@ -135,7 +135,6 @@
 
  -->
 
-
  <div id="sidenav" class="sidenav">
   <h2>📌 Teacher Menu</h2>
   <ul>
@@ -143,7 +142,7 @@
     <li><a href="javascript:void(0)" onclick="loadSection('classes')">Classes</a></li>
     <li><a href="javascript:void(0)" onclick="loadSection('students')">Students</a></li>
     <li><a href="javascript:void(0)" onclick="loadSection('reports')">Reports</a></li>
-    <li><a href="/teacher/logout">🚪 Logout</a></li>
+    <li><a href="/admin/logout">🚪 Logout</a></li>
   </ul>
 </div>
 
@@ -213,6 +212,85 @@
     z-index: 1100;
   }
 
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    /* allows horizontal scroll if needed */
+    -webkit-overflow-scrolling: touch;
+    /* smooth scrolling on iOS */
+    max-height: 400px;
+        /* Adjust height as needed */
+        overflow-y: auto;
+        margin-top: 20px;
+}
+
+.user-table-wrapper {
+    max-height: 400px;
+    /* Adjust height as needed */
+    overflow-y: auto;
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    border-radius: 6px;   
+}
+
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+    font-family: sans-serif;
+}
+
+.user-table th {
+    position: sticky;
+        top: 0;
+    background-color: #333;
+    color: white;
+    text-align: left;
+    padding: 12px;
+}
+
+.user-table td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.user-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.btn-edit {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.btn-view {
+    background-color: #000000;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.btn-edit:hover {
+    background-color: #45a049;
+}
+.btn-delete {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.btn-delete:hover {
+    background-color: #e53935;
+}
+
   /* Responsive */
   @media (max-width: 768px) {
     .sidenav {
@@ -228,6 +306,21 @@
     .toggle-btn {
       display: block;
     }
+    .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            /* allows horizontal scroll if needed */
+            -webkit-overflow-scrolling: touch;
+            /* smooth scrolling on iOS */   }
+    .user-table th,
+    .user-table td {
+        padding: 8px 6px;
+        font-size: 12px;
+    }
+    .user-table img {
+        width: 35px !important;
+        height: 35px !important;
+    }
   }
 </style>
 
@@ -240,6 +333,29 @@
     e.stopPropagation();
     sidenav.classList.toggle("active");
   });
+
+  
+  // Close when clicking a link inside sidenav
+  sidenav.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      if (window.innerWidth <= 768) { // only on mobile
+        sidenav.classList.remove("active");
+      }
+    });
+  });
+
+  // Close when clicking outside sidenav
+  document.addEventListener("click", (e) => {
+    if (
+      window.innerWidth <= 768 && // only mobile
+      sidenav.classList.contains("active") && 
+      !sidenav.contains(e.target) && 
+      e.target !== toggleBtn
+    ) {
+      sidenav.classList.remove("active");
+    }
+  });
+
 
   // load section dynamically
   async function loadSection(section) {
