@@ -20,47 +20,49 @@
 
             <div class="content" style="display: none; padding: 10px; border: 1px solid #ddd; margin-top: 5px;">
               <!-- Lessons + Quizzes -->
-              <table class="user-table" border="1" cellpadding="8" cellspacing="0" width="100%">
-                <thead>
-                  <tr>
-                    <th>Lesson</th>
-                    <th>Status</th>
-                    <th>Quiz</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% m.lessons.forEach(l => { %>
+               <div class="table-responsive">
+                <table class="user-table" border="1" cellpadding="8" cellspacing="0" width="100%">
+                    <thead>
                     <tr>
-                      <td><%= l.title %></td>
-                      <td><%= l.completed ? "✅ Completed" : "❌ Not Completed" %></td>
-                     <td>
-  <% 
-    const lessonQuizzes = m.quizzes.filter(q => q.lesson_id === l.id); 
-  %>
-  <% if (lessonQuizzes.length) { %>
-    <ul>
-      <% lessonQuizzes.forEach(q => { %>
-        <li>
-          <%= q.title %> — 
-          <% if (q.score !== null) { %>
-            Score: <%= q.score %> | 
-            <a href="/teacher/student/<%= student.id %>/quizzes/<%= q.id %>/download">📥 Download</a>
-          <% } else { %>
-            Score: N/A
-          <% } %>
-        </li>
-      <% }) %>
-    </ul>
-  <% } else { %>
-    N/A
-  <% } %>
-</td>
-
-
+                        <th>Lesson</th>
+                        <th>Status</th>
+                        <th>Quiz</th>
                     </tr>
-                  <% }) %>
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody>
+                    <% m.lessons.forEach(l => { %>
+                        <tr>
+                        <td><%= l.title %></td>
+                        <td><%= l.completed ? "✅ Completed" : "❌ Not Completed" %></td>
+                        <td>
+                            <% 
+                                const lessonQuizzes = m.quizzes.filter(q => q.lesson_id === l.id); 
+                            %>
+                            <% if (lessonQuizzes.length) { %>
+                                <ul>
+                                <% lessonQuizzes.forEach(q => { %>
+                                    <li>
+                                    <%= q.title %> — 
+                                    <% if (q.score !== null) { %>
+                                        Score: <%= q.score %> | 
+                                        <a href="/teacher/student/<%= student.id %>/quizzes/<%= q.id %>/download">📥 Download</a>
+                                    <% } else { %>
+                                        Score: N/A
+                                    <% } %>
+                                    </li>
+                                <% }) %>
+                                </ul>
+                            <% } else { %>
+                                N/A
+                            <% } %>
+                            </td>
+
+
+                        </tr>
+                    <% }) %>
+                    </tbody>
+                </table>
+              </div>
 
               <!-- Module Assignments -->
               <div class="module-assignments" style="margin-top:15px;">
