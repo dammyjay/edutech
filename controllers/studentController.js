@@ -133,7 +133,6 @@ const { askTutor } = require("../utils/ai");
 
 //     const enrolledCourses = enrolledCoursesRes.rows;
 
-
 //     // ✅ Calculate progress for each enrolled course
 //     for (let course of enrolledCourses) {
 //       const totalLessonsRes = await pool.query(
@@ -230,59 +229,6 @@ const { askTutor } = require("../utils/ai");
 //     }
 
 //     // Lessons (🔑 with unlocked flag)
-//     // const moduleIds = modulesRes.rows.map((m) => m.id);
-//     // let lessonCounts = {};
-//     // let moduleLessons = {};
-//     // if (moduleIds.length > 0) {
-//     //   const countRes = await pool.query(
-//     //     `SELECT module_id, COUNT(*) AS total_lessons
-//     //      FROM lessons
-//     //      WHERE module_id = ANY($1)
-//     //      GROUP BY module_id`,
-//     //     [moduleIds]
-//     //   );
-//     //   countRes.rows.forEach((row) => {
-//     //     lessonCounts[row.module_id] = parseInt(row.total_lessons);
-//     //   });
-
-//     //   const lessonsRes = await pool.query(
-//     //     `
-//     //     SELECT l.*,
-//     //            EXISTS(
-//     //              SELECT 1 FROM unlocked_lessons ul
-//     //              WHERE ul.student_id = $2 AND ul.lesson_id = l.id
-//     //            ) AS unlocked,
-//     //            EXISTS(SELECT 1 FROM quizzes q WHERE q.lesson_id = l.id) AS has_quiz
-//     //     FROM lessons l
-//     //     WHERE l.module_id = ANY($1)
-//     //     ORDER BY l.id ASC
-//     //     `,
-//     //     [moduleIds, studentId]
-//     //   );
-
-//     //   // Auto-unlock first lesson if none unlocked
-//     //   if (
-//     //     lessonsRes.rows.length > 0 &&
-//     //     !lessonsRes.rows.some((l) => l.unlocked)
-//     //   ) {
-//     //     const firstLesson = lessonsRes.rows[0];
-//     //     firstLesson.unlocked = true;
-//     //     await pool.query(
-//     //       `INSERT INTO unlocked_lessons (student_id, lesson_id)
-//     //        VALUES ($1,$2)
-//     //        ON CONFLICT (student_id,lesson_id) DO NOTHING`,
-//     //       [studentId, firstLesson.id]
-//     //     );
-//     //   }
-
-//     //   lessonsRes.rows.forEach((lesson) => {
-//     //     if (!moduleLessons[lesson.module_id])
-//     //       moduleLessons[lesson.module_id] = [];
-//     //     moduleLessons[lesson.module_id].push(lesson);
-//     //   });
-//     // }
-
-//     // Lessons (🔑 with unlocked flag)
 //     const moduleIds = modulesRes.rows.map((m) => m.id);
 //     let lessonCounts = {};
 //     let moduleLessons = {};
@@ -343,42 +289,7 @@ const { askTutor } = require("../utils/ai");
 //       });
 //     }
 
-//     // --- Assignments (same as before)
-//     // let moduleAssignments = {};
-//     // if (moduleIds.length > 0) {
-//     //   const assignmentsRes = await pool.query(
-//     //     `
-//     //     SELECT a.*, m.title AS module_title
-//     //     FROM module_assignments a
-//     //     JOIN modules m ON a.module_id = m.id
-//     //     WHERE a.module_id = ANY($1)
-//     //     ORDER BY a.id ASC
-//     //     `,
-//     //     [moduleIds]
-//     //   );
-
-//     //   // ✅ fetch unlocked assignments for this student
-//     //   const unlockedAssignmentsRes = await pool.query(
-//     //     `SELECT assignment_id FROM unlocked_assignments WHERE student_id=$1`,
-//     //     [studentId]
-//     //   );
-//     //   const unlockedAssignments = unlockedAssignmentsRes.rows.map(
-//     //     (r) => r.assignment_id
-//     //   );
-
-//     //   assignmentsRes.rows.forEach((assign) => {
-//     //     if (!moduleAssignments[assign.module_id])
-//     //       moduleAssignments[assign.module_id] = [];
-
-//     //     // assignment is unlocked only if it exists in unlocked_assignments
-//     //     assign.unlocked = unlockedAssignments.includes(assign.id);
-
-//     //     moduleAssignments[assign.module_id].push(assign);
-//     //   });
-
-//     // }
-
-//     // --- Assignments (🔑 unlock when last lesson's quiz attempted)
+//    // --- Assignments (🔑 unlock when last lesson's quiz attempted)
 //     let moduleAssignments = {};
 //     if (moduleIds.length > 0) {
 //       const assignmentsRes = await pool.query(
@@ -479,7 +390,7 @@ const { askTutor } = require("../utils/ai");
 
 //     const certificates = certificatesRes.rows;
 
-//    const xpHistoryRes = await pool.query(
+//     const xpHistoryRes = await pool.query(
 //       `SELECT * FROM xp_history WHERE user_id = $1 ORDER BY earned_at DESC LIMIT 10`,
 //       [studentId]
 //     );
@@ -621,113 +532,149 @@ const { askTutor } = require("../utils/ai");
 //   }
 // };
 
-// studentController.js
-
 exports.getDashboard = async (req, res) => {
   const studentId = req.user.id;
+  const role = req.session.user.role; // "student", "individual_student", "user"
 
   try {
-    // Company Info
+    // --- Company Info
     const infoResult = await pool.query(
       "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
     );
     const info = infoResult.rows[0] || {};
     const profilePic = req.session.user?.profile_picture || null;
 
-    // Wallet
+    // --- Wallet
     const walletResult = await pool.query(
       "SELECT wallet_balance2 FROM users2 WHERE id = $1",
       [studentId]
     );
     const walletBalance = walletResult.rows[0]?.wallet_balance2 || 0;
 
-    // Student
+    // --- Student base info
     const studentRes = await pool.query("SELECT * FROM users2 WHERE id = $1", [
       studentId,
     ]);
     const student = studentRes.rows[0];
 
-    // --- Role from user_school (important for EJS condition checks)
-    const roleRes = await pool.query(
-      `SELECT role_in_school FROM user_school
-       WHERE user_id = $1 AND approved = true
-       LIMIT 1`,
-      [studentId]
-    );
-    if (roleRes.rows.length) {
-      student.role = roleRes.rows[0].role_in_school;
-    }
-
-    // --- School (via user_school)
-    const schoolRes = await pool.query(
-      `SELECT s.id, s.name
-       FROM schools s
-       JOIN user_school us ON s.id = us.school_id
-       WHERE us.user_id = $1
-         AND us.role_in_school = 'student'
-         AND us.approved = true
-       LIMIT 1`,
-      [studentId]
-    );
-    const school = schoolRes.rows[0] || null;
-
-    // --- Classroom (via user_school)
-    const classroomRes = await pool.query(
-      `SELECT c.id, c.name
-       FROM classrooms c
-       JOIN user_school us ON c.id = us.classroom_id
-       WHERE us.user_id = $1
-         AND us.role_in_school = 'student'
-         AND us.approved = true
-       LIMIT 1`,
-      [studentId]
-    );
-    const classroom = classroomRes.rows[0] || null;
-
-    // --- Teacher(s) for classroom
+    // Vars that differ per role
+    let school = null;
+    let classroom = null;
     let teacher = null;
-    if (classroom) {
-      const teacherRes = await pool.query(
-        `SELECT u.id, u.fullname, u.email
-         FROM users2 u
-         JOIN classroom_teachers ct ON ct.teacher_id = u.id
-         WHERE ct.classroom_id = $1
-         LIMIT 1`,
-        [classroom.id]
-      );
-      teacher = teacherRes.rows[0] || null;
-    }
-
     let classmates = [];
     let teachers = [];
-    if (classroom) {
-      if (req.query.section === "classroom") {
+    let enrolledCourses = [];
+
+    // ✅ School-linked students
+    if (role === "student") {
+      // Role in school
+      const roleRes = await pool.query(
+        `SELECT role_in_school, classroom_id 
+         FROM user_school
+         WHERE user_id = $1 AND approved = true
+         LIMIT 1`,
+        [studentId]
+      );
+      if (roleRes.rows.length) {
+        student.role = roleRes.rows[0].role_in_school;
+      }
+
+      // School
+      const schoolRes = await pool.query(
+        `SELECT s.id, s.name
+         FROM schools s
+         JOIN user_school us ON s.id = us.school_id
+         WHERE us.user_id = $1
+           AND us.role_in_school = 'student'
+           AND us.approved = true
+         LIMIT 1`,
+        [studentId]
+      );
+      school = schoolRes.rows[0] || null;
+
+      // Classroom
+      const classroomRes = await pool.query(
+        `SELECT c.id, c.name
+         FROM classrooms c
+         JOIN user_school us ON c.id = us.classroom_id
+         WHERE us.user_id = $1
+           AND us.role_in_school = 'student'
+           AND us.approved = true
+         LIMIT 1`,
+        [studentId]
+      );
+      classroom = classroomRes.rows[0] || null;
+
+      // Teacher(s)
+      if (classroom) {
+        const teacherRes = await pool.query(
+          `SELECT u.id, u.fullname, u.email
+           FROM users2 u
+           JOIN classroom_teachers ct ON ct.teacher_id = u.id
+           WHERE ct.classroom_id = $1
+           LIMIT 1`,
+          [classroom.id]
+        );
+        teacher = teacherRes.rows[0] || null;
+      }
+
+      // Classmates (only if viewing classroom section)
+      if (classroom && req.query.section === "classroom") {
         const matesRes = await pool.query(
           `SELECT u.id, u.fullname, u.email
-       FROM users2 u
-       JOIN user_school us ON us.user_id = u.id
-       WHERE us.classroom_id = $1
-         AND us.role_in_school = 'student'
-         AND us.approved = true
-         AND u.id != $2`,
+           FROM users2 u
+           JOIN user_school us ON us.user_id = u.id
+           WHERE us.classroom_id = $1
+             AND us.role_in_school = 'student'
+             AND us.approved = true
+             AND u.id != $2`,
           [classroom.id, studentId]
         );
         classmates = matesRes.rows;
       }
 
-      if (req.query.section === "teacher") {
+      // Teachers (only if viewing teacher section)
+      if (classroom && req.query.section === "teacher") {
         const tRes = await pool.query(
           `SELECT u.id, u.fullname, u.email
-       FROM users2 u
-       JOIN classroom_teachers ct ON ct.teacher_id = u.id
-       WHERE ct.classroom_id = $1`,
+           FROM users2 u
+           JOIN classroom_teachers ct ON ct.teacher_id = u.id
+           WHERE ct.classroom_id = $1`,
           [classroom.id]
         );
         teachers = tRes.rows;
       }
+
+      // Enrolled courses (from classroom)
+      if (classroom) {
+        const enrolledCoursesRes = await pool.query(
+          `SELECT cr.*, p.title AS pathway_name
+           FROM classroom_courses cc
+           JOIN courses cr ON cc.course_id = cr.id
+           LEFT JOIN career_pathways p ON cr.career_pathway_id = p.id
+           WHERE cc.classroom_id = $1
+           ORDER BY cr.title`,
+          [classroom.id]
+        );
+        enrolledCourses = enrolledCoursesRes.rows;
+      }
     }
 
-    // ✅ Parent requests
+    // ✅ Independent students (user / individual_student)
+    else if (role === "user" || role === "individual_student") {
+      const enrolledCoursesRes = await pool.query(
+        `SELECT c.*, p.title AS pathway_name, e.progress
+         FROM course_enrollments e
+         JOIN courses c ON c.id = e.course_id
+         JOIN career_pathways p ON c.career_pathway_id = p.id
+         WHERE e.user_id = $1
+         ORDER BY p.title, c.title`,
+        [studentId]
+      );
+      enrolledCourses = enrolledCoursesRes.rows;
+    }
+
+    // --- Parent requests
     const requestsRes = await pool.query(
       `SELECT r.id, u.fullname AS parent_name, u.email AS parent_email, r.status
        FROM parent_child_requests r
@@ -737,22 +684,7 @@ exports.getDashboard = async (req, res) => {
     );
     const parentRequests = requestsRes.rows;
 
-    // // Enrolled Courses
-    const enrolledCoursesRes = await pool.query(
-      `
-      SELECT c.*, p.title AS pathway_name, e.progress
-      FROM course_enrollments e
-      JOIN courses c ON c.id = e.course_id
-      JOIN career_pathways p ON c.career_pathway_id = p.id
-      WHERE e.user_id = $1
-      ORDER BY p.title, c.title
-      `,
-      [studentId]
-    );
-
-    const enrolledCourses = enrolledCoursesRes.rows;
-
-    // ✅ Calculate progress for each enrolled course
+    // --- Calculate progress for each enrolled course
     for (let course of enrolledCourses) {
       const totalLessonsRes = await pool.query(
         `SELECT COUNT(*) FROM lessons l
@@ -775,56 +707,38 @@ exports.getDashboard = async (req, res) => {
       course.progress = Math.round((completedLessons / totalLessons) * 100);
     }
 
-    // Modules (🔑 with unlocked flag)
-    const courseIds = enrolledCoursesRes.rows.map((c) => c.id);
+    // --- Modules (with unlocked flag)
+    const courseIds = enrolledCourses.map((c) => c.id);
     let modulesRes = { rows: [] };
     if (courseIds.length > 0) {
       modulesRes = await pool.query(
-        `
-        SELECT m.*,
+        `SELECT m.*,
                EXISTS(
                  SELECT 1 FROM unlocked_modules um
                  WHERE um.student_id = $2 AND um.module_id = m.id
                ) AS unlocked
-        FROM modules m
-        WHERE course_id = ANY($1)
-        ORDER BY m.id ASC
-        `,
+         FROM modules m
+         WHERE course_id = ANY($1)
+         ORDER BY m.order_number ASC`,
         [courseIds, studentId]
       );
 
-      // Auto-unlock first module if none unlocked
-      // if (
-      //   modulesRes.rows.length > 0 &&
-      //   !modulesRes.rows.some((m) => m.unlocked)
-      // ) {
-      //   const firstModule = modulesRes.rows[0];
-      //   firstModule.unlocked = true;
-      //   await pool.query(
-      //     `INSERT INTO unlocked_modules (student_id, module_id)
-      //      VALUES ($1,$2)
-      //      ON CONFLICT (student_id,module_id) DO NOTHING`,
-      //     [studentId, firstModule.id]
-      //   );
-      // }
-
-      // Auto-unlock the first module (by order_number) of each course if none unlocked yet
+      // Auto-unlock first module per course
       for (const courseId of courseIds) {
         const unlockedCheck = await pool.query(
           `SELECT 1 FROM unlocked_modules um
-     JOIN modules m ON m.id = um.module_id
-     WHERE um.student_id = $1 AND m.course_id = $2
-     LIMIT 1`,
+           JOIN modules m ON m.id = um.module_id
+           WHERE um.student_id = $1 AND m.course_id = $2
+           LIMIT 1`,
           [studentId, courseId]
         );
 
         if (unlockedCheck.rows.length === 0) {
-          // find the module with the smallest order_number for this course
           const firstModuleRes = await pool.query(
             `SELECT id FROM modules
-       WHERE course_id = $1
-       ORDER BY order_number ASC
-       LIMIT 1`,
+             WHERE course_id = $1
+             ORDER BY order_number ASC
+             LIMIT 1`,
             [courseId]
           );
 
@@ -832,12 +746,11 @@ exports.getDashboard = async (req, res) => {
             const firstModuleId = firstModuleRes.rows[0].id;
             await pool.query(
               `INSERT INTO unlocked_modules (student_id, module_id)
-         VALUES ($1,$2)
-         ON CONFLICT (student_id,module_id) DO NOTHING`,
+               VALUES ($1,$2)
+               ON CONFLICT (student_id,module_id) DO NOTHING`,
               [studentId, firstModuleId]
             );
 
-            // also mark it as unlocked in your modulesRes.rows
             const moduleRow = modulesRes.rows.find(
               (m) => m.id === firstModuleId
             );
@@ -847,69 +760,16 @@ exports.getDashboard = async (req, res) => {
       }
     }
 
-    // Lessons (🔑 with unlocked flag)
-    // const moduleIds = modulesRes.rows.map((m) => m.id);
-    // let lessonCounts = {};
-    // let moduleLessons = {};
-    // if (moduleIds.length > 0) {
-    //   const countRes = await pool.query(
-    //     `SELECT module_id, COUNT(*) AS total_lessons
-    //      FROM lessons
-    //      WHERE module_id = ANY($1)
-    //      GROUP BY module_id`,
-    //     [moduleIds]
-    //   );
-    //   countRes.rows.forEach((row) => {
-    //     lessonCounts[row.module_id] = parseInt(row.total_lessons);
-    //   });
-
-    //   const lessonsRes = await pool.query(
-    //     `
-    //     SELECT l.*,
-    //            EXISTS(
-    //              SELECT 1 FROM unlocked_lessons ul
-    //              WHERE ul.student_id = $2 AND ul.lesson_id = l.id
-    //            ) AS unlocked,
-    //            EXISTS(SELECT 1 FROM quizzes q WHERE q.lesson_id = l.id) AS has_quiz
-    //     FROM lessons l
-    //     WHERE l.module_id = ANY($1)
-    //     ORDER BY l.id ASC
-    //     `,
-    //     [moduleIds, studentId]
-    //   );
-
-    //   // Auto-unlock first lesson if none unlocked
-    //   if (
-    //     lessonsRes.rows.length > 0 &&
-    //     !lessonsRes.rows.some((l) => l.unlocked)
-    //   ) {
-    //     const firstLesson = lessonsRes.rows[0];
-    //     firstLesson.unlocked = true;
-    //     await pool.query(
-    //       `INSERT INTO unlocked_lessons (student_id, lesson_id)
-    //        VALUES ($1,$2)
-    //        ON CONFLICT (student_id,lesson_id) DO NOTHING`,
-    //       [studentId, firstLesson.id]
-    //     );
-    //   }
-
-    //   lessonsRes.rows.forEach((lesson) => {
-    //     if (!moduleLessons[lesson.module_id])
-    //       moduleLessons[lesson.module_id] = [];
-    //     moduleLessons[lesson.module_id].push(lesson);
-    //   });
-    // }
-
-    // Lessons (🔑 with unlocked flag)
+    // --- Lessons (with unlocked flag)
     const moduleIds = modulesRes.rows.map((m) => m.id);
     let lessonCounts = {};
     let moduleLessons = {};
     if (moduleIds.length > 0) {
       const countRes = await pool.query(
         `SELECT module_id, COUNT(*) AS total_lessons
-     FROM lessons
-     WHERE module_id = ANY($1)
-     GROUP BY module_id`,
+         FROM lessons
+         WHERE module_id = ANY($1)
+         GROUP BY module_id`,
         [moduleIds]
       );
       countRes.rows.forEach((row) => {
@@ -917,38 +777,33 @@ exports.getDashboard = async (req, res) => {
       });
 
       const lessonsRes = await pool.query(
-        `
-    SELECT l.*,
-           EXISTS(
-             SELECT 1 FROM unlocked_lessons ul
-             WHERE ul.student_id = $2 AND ul.lesson_id = l.id
-           ) AS unlocked,
-           EXISTS(SELECT 1 FROM quizzes q WHERE q.lesson_id = l.id) AS has_quiz
-    FROM lessons l
-    WHERE l.module_id = ANY($1)
-    ORDER BY l.id ASC
-    `,
+        `SELECT l.*,
+                EXISTS(
+                  SELECT 1 FROM unlocked_lessons ul
+                  WHERE ul.student_id = $2 AND ul.lesson_id = l.id
+                ) AS unlocked,
+                EXISTS(SELECT 1 FROM quizzes q WHERE q.lesson_id = l.id) AS has_quiz
+         FROM lessons l
+         WHERE l.module_id = ANY($1)
+         ORDER BY l.order_number ASC`,
         [moduleIds, studentId]
       );
 
-      // Auto-unlock the first lesson of each unlocked module if none unlocked yet
       for (const mod of modulesRes.rows) {
-        if (!mod.unlocked) continue; // skip locked modules
-
+        if (!mod.unlocked) continue;
         const lessonsForModule = lessonsRes.rows.filter(
           (l) => l.module_id === mod.id
         );
-
         if (
           lessonsForModule.length > 0 &&
           !lessonsForModule.some((l) => l.unlocked)
         ) {
-          const firstLesson = lessonsForModule[0]; // lowest id lesson
+          const firstLesson = lessonsForModule[0];
           firstLesson.unlocked = true;
           await pool.query(
             `INSERT INTO unlocked_lessons (student_id, lesson_id)
-         VALUES ($1,$2)
-         ON CONFLICT (student_id,lesson_id) DO NOTHING`,
+             VALUES ($1,$2)
+             ON CONFLICT (student_id,lesson_id) DO NOTHING`,
             [studentId, firstLesson.id]
           );
         }
@@ -961,52 +816,15 @@ exports.getDashboard = async (req, res) => {
       });
     }
 
-    // --- Assignments (same as before)
-    // let moduleAssignments = {};
-    // if (moduleIds.length > 0) {
-    //   const assignmentsRes = await pool.query(
-    //     `
-    //     SELECT a.*, m.title AS module_title
-    //     FROM module_assignments a
-    //     JOIN modules m ON a.module_id = m.id
-    //     WHERE a.module_id = ANY($1)
-    //     ORDER BY a.id ASC
-    //     `,
-    //     [moduleIds]
-    //   );
-
-    //   // ✅ fetch unlocked assignments for this student
-    //   const unlockedAssignmentsRes = await pool.query(
-    //     `SELECT assignment_id FROM unlocked_assignments WHERE student_id=$1`,
-    //     [studentId]
-    //   );
-    //   const unlockedAssignments = unlockedAssignmentsRes.rows.map(
-    //     (r) => r.assignment_id
-    //   );
-
-    //   assignmentsRes.rows.forEach((assign) => {
-    //     if (!moduleAssignments[assign.module_id])
-    //       moduleAssignments[assign.module_id] = [];
-
-    //     // assignment is unlocked only if it exists in unlocked_assignments
-    //     assign.unlocked = unlockedAssignments.includes(assign.id);
-
-    //     moduleAssignments[assign.module_id].push(assign);
-    //   });
-
-    // }
-
-    // --- Assignments (🔑 unlock when last lesson's quiz attempted)
+    // --- Assignments (unlocked after last lesson quiz attempted)
     let moduleAssignments = {};
     if (moduleIds.length > 0) {
       const assignmentsRes = await pool.query(
-        `
-    SELECT a.*, m.title AS module_title
-    FROM module_assignments a
-    JOIN modules m ON a.module_id = m.id
-    WHERE a.module_id = ANY($1)
-    ORDER BY a.id ASC
-    `,
+        `SELECT a.*, m.title AS module_title
+         FROM module_assignments a
+         JOIN modules m ON a.module_id = m.id
+         WHERE a.module_id = ANY($1)
+         ORDER BY a.id ASC`,
         [moduleIds]
       );
 
@@ -1014,21 +832,18 @@ exports.getDashboard = async (req, res) => {
         if (!moduleAssignments[assign.module_id])
           moduleAssignments[assign.module_id] = [];
 
-        // find last lesson of this module
         const lessonsForMod = moduleLessons[assign.module_id] || [];
         const lastLesson = lessonsForMod[lessonsForMod.length - 1];
 
         if (lastLesson) {
-          // check if student attempted the quiz for that lesson
           const quizAttemptRes = await pool.query(
             `SELECT 1
-            FROM quiz_submissions qs
-            JOIN quizzes q ON q.id = qs.quiz_id
-            WHERE qs.student_id = $1 AND q.lesson_id = $2
-            LIMIT 1`,
+             FROM quiz_submissions qs
+             JOIN quizzes q ON q.id = qs.quiz_id
+             WHERE qs.student_id = $1 AND q.lesson_id = $2
+             LIMIT 1`,
             [studentId, lastLesson.id]
           );
-
           assign.unlocked = quizAttemptRes.rows.length > 0;
         } else {
           assign.unlocked = false;
@@ -1038,10 +853,10 @@ exports.getDashboard = async (req, res) => {
       }
     }
 
-    // Group by pathway & course
+    // --- Group by pathway & course
     let pathwayCourses = {};
     let courseModules = {};
-    for (const course of enrolledCoursesRes.rows) {
+    for (const course of enrolledCourses) {
       if (!pathwayCourses[course.pathway_name]) {
         pathwayCourses[course.pathway_name] = [];
       }
@@ -1054,22 +869,19 @@ exports.getDashboard = async (req, res) => {
       courseModules[mod.course_id].push(mod);
     }
 
-    // Stats (same as before)
+    // --- Stats
     const completedCoursesRes = await pool.query(
-      `SELECT COUNT(*) FROM course_enrollments WHERE user_id = $1 AND progress = 100`,
+      `SELECT COUNT(*) FROM course_enrollments 
+       WHERE user_id = $1 AND progress = 100`,
       [studentId]
     );
     const completedCourses = parseInt(completedCoursesRes.rows[0].count);
 
-    // const certificates = certificatesRes.rows;
-
     const completedProjectsRes = await pool.query(
-      `
-      SELECT COUNT(*) FROM course_projects
-      WHERE course_id IN (
-        SELECT course_id FROM course_enrollments WHERE user_id = $1
-      )
-      `,
+      `SELECT COUNT(*) FROM course_projects
+       WHERE course_id IN (
+         SELECT course_id FROM course_enrollments WHERE user_id = $1
+       )`,
       [studentId]
     );
     const completedProjects = parseInt(completedProjectsRes.rows[0].count);
@@ -1079,46 +891,38 @@ exports.getDashboard = async (req, res) => {
       [studentId]
     );
 
-    // const certificatesRes = await pool.query(
-    //   `SELECT COUNT(*) FROM course_enrollments WHERE user_id = $1 AND progress = 100`,
-    //   [studentId]
-    // );
-    // const certificatesCount = parseInt(certificatesRes.rows[0].count);
-
     const certificatesRes = await pool.query(
-      `
-  SELECT c.id AS course_id, c.title AS course_title, uc.issued_at, uc.certificate_url
-  FROM user_certificates uc
-  JOIN courses c ON uc.course_id = c.id
-  WHERE uc.user_id = $1
-`,
+      `SELECT c.id AS course_id, c.title AS course_title, uc.issued_at, uc.certificate_url
+       FROM user_certificates uc
+       JOIN courses c ON uc.course_id = c.id
+       WHERE uc.user_id = $1`,
       [studentId]
     );
-
     const certificates = certificatesRes.rows;
 
     const xpHistoryRes = await pool.query(
-      `SELECT * FROM xp_history WHERE user_id = $1 ORDER BY earned_at DESC LIMIT 10`,
+      `SELECT * FROM xp_history 
+       WHERE user_id = $1 
+       ORDER BY earned_at DESC 
+       LIMIT 10`,
       [studentId]
     );
     const xpHistory = xpHistoryRes.rows;
 
     const xpTotalRes = await pool.query(
-      `SELECT COALESCE(SUM(xp), 0) AS total FROM xp_history WHERE user_id = $1`,
+      `SELECT COALESCE(SUM(xp), 0) AS total 
+       FROM xp_history 
+       WHERE user_id = $1`,
       [studentId]
     );
     const totalXP = xpTotalRes.rows[0].total;
 
     const engagementRes = await pool.query(
-      `
-      SELECT
-        TO_CHAR(completed_at, 'Day') AS day,
-        COUNT(*) AS count
-      FROM user_lesson_progress
-      WHERE user_id = $1 AND completed_at >= NOW() - INTERVAL '6 days'
-      GROUP BY day
-      ORDER BY MIN(completed_at)
-      `,
+      `SELECT TO_CHAR(completed_at, 'Day') AS day, COUNT(*) AS count
+       FROM user_lesson_progress
+       WHERE user_id = $1 AND completed_at >= NOW() - INTERVAL '6 days'
+       GROUP BY day
+       ORDER BY MIN(completed_at)`,
       [studentId]
     );
     const engagementData = {
@@ -1127,75 +931,76 @@ exports.getDashboard = async (req, res) => {
     };
 
     // Module view (kept same, you can later inject unlocked flag here too)
-    let moduleInfo = null;
-    let lessons = [];
-    let selectedLesson = null;
+        let moduleInfo = null;
+        let lessons = [];
+        let selectedLesson = null;
 
-    if (req.query.section === "module" && req.query.moduleId) {
-      const moduleRes = await pool.query(
-        `SELECT * FROM modules WHERE id = $1 LIMIT 1`,
-        [req.query.moduleId]
-      );
-      moduleInfo = moduleRes.rows[0] || null;
-
-      // 🔑 Only keep modules from this course
-      if (moduleInfo) {
-        const modsRes = await pool.query(
-          `SELECT * FROM modules WHERE course_id = $1 ORDER BY id ASC`,
-          [moduleInfo.course_id]
-        );
-        courseModules = { [moduleInfo.course_id]: modsRes.rows };
-
-        // also refetch lessons only for this course
-        const moduleIdsForThisCourse = modsRes.rows.map((m) => m.id);
-        if (moduleIdsForThisCourse.length > 0) {
-          const lessonsRes2 = await pool.query(
-            `SELECT l.*,
-                EXISTS(
-                  SELECT 1 FROM unlocked_lessons ul
-                  WHERE ul.student_id = $2 AND ul.lesson_id = l.id
-                ) AS unlocked,
-                EXISTS(SELECT 1 FROM quizzes q WHERE q.lesson_id = l.id) AS has_quiz
-         FROM lessons l
-         WHERE module_id = ANY($1)
-         ORDER BY l.id ASC`,
-            [moduleIdsForThisCourse, studentId]
+        if (req.query.section === "module" && req.query.moduleId) {
+          const moduleRes = await pool.query(
+            `SELECT * FROM modules WHERE id = $1 LIMIT 1`,
+            [req.query.moduleId]
           );
+          moduleInfo = moduleRes.rows[0] || null;
 
-          moduleLessons = {};
-          lessonsRes2.rows.forEach((lsn) => {
-            if (!moduleLessons[lsn.module_id])
-              moduleLessons[lsn.module_id] = [];
-            moduleLessons[lsn.module_id].push(lsn);
-          });
+          // 🔑 Only keep modules from this course
+          if (moduleInfo) {
+            const modsRes = await pool.query(
+              `SELECT * FROM modules WHERE course_id = $1 ORDER BY id ASC`,
+              [moduleInfo.course_id]
+            );
+            courseModules = { [moduleInfo.course_id]: modsRes.rows };
+
+            // also refetch lessons only for this course
+            const moduleIdsForThisCourse = modsRes.rows.map((m) => m.id);
+            if (moduleIdsForThisCourse.length > 0) {
+              const lessonsRes2 = await pool.query(
+                `SELECT l.*,
+                    EXISTS(
+                      SELECT 1 FROM unlocked_lessons ul
+                      WHERE ul.student_id = $2 AND ul.lesson_id = l.id
+                    ) AS unlocked,
+                    EXISTS(SELECT 1 FROM quizzes q WHERE q.lesson_id = l.id) AS has_quiz
+             FROM lessons l
+             WHERE module_id = ANY($1)
+             ORDER BY l.id ASC`,
+                [moduleIdsForThisCourse, studentId]
+              );
+
+              moduleLessons = {};
+              lessonsRes2.rows.forEach((lsn) => {
+                if (!moduleLessons[lsn.module_id])
+                  moduleLessons[lsn.module_id] = [];
+                moduleLessons[lsn.module_id].push(lsn);
+              });
+            }
+          }
         }
-      }
-    }
 
-    // Pathway filter (same)
-    if (req.query.pathway && pathwayCourses[req.query.pathway]) {
-      pathwayCourses = {
-        [req.query.pathway]: pathwayCourses[req.query.pathway],
-      };
-      const allowedCourseIds = pathwayCourses[req.query.pathway].map(
-        (c) => c.id
-      );
-      courseModules = Object.fromEntries(
-        Object.entries(courseModules).filter(([courseId]) =>
-          allowedCourseIds.includes(parseInt(courseId))
-        )
-      );
-    }
+        // Pathway filter (same)
+        if (req.query.pathway && pathwayCourses[req.query.pathway]) {
+          pathwayCourses = {
+            [req.query.pathway]: pathwayCourses[req.query.pathway],
+          };
+          const allowedCourseIds = pathwayCourses[req.query.pathway].map(
+            (c) => c.id
+          );
+          courseModules = Object.fromEntries(
+            Object.entries(courseModules).filter(([courseId]) =>
+              allowedCourseIds.includes(parseInt(courseId))
+            )
+          );
+        }
 
+    // --- Parents
     const { rows: parents } = await pool.query(
       `SELECT u.id, u.fullname, u.email
-      FROM users2 u
-      JOIN parent_children pc ON u.id = pc.parent_id
-      WHERE pc.child_id = $1 AND u.role = 'parent'`,
+       FROM users2 u
+       JOIN parent_children pc ON u.id = pc.parent_id
+       WHERE pc.child_id = $1 AND u.role = 'parent'`,
       [studentId]
     );
 
-    // Render with unlocked flags
+    // --- Render
     res.render("student/dashboard", {
       student,
       profilePic,
@@ -1203,33 +1008,31 @@ exports.getDashboard = async (req, res) => {
       users: req.session.user,
       info,
       walletBalance,
-      school, // ✅ Added
-      classroom, // ✅ Added
-      teacher, // ✅ Added
-      classmates, // <- new
-      teachers, // <- new
+      school,
+      classroom,
+      teacher,
+      classmates,
+      teachers,
       subscribed: req.query.subscribed,
-      enrolledCourses: enrolledCoursesRes.rows,
+      enrolledCourses,
       pathwayCourses,
       courseModules,
       moduleLessons,
       moduleAssignments,
-      enrolledCourses,
       lessonCounts,
-      courses: enrolledCoursesRes.rows,
       completedCourses,
       completedProjects,
       certificates,
       certificatesCount: certificates.length,
       badges: badgesRes.rows,
       totalXP,
-      xpHistory: xpHistoryRes.rows,
+      xpHistory,
       engagementData,
       selectedPathway: req.query.pathway || null,
       section: req.query.section || null,
       moduleInfo,
-      lessons,
-      selectedLesson,
+      lessons: [],
+      selectedLesson: null,
       parentRequests,
       parents,
     });
@@ -1238,7 +1041,6 @@ exports.getDashboard = async (req, res) => {
     res.status(500).send("Server Error");
   }
 };
-
 
 
 exports.getEnrolledCourses = async (req, res) => {
@@ -1327,7 +1129,7 @@ exports.getEnrolledCourses = async (req, res) => {
                EXISTS(SELECT 1 FROM quizzes q WHERE q.lesson_id = l.id) AS has_quiz
         FROM lessons l
         WHERE l.module_id = ANY($1)
-        ORDER BY l.id ASC
+        ORDER BY l.order_number ASC
         `,
         [moduleIds, studentId]
       );
