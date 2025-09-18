@@ -1,9 +1,185 @@
 
 
 
-<%- include('../partials/teacher_sidenav') %>
 
-<div class="main-content">
+<style>
+  /* Sidebar */
+  .sidenav {
+    width: 220px;
+    background: #1270b0;
+    color: #fff;
+    height: 100vh;
+    padding: 15px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transition: transform 0.3s ease-in-out;
+    z-index: 1000;
+  }
+
+  .sidenav h2 {
+    margin-bottom: 20px;
+  }
+
+  .sidenav ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .sidenav ul li {
+    margin: 10px 0;
+  }
+
+  .sidenav ul li a {
+    color: #fff;
+    text-decoration: none;
+    display: block;
+    padding: 8px;
+    border-radius: 4px;
+  }
+
+  .sidenav ul li a:hover {
+    background: #0b4e7a;
+  }
+
+  /* Main content */
+  .main-content {
+    margin-left: 240px;
+    padding: 20px;
+    transition: margin-left 0.3s ease-in-out;
+  }
+
+  /* Toggle button */
+  .toggle-btn {
+    display: none;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #1270b0;
+    color: #fff;
+    border: none;
+    padding: 10px 14px;
+    font-size: 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    z-index: 1100;
+  }
+
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    /* allows horizontal scroll if needed */
+    -webkit-overflow-scrolling: touch;
+    /* smooth scrolling on iOS */
+    max-height: 400px;
+        /* Adjust height as needed */
+        overflow-y: auto;
+        margin-top: 20px;
+}
+
+.user-table-wrapper {
+    max-height: 400px;
+    /* Adjust height as needed */
+    overflow-y: auto;
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    border-radius: 6px;   
+}
+
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+    font-family: sans-serif;
+}
+
+.user-table th {
+    position: sticky;
+        top: 0;
+    background-color: #333;
+    color: white;
+    text-align: left;
+    padding: 12px;
+}
+
+.user-table td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.user-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.btn-edit {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.btn-view {
+    background-color: #000000;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.btn-edit:hover {
+    background-color: #45a049;
+}
+.btn-delete {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.btn-delete:hover {
+    background-color: #e53935;
+}
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sidenav {
+      transform: translateX(-100%);
+    }
+    .sidenav.active {
+      transform: translateX(0);
+    }
+    .main-content {
+      margin-left: 0;
+      padding: 15px;
+    }
+    .toggle-btn {
+      display: block;
+    }
+    .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            /* allows horizontal scroll if needed */
+            -webkit-overflow-scrolling: touch;
+            /* smooth scrolling on iOS */   }
+    .user-table th,
+    .user-table td {
+        padding: 8px 6px;
+        font-size: 12px;
+    }
+    .user-table img {
+        width: 35px !important;
+        height: 35px !important;
+    }
+  }
+</style>
+
+
+<div >
+    <a style="padding: 5px 10px; background-color: black; color: white; text-decoration: none;" href="/teacher/dashboard"> Back to dashboard</a>
   <h2>📊 Student Progress: <%= student.fullname %></h2>
   <p><strong>Email:</strong> <%= student.email %></p>
 
