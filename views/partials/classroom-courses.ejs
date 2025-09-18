@@ -1,0 +1,131 @@
+<h2>📚 Assign Courses to Classrooms</h2>
+
+<form action="/school-admin/classroom-courses/assign" method="POST" style="margin-bottom:15px;">
+  <select name="classroomId" required>
+    <option value="">-- Select Classroom --</option>
+    <% classrooms.forEach(c => { %>
+      <option value="<%= c.id %>"><%= c.name %></option>
+    <% }) %>
+  </select>
+
+  <select name="courseId" required>
+    <option value="">-- Select Course --</option>
+    <% courses.forEach(cr => { %>
+      <option value="<%= cr.id %>"><%= cr.title %></option>
+    <% }) %>
+  </select>
+
+  <button type="submit">➕ Assign</button>
+</form>
+
+<!-- <h3>📖 Assigned Courses</h3>
+<table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse;">
+  <thead>
+    <tr>
+      <th>Classroom</th>
+      <th>Course</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if (classroomCourses.length > 0) { %>
+      <% classroomCourses.forEach(cc => { %>
+        <tr>
+          <td><%= cc.classroom %></td>
+          <td><%= cc.course %></td>
+        </tr>
+      <% }) %>
+    <% } else { %>
+      <tr><td colspan="2">No classroom-course assignments yet.</td></tr>
+    <% } %>
+  </tbody>
+</table> -->
+
+
+<!-- <h3>📖 Assigned Courses</h3>
+<div class="table-responsive">
+    <table class="user-table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse;">
+    <thead>
+        <tr>
+        <th>Classroom</th>
+        <th>Course</th>
+        <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% if (classroomCourses.length > 0) { %>
+        <% classroomCourses.forEach(cc => { %>
+            <tr>
+            <td><%= cc.classroom %></td>
+            <td><%= cc.course %></td>
+            <td>
+                <div class="article-buttons">
+                    <form action="/school-admin/classroom-courses/update/<%= cc.id %>" method="POST" style="display:inline;">
+                    <select name="courseId" required>
+                        <% courses.forEach(cr => { %>
+                        <option value="<%= cr.id %>" <%= cr.title === cc.course ? "selected" : "" %>>
+                            <%= cr.title %>
+                        </option>
+                        <% }) %>
+                    </select>
+                    <button class="btn-edit" type="submit">✏️ Update</button>
+                    </form>
+
+                    <form action="/school-admin/classroom-courses/delete/<%= cc.id %>" method="POST" style="display:inline;">
+                    <button type="submit">🗑️ Delete</button>
+                    </form>
+                </div>
+            </td>
+            </tr>
+        <% }) %>
+        <% } else { %>
+        <tr><td colspan="3">No classroom-course assignments yet.</td></tr>
+        <% } %>
+    </tbody>
+    </table>
+</div> -->
+
+
+<h3>📖 Assigned Courses</h3>
+
+<div style="display:flex; flex-wrap:wrap; gap:15px; justify-content:center;">
+  <% if (classroomCourses.length > 0) { %>
+    <% classroomCourses.forEach(cc => { %>
+      <div style="
+        flex: 1 1 250px; 
+        max-width: 300px;
+        border:1px solid #ddd; 
+        border-radius:10px; 
+        padding:15px; 
+        box-shadow:0 2px 5px rgba(0,0,0,0.1); 
+        background:#fafafa;
+      ">
+        <h4 style="margin-top:0;">🏫 <%= cc.classroom %></h4>
+        <p>📚 <strong><%= cc.course %></strong></p>
+
+      
+        <form action="/school-admin/classroom-courses/update/<%= cc.id %>" method="POST" style="margin-bottom:10px;">
+          <select name="courseId" required style="width:100%; padding:5px; margin-bottom:5px;">
+            <% courses.forEach(cr => { %>
+              <option value="<%= cr.id %>" <%= cr.title === cc.course ? "selected" : "" %>>
+                <%= cr.title %>
+              </option>
+            <% }) %>
+          </select>
+          <button type="submit" style="width:100%; background:#ffc107; border:none; padding:6px; border-radius:5px; cursor:pointer;">
+            ✏️ Update
+          </button>
+        </form>
+
+        
+        <form action="/school-admin/classroom-courses/delete/<%= cc.id %>" method="POST">
+          <button type="submit" style="width:100%; background:#dc3545; color:#fff; border:none; padding:6px; border-radius:5px; cursor:pointer;">
+            🗑️ Delete
+          </button>
+        </form>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <p>No classroom-course assignments yet.</p>
+  <% } %>
+</div>
+

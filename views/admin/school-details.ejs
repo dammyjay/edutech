@@ -1,0 +1,116 @@
+<%- include('../partials/adminHeader', { title: school.name }) %>
+
+<section class="section">
+    <h2><%= school.name %> - Details</h2>
+    <p><strong>Email:</strong> <%= school.email %></p>
+    <p><strong>Phone:</strong> <%= school.phone %></p>
+    <p><strong>Address:</strong> <%= school.address %></p>
+
+    <hr>
+
+    <h3>Classrooms</h3>
+    <ul>
+    <% if (school.classrooms.length > 0) { %>
+        <% school.classrooms.forEach(classroom => { %>
+        <li><%= classroom.name %></li>
+        <% }) %>
+    <% } else { %>
+        <p>No classrooms available.</p>
+    <% } %>
+    </ul>
+
+    <hr>
+</section>
+
+<h3>Teachers</h3>
+<div class="table-responsive">
+  <table class="user-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Classroom</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% school.teachers.forEach(teacher => { %>
+      <tr>
+        <td><%= teacher.full_name %></td>
+        <td><%= teacher.email %></td>
+        <td><%= teacher.classroom_name || '—' %></td>
+        <td>
+          <button class="btn-view" onclick='openUserModal(<%- JSON.stringify(teacher) %>)'>👁️ View</button>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<hr>
+
+<h3>Students</h3>
+<div class="table-responsive">
+  <table class="user-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Classroom</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% school.students.forEach(student => { %>
+      <tr>
+        <td><%= student.full_name %></td>
+        <td><%= student.email %></td>
+        <td><%= student.classroom_name || '—' %></td>
+        <td>
+          <button class="btn-view" onclick='openUserModal(<%- JSON.stringify(student) %>)'>👁️ View</button>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<!-- User Modal -->
+<div id="userModal" class="modal" style="display:none;">
+  <div class="modal-content" style="max-width: 500px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; text-align: left;">
+    <span onclick="closeUserModal()" class="close" style="float:right;cursor:pointer;">&times;</span>
+    <h2>User Details</h2>
+    <img id="modalProfilePic" src="" alt="Profile" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;"><br><br>
+    <p><strong>Full Name:</strong> <span id="modalFullName"></span></p>
+    <p><strong>Email:</strong> <span id="modalEmail"></span></p>
+    <p><strong>Phone:</strong> <span id="modalPhone"></span></p>
+    <p><strong>Date of Birth:</strong> <span id="modalDOB"></span></p>
+    <p><strong>Gender:</strong> <span id="modalGender"></span></p>
+    <p><strong>Role:</strong> <span id="modalRole"></span></p>
+    <p><strong>Classroom:</strong> <span id="modalClassroom"></span></p>
+    <p><strong>walletBalance:</strong> ₦<span id="modalWalletBalance"></span></p>
+    <p><strong>Date Registered:</strong> <span id="modalDate"></span></p>
+  </div>
+</div>
+
+<script>
+  function openUserModal(user) {
+    document.getElementById("modalProfilePic").src = user.profile_picture || "/images/default-profile.png";
+    document.getElementById("modalFullName").innerText = user.full_name || "N/A";
+    document.getElementById("modalEmail").innerText = user.email || "N/A";
+    document.getElementById("modalPhone").innerText = user.phone || "N/A";
+    document.getElementById("modalDOB").innerText = user.dob || "N/A";
+    document.getElementById("modalGender").innerText = user.gender || "N/A";
+    document.getElementById("modalRole").innerText = user.role || "N/A";
+    document.getElementById("modalClassroom").innerText = user.classroom_name || "—";
+    document.getElementById("modalWalletBalance").innerText = user.wallet_balance || 0;
+    document.getElementById("modalDate").innerText = user.created_at || "N/A";
+
+    document.getElementById("userModal").style.display = "block";
+  }
+
+  function closeUserModal() {
+    document.getElementById("userModal").style.display = "none";
+  }
+</script>

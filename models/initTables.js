@@ -489,7 +489,8 @@ async function createTables() {
         email TEXT,
         phone TEXT,
         created_by INT REFERENCES users2(id) ON DELETE CASCADE, -- school_admin
-        created_at TIMESTAMP DEFAULT NOW()
+        created_at TIMESTAMP DEFAULT NOW(),
+        logo_url TEXT
       );
     `);
     
@@ -576,6 +577,17 @@ async function createTables() {
         classroom_id INT REFERENCES classrooms(id) ON DELETE CASCADE,
         teacher_id INT REFERENCES users2(id) ON DELETE CASCADE,
         UNIQUE (classroom_id, teacher_id)
+      );
+
+      `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS classroom_courses (
+        id SERIAL PRIMARY KEY,
+        classroom_id INT REFERENCES classrooms(id) ON DELETE CASCADE,
+        course_id INT REFERENCES courses(id) ON DELETE CASCADE,
+        assigned_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(classroom_id, course_id)
       );
 
       `);

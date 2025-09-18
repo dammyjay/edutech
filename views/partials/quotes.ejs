@@ -1,0 +1,46 @@
+<h2>💡 Request a Quote</h2>
+
+<form action="/school-admin/quotes/add" method="POST" style="margin-bottom: 15px;">
+  <input type="number" name="requested_students" placeholder="Number of students" required>
+  <input type="number" step="0.01" name="price_quote" placeholder="Proposed Price" required>
+  <button type="submit">➕ Request Quote</button>
+</form>
+
+<div class="table-responsive">
+    <table class="user-table" border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse: collapse;">
+    <thead>
+        <tr>
+        <th>ID</th>
+        <th>Requested Students</th>
+        <th>Price Quote</th>
+        <th>Status</th>
+        <th>Created At</th>
+        <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% if (quotes.length > 0) { %>
+        <% quotes.forEach(q => { %>
+            <tr>
+            <td><%= q.id %></td>
+            <td><%= q.requested_students %></td>
+            <td>₦<%= q.price_quote %></td>
+            <td><%= q.status %></td>
+            <td><%= q.created_at.toLocaleDateString() %></td>
+            <td>
+                <div class="article-buttons">
+                <form action="/school-admin/quotes/delete/<%= q.id %>" method="POST" style="display:inline;">
+                <button class="btn-delete" type="submit">🗑️ Delete</button>
+                </form>
+                </div>
+            </td>
+            </tr>
+        <% }) %>
+        <% } else { %>
+        <tr>
+            <td colspan="6" style="text-align:center;">No quotes yet.</td>
+        </tr>
+        <% } %>
+    </tbody>
+    </table>
+</div>

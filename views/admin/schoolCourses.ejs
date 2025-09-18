@@ -1,0 +1,112 @@
+<!-- 
+
+ <%- include('../partials/adminHeader', { title: 'Assign Courses' }) %>
+
+<h2>Assign Courses to Schools</h2>
+
+<form method="POST" action="/admin/school-courses/assign">
+  <% schools.forEach(school => { %>
+    <div class="school-section">
+      <h3><%= school.name %></h3>
+
+      <% courses.forEach(course => { %>
+        <label>
+          <input 
+            type="checkbox" 
+            name="school_<%= school.id %>[]" 
+            value="<%= course.id %>"
+            <% if (schoolCoursesMap[school.id] && schoolCoursesMap[school.id].includes(course.id)) { %> checked <% } %>
+          >
+          <%= course.title %>
+        </label><br>
+      <% }) %>
+
+      <button type="submit" name="school_id" value="<%= school.id %>">Assign Courses</button>
+      <hr>
+    </div>
+  <% }) %>
+</form>
+ -->
+
+
+ <%- include('../partials/adminHeader', { title: 'Assign Courses' }) %>
+
+<h2>Assign Courses to Schools</h2>
+
+<% if (schools.length === 0) { %>
+  <p>No schools found.</p>
+<% } else if (courses.length === 0) { %>
+  <p>No courses available to assign.</p>
+<% } else { %>
+
+<form method="POST" action="/admin/school-courses/assign">
+  <% schools.forEach(school => { %>
+    <div class="school-section">
+      <h3>
+        <button type="button" class="collapse-btn" onclick="toggleCourses('<%= school.id %>')">
+          <%= school.name %> ▾
+        </button>
+      </h3>
+
+      <div id="courses-<%= school.id %>" class="courses-list" style="display:none; margin-left: 20px;">
+        <input type="text" placeholder="Search courses..." class="course-search" onkeyup="filterCourses('<%= school.id %>')">
+        <br><br>
+        <% courses.forEach(course => { %>
+          <label class="course-item">
+            <input 
+              type="checkbox" 
+              name="school_<%= school.id %>[]" 
+              value="<%= course.id %>"
+              <% if (schoolCoursesMap[school.id] && schoolCoursesMap[school.id].includes(course.id)) { %> checked <% } %>
+            >
+            <%= course.title %>
+          </label><br>
+        <% }) %>
+        <br>
+        <button type="submit" name="school_id" value="<%= school.id %>">Assign Courses</button>
+      </div>
+      <hr>
+    </div>
+  <% }) %>
+</form>
+
+<% } %>
+
+<script>
+  function toggleCourses(schoolId) {
+    const div = document.getElementById('courses-' + schoolId);
+    div.style.display = div.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function filterCourses(schoolId) {
+    const input = document.querySelector('#courses-' + schoolId + ' .course-search');
+    const filter = input.value.toLowerCase();
+    const items = document.querySelectorAll('#courses-' + schoolId + ' .course-item');
+
+    items.forEach(item => {
+      const text = item.textContent || item.innerText;
+      item.style.display = text.toLowerCase().includes(filter) ? '' : 'none';
+    });
+  }
+</script>
+
+<style>
+  .collapse-btn {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .courses-list input[type="text"] {
+    width: 100%;
+    padding: 5px;
+    margin-bottom: 10px;
+  }
+
+  .course-item {
+    display: block;
+    margin-bottom: 5px;
+  }
+</style>

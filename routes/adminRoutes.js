@@ -201,34 +201,11 @@ router.post(
 );
 router.post("/modules/delete/:id", learningController.deleteModule);
 
-// Lessons
-// router.get("/lessons", adminController.getLessons);
-// router.post("/admin/modules/:id/lessons", upload.single(video_url), learningController.createLesson);
-// router.post("/admin/lessons/:id/edit", learningController.editLesson);
-// router.post("/admin/lessons/:id/delete", learningController.deleteLesson);
-
-// router.post(
-//   "/lessons/create",
-//   upload.single("video_url"),
-//   learningController.createLesson
-// );
-
-// router.post(
-//   "/lessons/:id/edit",
-//   upload.single("video_url"),
-//   learningController.editLesson
-// );
 
 router.post("/lessons/create", upload.none(), learningController.createLesson);
 router.post("/lessons/:id/edit", upload.none(), learningController.editLesson);
 router.post("/lessons/:id/delete", learningController.deleteLesson);
 router.get("/lessons/:id/json", learningController.getLessonJSON);
-
-
-// Quiz
-// router.post("/admin/lessons/:id/quiz", learningController.createQuiz);
-// router.post("/admin/quizzes/:id/questions", learningController.addQuizQuestion);
-// router.post("/admin/quizzes/:id/delete", learningController.deleteQuiz);
 
 // Get or create quiz for lesson
 router.get("/lesson/:lessonId/quiz", learningController.getOrCreateLessonQuiz);
@@ -269,13 +246,6 @@ router.post(
 
 // Delete question
 router.post("/quiz-question/:id/delete", learningController.deleteQuizQuestion);
-
-// Handle lesson assignment
-// router.post("/admin/lessons/:id/assignment", learningController.createAssignment);
-
-// Handle module assignment using same function
-// View single course with assignments tab support
-// router.get("/courses/:id", learningController.viewCourseWithAssignments);
 
 router.post(
   "/assignments/create",
@@ -345,5 +315,20 @@ router.get(
   "/student/:studentId/course-summary/:courseId/download",
   adminController.downloadCourseSummary
 );
+
+// routes/admin.js
+router.get("/schools", adminController.getSchools);
+router.get("/schools/:id", adminController.getSchoolDetails);
+
+// for quotes and course assignment
+router.get("/quotes", adminController.getQuotes);
+router.get("/school-courses", adminController.getSchoolCourses);
+router.post("/school-courses/assign", adminController.assignSchoolCourses);
+
+
+
+// routes/admin.js
+router.post("/quotes/:id/approve", adminController.approveQuote);
+router.post("/quotes/:id/reject", adminController.rejectQuote);
 
 module.exports = router;

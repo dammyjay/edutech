@@ -117,14 +117,33 @@
         </div>
 
         <!-- Extra fields for School Admin -->
-        <div id="school-admin-fields" style="display:none;">
+        <!-- <div id="school-admin-fields" style="display:none;">
           <div class="container">
             <input type="text" name="schoolName" placeholder="School Name" />
           </div>
           <div class="container">
             <input type="text" name="schoolAddress" placeholder="School Address" />
           </div>
-        </div>
+        </div> -->
+
+        <!-- Extra fields for School Admin -->
+<div id="school-admin-fields" style="display:none;">
+  <div class="container">
+    <input type="text" name="schoolName" placeholder="School Name" />
+  </div>
+  <div class="container">
+    <input type="text" name="schoolAddress" placeholder="School Address" />
+  </div>
+  <div class="container">
+    <label for="schoolLogo">Upload School Logo:</label>
+    <input type="file" id="schoolLogo" name="schoolLogo" accept="image/*" />
+  </div>
+  <!-- Optional: Preview -->
+  <div class="preview-container">
+    <img id="schoolLogoPreview" style="display:none;width:80px;height:80px;border-radius:50%;" alt="School Logo Preview">
+  </div>
+</div>
+
 
         <!-- Extra fields for Teacher/School Student -->
         <div id="school-id-field" style="display:none;">
@@ -226,26 +245,51 @@
 
       };
 
+      // async function verifyOtp() {
+      //   const otp = document.getElementById("otp-input").value;
+      //   const email = document.querySelector("input[name='email']").value;
+
+      //   const res = await fetch("/verify-otp", {
+      //     method: "POST",
+      //     headers: { "Content-Type": "application/json" },
+      //     body: JSON.stringify({ email, otp }),
+      //   });
+
+      //   const result = await res.text();
+      //   alert(result);
+
+      //   if (result.includes("success")) {
+      //     // Wait 2 seconds and redirect to login
+      //     setTimeout(() => {
+      //       window.location.href = "/admin/login";
+      //     }, 1000);
+      //   }
+      // }
+
       async function verifyOtp() {
-        const otp = document.getElementById("otp-input").value;
-        const email = document.querySelector("input[name='email']").value;
+  const otp = document.getElementById("otp-input").value;
+  const email = document.querySelector("input[name='email']").value;
 
-        const res = await fetch("/verify-otp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, otp }),
-        });
+  const res = await fetch("/verify-otp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, otp }),
+  });
 
-        const result = await res.text();
-        alert(result);
+  const data = await res.json();
+  alert(data.message); // show school ID alert
 
-        if (result.includes("success")) {
-          // Wait 2 seconds and redirect to login
-          setTimeout(() => {
-            window.location.href = "/admin/login";
-          }, 1000);
-        }
-      }
+  if (data.success) {
+    // Hide OTP modal
+    document.getElementById("otp-modal").style.display = "none";
+
+    // Redirect to login
+    setTimeout(() => {
+      window.location.href = "/admin/login";
+    }, 1000);
+  }
+}
+
 
       const passwordInput = document.getElementById("password");
       const togglePassword = document.getElementById("togglePassword");
@@ -316,6 +360,24 @@
           console.error("Error checking school:", err);
         }
       });
+
+      const schoolLogoInput = document.getElementById("schoolLogo");
+const schoolLogoPreview = document.getElementById("schoolLogoPreview");
+
+schoolLogoInput.addEventListener("change", function () {
+  const file = this.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      schoolLogoPreview.src = e.target.result;
+      schoolLogoPreview.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+  } else {
+    schoolLogoPreview.style.display = "none";
+  }
+});
+
 
     </script>
   </body>

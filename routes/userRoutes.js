@@ -5,7 +5,13 @@ const userController = require("../controllers/userController");
 const upload = require("../middlewares/upload");
 const { ensureParent } = require("../middlewares/auth");
 
-router.post("/signup", upload.single("profile_picture"), userController.signup);
+// router.post("/signup", upload.single("profile_picture"), userController.signup);
+// Route
+router.post("/signup", upload.fields([
+  { name: "profile_picture", maxCount: 1 },
+  { name: "schoolLogo", maxCount: 1 }
+]), userController.signup);
+
 router.get("/signup", userController.showSignup);
 router.post("/verify-otp", userController.verifyOtp);
 

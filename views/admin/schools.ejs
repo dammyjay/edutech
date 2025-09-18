@@ -1,0 +1,31 @@
+<%- include('../partials/adminHeader', { title: 'Schools' }) %>
+
+<h2>All Registered Schools</h2>
+<div class="table-responsive">
+  <table class="user-table" style="width:100%; margin-top:20px;">
+    <thead>
+      <tr>
+        <th>School Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>No. of Students</th>
+        <th>No. of Teachers</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% schools.forEach(school => { %>
+        <tr>
+          <td><%= school.name %></td>
+          <td><%= school.email %></td>
+          <td><%= school.phone %></td>
+          <td><%= school.student_count %></td>
+          <td><%= school.teacher_count %></td>
+          <td>
+            <a href="/admin/schools/<%= school.id %>" class="btn-edit">👁️ View</a>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>

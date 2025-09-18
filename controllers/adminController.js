@@ -1041,192 +1041,6 @@ exports.viewStudentDetails = async (req, res) => {
   }
 };
 
-// exports.viewStudentProgress = async (req, res) => {
-//   try {
-//     const infoResult = await pool.query(
-//       "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
-//     );
-//     const info = infoResult.rows[0];
-//     const { id } = req.params;
-
-//     // ✅ Get student info
-//     const studentRes = await pool.query(
-//       `SELECT id, fullname, email, created_at
-//        FROM users2 WHERE id = $1`,
-//       [id]
-//     );
-//     if (!studentRes.rows.length)
-//       return res.status(404).send("Student not found");
-//     const student = studentRes.rows[0];
-
-//     // ✅ Courses
-//     const coursesRes = await pool.query(
-//       `
-//       SELECT c.id, c.title AS course_title, e.enrolled_at
-//       FROM courses c
-//       JOIN course_enrollments e ON e.course_id = c.id
-//       WHERE e.user_id = $1
-//       ORDER BY c.title;
-//       `,
-//       [id]
-//     );
-
-//     // ✅ Modules per course
-//     const modulesRes = await pool.query(
-//       `
-//       SELECT m.id, m.title AS module_title, m.course_id
-//       FROM modules m
-//       LEFT JOIN unlocked_modules um ON um.module_id = m.id AND um.student_id = $1
-//       ORDER BY m.title;
-//       `,
-//       [id]
-//     );
-
-//     // ✅ Lessons per module
-//     const lessonsRes = await pool.query(
-//       `
-//       SELECT l.id, l.title AS lesson_title, l.module_id, ulp.completed_at
-//       FROM lessons l
-//       LEFT JOIN user_lesson_progress ulp
-//         ON ulp.lesson_id = l.id AND ulp.user_id = $1
-//       ORDER BY l.title;
-//       `,
-//       [id]
-//     );
-
-//     // ✅ Quizzes
-//     const quizzesRes = await pool.query(
-//       `
-//       SELECT q.id, q.title, l.module_id, qs.score, qs.created_at AS taken_at, l.title AS lesson_title
-//       FROM quiz_submissions qs
-//       JOIN quizzes q ON qs.quiz_id = q.id
-//       JOIN lessons l ON q.lesson_id = l.id
-//       WHERE qs.student_id = $1
-//       ORDER BY qs.created_at DESC;
-//       `,
-//       [id]
-//     );
-
-//     // ✅ Assignments
-//     const assignmentsRes = await pool.query(
-//       `
-//       SELECT ma.id, ma.title, ma.module_id, s.total, s.grade, s.ai_feedback, s.created_at AS submitted_at
-//       FROM assignment_submissions s
-//       JOIN module_assignments ma ON s.assignment_id = ma.id
-//       WHERE s.student_id = $1
-//       ORDER BY s.created_at DESC;
-//       `,
-//       [id]
-//     );
-
-//     // --- Build Nested Structure ---
-//     const courses = coursesRes.rows.map((course) => {
-//       const courseModules = modulesRes.rows.filter(
-//         (m) => m.course_id === course.id
-//       );
-
-//       const modules = courseModules.map((module) => {
-//         const moduleLessons = lessonsRes.rows.filter(
-//           (l) => l.module_id === module.id
-//         );
-
-//         // Progress calculation
-//         const totalLessons = moduleLessons.length;
-//         const completedLessons = moduleLessons.filter(
-//           (l) => l.completed_at
-//         ).length;
-//         const modulePercent = totalLessons
-//           ? Math.round((completedLessons / totalLessons) * 100)
-//           : 0;
-
-//         // Quizzes & Assignments under this module
-//         const moduleQuizzes = quizzesRes.rows.filter(
-//           (q) => q.module_id === module.id
-//         );
-//         const moduleAssignments = assignmentsRes.rows.filter(
-//           (a) => a.module_id === module.id
-//         );
-
-//         const quizAvg = moduleQuizzes.length
-//           ? Math.round(
-//               moduleQuizzes.reduce((a, q) => a + q.score, 0) /
-//                 moduleQuizzes.length
-//             )
-//           : null;
-
-//         const assignmentAvg = moduleAssignments.length
-//           ? Math.round(
-//               moduleAssignments.reduce((a, x) => a + (x.total || 0), 0) /
-//                 moduleAssignments.length
-//             )
-//           : null;
-
-//         return {
-//           ...module,
-//           lessons: moduleLessons,
-//           totalLessons,
-//           completedLessons,
-//           percent: modulePercent,
-//           quizAvg,
-//           assignmentAvg,
-//           assignments: moduleAssignments,
-//         };
-//       });
-
-//       // Course progress (aggregate of module lessons)
-//       const totalLessons = modules.reduce((sum, m) => sum + m.totalLessons, 0);
-//       const completedLessons = modules.reduce(
-//         (sum, m) => sum + m.completedLessons,
-//         0
-//       );
-//       const coursePercent = totalLessons
-//         ? Math.round((completedLessons / totalLessons) * 100)
-//         : 0;
-
-//       return {
-//         ...course,
-//         modules,
-//         totalLessons,
-//         completedLessons,
-//         percent: coursePercent,
-//       };
-//     });
-
-//     // --- Compute overall averages ---
-//     const allQuizzes = quizzesRes.rows;
-//     const allAssignments = assignmentsRes.rows;
-
-//     const quizAvg =
-//       allQuizzes.length > 0
-//         ? Math.round(
-//             allQuizzes.reduce((a, q) => a + q.score, 0) / allQuizzes.length
-//           )
-//         : null;
-
-//     const assignmentAvg =
-//       allAssignments.length > 0
-//         ? Math.round(
-//             allAssignments.reduce((a, x) => a + (x.total || 0), 0) /
-//               allAssignments.length
-//           )
-//         : null;
-
-//     // ✅ Pass everything to EJS
-//     res.render("admin/studentProgress", {
-//       student,
-//       courses,
-//       quizzes: allQuizzes,
-//       assignments: allAssignments,
-//       quizAvg,
-//       assignmentAvg,
-//       info
-//     });
-//   } catch (err) {
-//     console.error("View student progress error:", err.message);
-//     res.status(500).send("Failed to fetch progress");
-//   }
-// };
-
 exports.viewStudentProgress = async (req, res) => {
   try {
     const infoResult = await pool.query(
@@ -1510,321 +1324,6 @@ exports.assignChildToParent = async (req, res) => {
 // };
 
 
-
-// exports.downloadCourseSummary = async (req, res) => {
-//   const { studentId, courseId } = req.params;
-
-//   try {
-//     // --- Student info
-//     const studentResult = await pool.query(
-//       "SELECT fullname, email FROM students WHERE id = $1",
-//       [studentId]
-//     );
-//     const student = studentResult.rows[0];
-
-//     // --- Course info
-//     const courseResult = await pool.query(
-//       `SELECT c.id, c.title AS course_title
-//        FROM student_courses sc
-//        JOIN courses c ON sc.course_id = c.id
-//        WHERE sc.student_id = $1 AND c.id = $2`,
-//       [studentId, courseId]
-//     );
-//     const course = courseResult.rows[0];
-
-//     // --- Modules + Lessons + Quizzes + Assignments
-//     const modulesResult = await pool.query(
-//       `SELECT m.id, m.title AS module_title,
-//               COALESCE(sm.percent, 0) AS percent
-//        FROM modules m
-//        LEFT JOIN student_modules sm ON sm.module_id = m.id AND sm.student_id = $1
-//        WHERE m.course_id = $2`,
-//       [studentId, courseId]
-//     );
-//     const modules = modulesResult.rows;
-
-//     // --- Lessons
-//     const lessonsResult = await pool.query(
-//       `SELECT l.id, l.title AS lesson_title, l.module_id,
-//               sl.completed_at
-//        FROM lessons l
-//        LEFT JOIN student_lessons sl ON sl.lesson_id = l.id AND sl.student_id = $1
-//        WHERE l.course_id = $2
-//        ORDER BY l.module_id, l.id`,
-//       [studentId, courseId]
-//     );
-
-//     // --- Quizzes
-//     const quizzesResult = await pool.query(
-//       `SELECT q.id, q.title, q.lesson_id, sq.score, sq.taken_at
-//        FROM quizzes q
-//        LEFT JOIN student_quizzes sq ON sq.quiz_id = q.id AND sq.student_id = $1
-//        WHERE q.course_id = $2
-//        ORDER BY q.lesson_id, q.id`,
-//       [studentId, courseId]
-//     );
-
-//     // --- Assignments
-//     const assignmentsResult = await pool.query(
-//       `SELECT a.id, a.title, a.module_id,
-//               sa.total AS score, sa.grade, sa.ai_feedback, sa.submitted_at
-//        FROM assignments a
-//        LEFT JOIN student_assignments sa ON sa.assignment_id = a.id AND sa.student_id = $1
-//        WHERE a.course_id = $2
-//        ORDER BY a.module_id, a.id`,
-//       [studentId, courseId]
-//     );
-
-//     const lessons = lessonsResult.rows;
-//     const quizzes = quizzesResult.rows;
-//     const assignments = assignmentsResult.rows;
-
-//     // ✅ Create PDF
-//     const doc = new PDFDocument({ margin: 40 });
-//     res.setHeader("Content-Type", "application/pdf");
-//     res.setHeader(
-//       "Content-Disposition",
-//       `attachment; filename=${course.course_title}-summary.pdf`
-//     );
-//     doc.pipe(res);
-
-//     // --- Header
-//     doc.fontSize(20).text("📊 Student Course Summary", { align: "center" });
-//     doc.moveDown();
-//     doc.fontSize(14).text(`👤 Student: ${student.fullname}`);
-//     doc.text(`📧 Email: ${student.email}`);
-//     doc.text(`🎓 Course: ${course.course_title}`);
-//     doc.moveDown();
-
-//     // --- Modules with details
-//     for (const m of modules) {
-//       doc
-//         .fontSize(16)
-//         .fillColor("blue")
-//         .text(`📦 ${m.module_title} — ${m.percent}% complete`);
-//       doc.moveDown(0.3);
-
-//       // Lessons under module
-//       const moduleLessons = lessons.filter((l) => l.module_id === m.id);
-//       if (moduleLessons.length) {
-//         doc.fontSize(13).fillColor("black").text("📚 Lessons:");
-//         moduleLessons.forEach((l) => {
-//           doc
-//             .fontSize(12)
-//             .text(
-//               `- ${l.lesson_title} — ${
-//                 l.completed_at ? "✅ Completed" : "❌ Not completed"
-//               }`
-//             );
-
-//           // Quizzes for this lesson
-//           const lessonQuizzes = quizzes.filter((q) => q.lesson_id === l.id);
-//           if (lessonQuizzes.length) {
-//             lessonQuizzes.forEach((q) => {
-//               doc
-//                 .fontSize(11)
-//                 .fillColor("darkgreen")
-//                 .text(
-//                   `   📝 Quiz: ${q.title} — Score: ${q.score ?? "N/A"} (${
-//                     q.taken_at
-//                       ? new Date(q.taken_at).toLocaleDateString()
-//                       : "Not taken"
-//                   })`
-//                 );
-//             });
-//           }
-//         });
-//         doc.moveDown(0.5);
-//       }
-
-//       // Assignments under module
-//       const moduleAssignments = assignments.filter((a) => a.module_id === m.id);
-//       if (moduleAssignments.length) {
-//         doc.fontSize(13).fillColor("black").text("📑 Assignments:");
-//         moduleAssignments.forEach((a) => {
-//           doc
-//             .fontSize(11)
-//             .fillColor("purple")
-//             .text(
-//               `- ${a.title} — Score: ${a.score ?? "Pending"}, Grade: ${
-//                 a.grade ?? "-"
-//               }, Feedback: ${a.ai_feedback ?? "No feedback"}, Submitted: ${
-//                 a.submitted_at
-//                   ? new Date(a.submitted_at).toLocaleDateString()
-//                   : "Not submitted"
-//               }`
-//             );
-//         });
-//         doc.moveDown(0.5);
-//       }
-
-//       doc.moveDown();
-//     }
-
-//     doc.end();
-//   } catch (err) {
-//     console.error("PDF Error:", err);
-//     res.status(500).send("Error generating summary PDF");
-//   }
-// };
-
-// exports.downloadCourseSummary = async (req, res) => {
-//   const { studentId, courseId } = req.params;
-
-//   try {
-//     // --- Student info
-//     const studentRes = await pool.query(
-//       `SELECT fullname, email FROM users2 WHERE id = $1`,
-//       [studentId]
-//     );
-//     const student = studentRes.rows[0];
-
-//     // --- Course info
-//     const courseRes = await pool.query(
-//       `SELECT title FROM courses WHERE id = $1`,
-//       [courseId]
-//     );
-//     const course = courseRes.rows[0];
-
-//     // --- Modules
-//     const modulesRes = await pool.query(
-//       `SELECT id, title FROM modules WHERE course_id = $1`,
-//       [courseId]
-//     );
-//     const modules = modulesRes.rows;
-
-//     // --- Lessons
-//     const lessonsRes = await pool.query(
-//       `SELECT l.id, l.title, l.module_id, ulp.completed_at
-//        FROM lessons l
-//        LEFT JOIN user_lesson_progress ulp
-//          ON ulp.lesson_id = l.id AND ulp.user_id = $1
-//        WHERE l.course_id = $2
-//        ORDER BY l.id`,
-//       [studentId, courseId]
-//     );
-//     const lessons = lessonsRes.rows;
-
-//     // --- Quizzes
-//     const quizzesRes = await pool.query(
-//       `SELECT q.id, q.title, l.module_id, qs.score, qs.created_at AS taken_at
-//        FROM quizzes q
-//        LEFT JOIN quiz_submissions qs
-//          ON qs.quiz_id = q.id AND qs.student_id = $1
-//        JOIN lessons l ON q.lesson_id = l.id
-//        WHERE q.course_id = $2
-//        ORDER BY q.id`,
-//       [studentId, courseId]
-//     );
-//     const quizzes = quizzesRes.rows;
-
-//     // --- Assignments
-//     const assignmentsRes = await pool.query(
-//       `SELECT ma.id, ma.title, ma.module_id, s.total, s.grade, s.ai_feedback, s.created_at AS submitted_at
-//        FROM module_assignments ma
-//        LEFT JOIN assignment_submissions s
-//          ON s.assignment_id = ma.id AND s.student_id = $1
-//        WHERE ma.course_id = $2
-//        ORDER BY ma.id`,
-//       [studentId, courseId]
-//     );
-//     const assignments = assignmentsRes.rows;
-
-//     // --- PDF headers
-//     res.setHeader(
-//       "Content-Disposition",
-//       `attachment; filename=${course.title.replace(/\s+/g, "_")}_report.pdf`
-//     );
-//     res.setHeader("Content-Type", "application/pdf");
-
-//     // --- Create streaming PDF
-//     const doc = new PDFDocument({ margin: 40 });
-//     doc.pipe(res);
-
-//     // --- Title
-//     doc.fontSize(20).text("📊 Student Progress Report", { align: "center" });
-//     doc.moveDown();
-//     doc.fontSize(12).text(`👤 Student: ${student.fullname}`);
-//     doc.text(`📧 Email: ${student.email}`);
-//     doc.text(`🎓 Course: ${course.title}`);
-//     doc.moveDown();
-
-//     // --- Loop through modules
-//     for (const m of modules) {
-//       doc
-//         .fontSize(14)
-//         .fillColor("blue")
-//         .text(`📦 Module: ${m.title}`, { underline: true });
-//       doc.moveDown(0.3);
-
-//       // Lessons
-//       const moduleLessons = lessons.filter((l) => l.module_id === m.id);
-//       if (moduleLessons.length) {
-//         doc.fontSize(12).fillColor("black").text("📚 Lessons:");
-//         moduleLessons.forEach((l) => {
-//           doc
-//             .fontSize(11)
-//             .text(
-//               `- ${l.title} — ${
-//                 l.completed_at ? "✅ Completed" : "❌ Not completed"
-//               }`
-//             );
-//         });
-//         doc.moveDown(0.5);
-//       }
-
-//       // Quizzes
-//       const moduleQuizzes = quizzes.filter((q) => q.module_id === m.id);
-//       if (moduleQuizzes.length) {
-//         doc.fontSize(12).fillColor("black").text("📝 Quizzes:");
-//         moduleQuizzes.forEach((q) => {
-//           doc
-//             .fontSize(11)
-//             .fillColor("darkgreen")
-//             .text(
-//               `- ${q.title} — Score: ${q.score ?? "N/A"} (${
-//                 q.taken_at
-//                   ? new Date(q.taken_at).toLocaleDateString()
-//                   : "Not taken"
-//               })`
-//             );
-//         });
-//         doc.moveDown(0.5);
-//       }
-
-//       // Assignments
-//       const moduleAssignments = assignments.filter((a) => a.module_id === m.id);
-//       if (moduleAssignments.length) {
-//         doc.fontSize(12).fillColor("black").text("📑 Assignments:");
-//         moduleAssignments.forEach((a) => {
-//           doc
-//             .fontSize(11)
-//             .fillColor("purple")
-//             .text(
-//               `- ${a.title} — Score: ${a.total ?? "Pending"}, Grade: ${
-//                 a.grade ?? "-"
-//               }, Feedback: ${a.ai_feedback ?? "No feedback"}, Submitted: ${
-//                 a.submitted_at
-//                   ? new Date(a.submitted_at).toLocaleDateString()
-//                   : "Not submitted"
-//               }`
-//             );
-//         });
-//         doc.moveDown(0.5);
-//       }
-
-//       doc.moveDown();
-//     }
-
-//     doc.end(); // ✅ end the PDF stream
-//   } catch (err) {
-//     console.error("PDF Error:", err);
-//     res.status(500).send("Error generating summary PDF");
-//   }
-// };
-
-
-
 exports.downloadCourseSummary = async (req, res) => {
   const { studentId, courseId } = req.params;
 
@@ -2044,9 +1543,380 @@ exports.downloadCourseSummary = async (req, res) => {
   }
 };
 
+// 📌 GET: All Schools
+// exports.getSchools = async (req, res) => {
+//   try {
+//     const result = await pool.query("SELECT * FROM schools");
+//     const schools = result.rows;
+
+//     res.render("admin/schools", {
+//       info: req.companyInfo || {},
+//       schools,
+//       currentPage: "schools",
+//     });
+//   } catch (err) {
+//     console.error("Error fetching schools:", err);
+//     res.status(500).send("Error loading schools");
+//   }
+// };
+
+exports.getSchools = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        s.id,
+        s.name,
+        s.email,
+        s.phone,
+        COUNT(*) FILTER (WHERE us.role_in_school = 'student') AS student_count,
+        COUNT(*) FILTER (WHERE us.role_in_school = 'teacher') AS teacher_count
+      FROM schools s
+      LEFT JOIN user_school us ON s.id = us.school_id
+      GROUP BY s.id
+      ORDER BY s.created_at DESC
+    `);
+
+    res.render("admin/schools", {
+      info: req.companyInfo || {},
+      schools: result.rows,
+      currentPage: "schools",
+    });
+  } catch (err) {
+    console.error("Error fetching schools:", err);
+    res.status(500).send("Error loading schools");
+  }
+};
+
+
+// 📌 GET: Single School Details
+// exports.getSchoolDetails = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     // Fetch school
+//     const schoolResult = await pool.query(
+//       "SELECT * FROM schools WHERE id = $1",
+//       [id]
+//     );
+//     const school = schoolResult.rows[0];
+//     if (!school) return res.status(404).send("School not found");
+
+//     // Fetch related students
+//     const studentsResult = await pool.query(
+//       `
+//       SELECT u.*
+//       FROM user_school us
+//       JOIN users2 u ON us.user_id = u.id
+//       WHERE us.school_id = $1 AND us.role_in_school = 'student'
+//     `,
+//       [id]
+//     );
+
+//     // Fetch related teachers
+//     const teachersResult = await pool.query(
+//       `
+//       SELECT u.*
+//       FROM user_school us
+//       JOIN users2 u ON us.user_id = u.id
+//       WHERE us.school_id = $1 AND us.role_in_school = 'teacher'
+//     `,
+//       [id]
+//     );
+
+//     // Fetch classrooms
+//     const classroomsResult = await pool.query(
+//       `
+//       SELECT *
+//       FROM classrooms
+//       WHERE school_id = $1
+//       ORDER BY created_at DESC
+//     `,
+//       [id]
+//     );
+
+//     // Attach to school object
+//     school.students = studentsResult.rows;
+//     school.teachers = teachersResult.rows;
+//     school.classrooms = classroomsResult.rows;
+
+//     res.render("admin/school-details", {
+//       info: req.companyInfo || {},
+//       school,
+//       currentPage: "schools",
+//     });
+//   } catch (err) {
+//     console.error("Error fetching school details:", err);
+//     res.status(500).send("Error loading school details");
+//   }
+// };
+
+// 📌 GET: Single School Details
+exports.getSchoolDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Fetch school
+    const schoolResult = await pool.query(
+      "SELECT * FROM schools WHERE id = $1",
+      [id]
+    );
+    const school = schoolResult.rows[0];
+    if (!school) return res.status(404).send("School not found");
+
+    // Fetch students with classroom names
+    const studentsResult = await pool.query(
+      `
+  SELECT u.id, 
+         u.fullname AS full_name,
+         u.email,
+         u.phone,
+         u.dob,
+         u.gender,
+         u.role,
+         u.wallet_balance,
+         u.created_at,
+         c.name AS classroom_name
+  FROM user_school us
+  JOIN users2 u ON us.user_id = u.id
+  LEFT JOIN classrooms c ON us.classroom_id = c.id
+  WHERE us.school_id = $1 AND us.role_in_school = 'student'
+  `,
+      [id]
+    );
+
+    // Fetch teachers with classroom names
+    const teachersResult = await pool.query(
+      `
+  SELECT u.id, 
+         u.fullname AS full_name,
+         u.email,
+         u.phone,
+         u.dob,
+         u.gender,
+         u.role,
+         u.wallet_balance,
+         u.created_at,
+         c.name AS classroom_name
+  FROM user_school us
+  JOIN users2 u ON us.user_id = u.id
+  LEFT JOIN classrooms c ON us.classroom_id = c.id
+  WHERE us.school_id = $1 AND us.role_in_school = 'teacher'
+  `,
+      [id]
+    );
+
+    // Fetch classrooms
+    const classroomsResult = await pool.query(
+      `
+      SELECT * FROM classrooms WHERE school_id = $1 ORDER BY created_at DESC
+    `,
+      [id]
+    );
+
+    // Fetch quotes for this school
+    const quotesResult = await pool.query(
+      `
+      SELECT * FROM quotes WHERE school_id = $1 ORDER BY created_at DESC
+    `,
+      [id]
+    );
+
+    // Attach to school object
+    school.students = studentsResult.rows;
+    school.teachers = teachersResult.rows;
+    school.classrooms = classroomsResult.rows;
+
+    res.render("admin/school-details", {
+      info: req.companyInfo || {},
+      school,
+      quotes: quotesResult.rows, // ✅ Pass quotes here
+      currentPage: "schools",
+    });
+  } catch (err) {
+    console.error("Error fetching school details:", err);
+    res.status(500).send("Error loading school details");
+  }
+};
+
+
+// 📌 GET: Quotes
+exports.getQuotes = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT q.*, s.name AS school_name 
+       FROM quotes q 
+       JOIN schools s ON q.school_id = s.id`
+    );
+    const quotes = result.rows;
+
+    res.render("admin/quotes", {
+      info: req.companyInfo || {},
+      quotes,
+      currentPage: "quotes",
+    });
+  } catch (err) {
+    console.error("Error fetching quotes:", err);
+    res.status(500).send("Error loading quotes");
+  }
+};
+
+// 📌 GET: School Courses (assignments)
+// exports.getSchoolCourses = async (req, res) => {
+//   try {
+//     // Fetch all schools
+//     const schoolsResult = await pool.query(`SELECT * FROM schools`);
+//     const schools = schoolsResult.rows;
+
+//     // Fetch all courses
+//     const coursesResult = await pool.query(`SELECT * FROM courses`);
+//     const courses = coursesResult.rows;
+
+//     // Fetch assigned courses for each school
+//     const schoolCoursesResult = await pool.query(`
+//       SELECT school_id, course_id
+//       FROM school_courses
+//     `);
+//     const schoolCoursesMap = {};
+//     schoolCoursesResult.rows.forEach(sc => {
+//       if (!schoolCoursesMap[sc.school_id]) schoolCoursesMap[sc.school_id] = [];
+//       schoolCoursesMap[sc.school_id].push(sc.course_id);
+//     });
+
+//     res.render("admin/schoolCourses", {
+//       info: req.companyInfo || {},
+//       schools,
+//       courses,
+//       schoolCoursesMap,
+//       currentPage: "school-courses",
+//     });
+//   } catch (err) {
+//     console.error("Error fetching school courses:", err);
+//     res.status(500).send("Error loading school courses");
+//   }
+// };
+
+// exports.getSchoolCourses = async (req, res) => {
+//   try {
+//     // Fetch all schools
+//     const schoolsResult = await pool.query(
+//       `SELECT * FROM schools ORDER BY name`
+//     );
+//     const schools = schoolsResult.rows;
+
+//     // Fetch all courses
+//     const coursesResult = await pool.query(
+//       `SELECT * FROM courses ORDER BY title`
+//     );
+//     const courses = coursesResult.rows;
+
+//     // Fetch already assigned courses for mapping
+//     const mappingResult = await pool.query(`SELECT * FROM school_courses`);
+//     const schoolCoursesMap = {};
+//     mappingResult.rows.forEach((sc) => {
+//       if (!schoolCoursesMap[sc.school_id]) schoolCoursesMap[sc.school_id] = [];
+//       schoolCoursesMap[sc.school_id].push(sc.course_id);
+//     });
+
+//     res.render("admin/schoolCourses", {
+//       info: req.companyInfo || {},
+//       schools,
+//       courses,
+//       schoolCoursesMap,
+//       currentPage: "school-courses",
+//     });
+//   } catch (err) {
+//     console.error("Error fetching school courses:", err);
+//     res.status(500).send("Error loading school courses");
+//   }
+// };
+
+exports.getSchoolCourses = async (req, res) => {
+  try {
+    // Fetch all schools
+    const schoolsResult = await pool.query(
+      `SELECT * FROM schools ORDER BY name`
+    );
+    const schools = schoolsResult.rows;
+
+    // Fetch all courses
+    const coursesResult = await pool.query(
+      `SELECT * FROM courses ORDER BY title`
+    );
+    const courses = coursesResult.rows;
+
+    // Fetch currently assigned courses
+    const assignmentsResult = await pool.query(`SELECT * FROM school_courses`);
+    const schoolCoursesMap = {};
+    assignmentsResult.rows.forEach((row) => {
+      if (!schoolCoursesMap[row.school_id])
+        schoolCoursesMap[row.school_id] = [];
+      schoolCoursesMap[row.school_id].push(row.course_id);
+    });
+
+    res.render("admin/schoolCourses", {
+      info: req.companyInfo || {},
+      schools,
+      courses,
+      schoolCoursesMap,
+      currentPage: "school-courses",
+    });
+  } catch (err) {
+    console.error("Error fetching school courses:", err);
+    res.status(500).send("Error loading school courses");
+  }
+};
 
 
 
 
+exports.approveQuote = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query("UPDATE quotes SET status = 'approved' WHERE id = $1", [
+      id,
+    ]);
+    res.redirect("/admin/quotes");
+  } catch (err) {
+    console.error("Error approving quote:", err);
+    res.status(500).send("Error approving quote");
+  }
+};
 
+exports.rejectQuote = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query("UPDATE quotes SET status = 'rejected' WHERE id = $1", [
+      id,
+    ]);
+    res.redirect("/admin/quotes");
+  } catch (err) {
+    console.error("Error rejecting quote:", err);
+    res.status(500).send("Error rejecting quote");
+  }
+};
+
+// 📌 POST: Assign Courses to School
+exports.assignSchoolCourses = async (req, res) => {
+  try {
+    const { school_id } = req.body;
+
+    if (!school_id) return res.status(400).send("School ID is required");
+
+    // Remove old assignments for this school
+    await pool.query("DELETE FROM school_courses WHERE school_id = $1", [school_id]);
+
+    // Get selected courses
+    const courseIds = req.body[`school_${school_id}`] || [];
+
+    if (courseIds.length > 0) {
+      const insertValues = courseIds.map(id => `(${school_id}, ${id})`).join(",");
+      await pool.query(`INSERT INTO school_courses (school_id, course_id) VALUES ${insertValues}`);
+    }
+
+    res.redirect("/admin/school-courses");
+  } catch (err) {
+    console.error("Error assigning courses:", err);
+    res.status(500).send("Error assigning courses");
+  }
+};
 

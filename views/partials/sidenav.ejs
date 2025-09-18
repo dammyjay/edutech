@@ -6,6 +6,10 @@
     <li><a href="#" onclick="loadSection('students')">🎓 Students</a></li>
     <li><a href="#" onclick="loadSection('classrooms')">🏫 Classrooms</a></li>
     <li><a href="#" onclick="loadSection('approvals')">⏳ Approvals</a></li>
+      <!-- New Sections -->
+    <li><a href="#" onclick="loadSection('quotes')">💡 Quotes</a></li>
+    <li><a href="#" onclick="loadSection('payments')">💳 Payments</a></li>
+    <li><a href="#" onclick="loadSection('classroom-courses')">📚 Classroom Courses</a></li>
     <li><a href="/admin/logout">🚪 Logout</a></li>
   </ul>
 </div>
@@ -222,8 +226,47 @@
 
 </style>
 
-<script>
+<!-- <script>
   document.getElementById("toggleBtn").addEventListener("click", function() {
     document.getElementById("sidenav").classList.toggle("active");
+  });
+</script> -->
+
+<script>
+  const sidenav = document.getElementById("sidenav");
+  const toggleBtn = document.getElementById("toggleBtn");
+
+  // Toggle open/close
+  toggleBtn.addEventListener("click", function(e) {
+    e.stopPropagation(); // prevent closing immediately
+    sidenav.classList.toggle("active");
+  });
+
+  // Close when clicking a link inside sidenav
+  sidenav.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      if (window.innerWidth <= 768) { // only on mobile
+        sidenav.classList.remove("active");
+      }
+    });
+  });
+
+  // Close when clicking outside sidenav
+  document.addEventListener("click", (e) => {
+    if (
+      window.innerWidth <= 768 && // only mobile
+      sidenav.classList.contains("active") && 
+      !sidenav.contains(e.target) && 
+      e.target !== toggleBtn
+    ) {
+      sidenav.classList.remove("active");
+    }
+  });
+
+  // Optional: close if window resized to desktop
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 768) {
+      sidenav.classList.remove("active");
+    }
   });
 </script>

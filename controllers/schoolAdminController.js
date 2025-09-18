@@ -279,43 +279,91 @@ exports.deleteClassroom = async (req, res) => {
   res.redirect("/school-admin/dashboard");
 };
 
-exports.loadSection = async (req, res) => {
-  const section = req.params.section;
+// exports.loadSection = async (req, res) => {
+//   const section = req.params.section;
 
-  if (section === "teachers") {
-    const teachers = await pool.query(
-      `SELECT u.id, u.fullname, u.email, us.joined_at
-       FROM users2 u
-       JOIN user_school us ON u.id = us.user_id
-       WHERE us.school_id = $1 AND us.role_in_school = 'teacher' AND us.approved = true`,
-      [req.session.user.school_id]
-    );
-    return res.render("partials/teachers", {
-      teachers: teachers.rows,
-    });
-  }
+//   if (section === "teachers") {
+//     const teachers = await pool.query(
+//       `SELECT u.id, u.fullname, u.email, us.joined_at
+//        FROM users2 u
+//        JOIN user_school us ON u.id = us.user_id
+//        WHERE us.school_id = $1 AND us.role_in_school = 'teacher' AND us.approved = true`,
+//       [req.session.user.school_id]
+//     );
+//     return res.render("partials/teachers", {
+//       teachers: teachers.rows,
+//     });
+//   }
 
-  if (section === "students") {
-    const students = await pool.query(
-      `SELECT u.id, u.fullname, u.email, us.joined_at
-       FROM users2 u
-       JOIN user_school us ON u.id = us.user_id
-       WHERE us.school_id = $1 AND us.role_in_school = 'student' AND us.approved = true`,
-      [req.session.user.school_id]
-    );
-    return res.render("partials/students", {
-      students: students.rows,
-    });
-  }
+//   if (section === "students") {
+//     const students = await pool.query(
+//       `SELECT u.id, u.fullname, u.email, us.joined_at
+//        FROM users2 u
+//        JOIN user_school us ON u.id = us.user_id
+//        WHERE us.school_id = $1 AND us.role_in_school = 'student' AND us.approved = true`,
+//       [req.session.user.school_id]
+//     );
+//     return res.render("partials/students", {
+//       students: students.rows,
+//     });
+//   }
 
     
+// // if (section === "classrooms") {
+// //   const classrooms = await pool.query(
+// //     `SELECT c.id, c.name,
+// //        COALESCE(STRING_AGG(u.fullname, ', '), 'Unassigned') AS teacher_names,
+// //        COALESCE(ARRAY_AGG(u.id) FILTER (WHERE u.id IS NOT NULL), '{}') AS teacher_ids,
+// //        (SELECT COUNT(*)
+// //           FROM user_school us2
+// //          WHERE us2.classroom_id = c.id
+// //            AND us2.role_in_school = 'student'
+// //            AND us2.approved = true) AS student_count
+// //      FROM classrooms c
+// //      LEFT JOIN classroom_teachers ct ON c.id = ct.classroom_id
+// //      LEFT JOIN users2 u ON u.id = ct.teacher_id
+// //      WHERE c.school_id = $1
+// //      GROUP BY c.id, c.name;`,
+// //     [req.session.user.school_id]
+// //   );
+
+// //   // ✅ all approved students (for dropdown)
+// //   const students = await pool.query(
+// //     `SELECT u.id, u.fullname, u.email
+// //      FROM users2 u
+// //      JOIN user_school us ON u.id = us.user_id
+// //      WHERE us.school_id = $1
+// //        AND us.role_in_school = 'student'
+// //        AND us.approved = true`,
+// //     [req.session.user.school_id]
+// //   );
+
+// //   // Fetch students per classroom
+// //   for (let c of classrooms.rows) {
+// //     const studentRows = await pool.query(
+// //       `SELECT u.id, u.fullname, u.email, us.joined_at
+// //        FROM users2 u
+// //        JOIN user_school us ON u.id = us.user_id
+// //        WHERE us.school_id = $1 AND us.classroom_id = $2
+// //          AND us.role_in_school = 'student' AND us.approved = true`,
+// //       [req.session.user.school_id, c.id]
+// //     );
+// //     c.students = studentRows.rows;
+// //   }
+
+// //   return res.render("partials/classrooms", {
+// //     classrooms: classrooms.rows,
+// //     availableStudents: students.rows, // ✅ now defined
+// //   });
+// // }
+
 // if (section === "classrooms") {
 //   const classrooms = await pool.query(
 //     `SELECT c.id, c.name,
 //        COALESCE(STRING_AGG(u.fullname, ', '), 'Unassigned') AS teacher_names,
 //        COALESCE(ARRAY_AGG(u.id) FILTER (WHERE u.id IS NOT NULL), '{}') AS teacher_ids,
-//        (SELECT COUNT(*) 
-//           FROM user_school us2 
+//        (SELECT COUNT(*)
+//           FROM user_school us2
 //          WHERE us2.classroom_id = c.id
 //            AND us2.role_in_school = 'student'
 //            AND us2.approved = true) AS student_count
@@ -327,91 +375,193 @@ exports.loadSection = async (req, res) => {
 //     [req.session.user.school_id]
 //   );
 
-//   // ✅ all approved students (for dropdown)
-//   const students = await pool.query(
+//   // ✅ fetch all approved students (for dropdown)
+//   const availableStudents = await pool.query(
 //     `SELECT u.id, u.fullname, u.email
 //      FROM users2 u
 //      JOIN user_school us ON u.id = us.user_id
-//      WHERE us.school_id = $1 
-//        AND us.role_in_school = 'student' 
+//      WHERE us.school_id = $1
+//        AND us.role_in_school = 'student'
 //        AND us.approved = true`,
 //     [req.session.user.school_id]
 //   );
 
-//   // Fetch students per classroom
+//   // ✅ fetch students per classroom
 //   for (let c of classrooms.rows) {
 //     const studentRows = await pool.query(
 //       `SELECT u.id, u.fullname, u.email, us.joined_at
 //        FROM users2 u
 //        JOIN user_school us ON u.id = us.user_id
-//        WHERE us.school_id = $1 AND us.classroom_id = $2 
+//        WHERE us.school_id = $1 AND us.classroom_id = $2
 //          AND us.role_in_school = 'student' AND us.approved = true`,
 //       [req.session.user.school_id, c.id]
 //     );
 //     c.students = studentRows.rows;
-//   }
 
+//     // ❌ filter out students already in this classroom
+//     c.availableStudents = availableStudents.rows.filter(
+//       (stu) => !studentRows.rows.some((s) => s.id === stu.id)
+//     );
+//   }
+  
+
+//     const openClassroom = req.query.openClassroom || null;
 //   return res.render("partials/classrooms", {
 //     classrooms: classrooms.rows,
-//     availableStudents: students.rows, // ✅ now defined
+//     openClassroom,
 //   });
 // }
 
-if (section === "classrooms") {
-  const classrooms = await pool.query(
-    `SELECT c.id, c.name,
-       COALESCE(STRING_AGG(u.fullname, ', '), 'Unassigned') AS teacher_names,
-       COALESCE(ARRAY_AGG(u.id) FILTER (WHERE u.id IS NOT NULL), '{}') AS teacher_ids,
-       (SELECT COUNT(*) 
-          FROM user_school us2 
-         WHERE us2.classroom_id = c.id
-           AND us2.role_in_school = 'student'
-           AND us2.approved = true) AS student_count
-     FROM classrooms c
-     LEFT JOIN classroom_teachers ct ON c.id = ct.classroom_id
-     LEFT JOIN users2 u ON u.id = ct.teacher_id
-     WHERE c.school_id = $1
-     GROUP BY c.id, c.name;`,
-    [req.session.user.school_id]
-  );
 
-  // ✅ fetch all approved students (for dropdown)
-  const availableStudents = await pool.query(
-    `SELECT u.id, u.fullname, u.email
-     FROM users2 u
-     JOIN user_school us ON u.id = us.user_id
-     WHERE us.school_id = $1 
-       AND us.role_in_school = 'student' 
-       AND us.approved = true`,
-    [req.session.user.school_id]
-  );
+//   if (section === "approvals") {
+//     const pendingUsers = await pool.query(
+//       `SELECT u.id, u.fullname, u.email, us.role_in_school, us.joined_at
+//        FROM users2 u
+//        JOIN user_school us ON u.id = us.user_id
+//        WHERE us.school_id = $1 AND us.approved = false`,
+//       [req.session.user.school_id]
+//     );
+//     return res.render("partials/approvals", {
+//       pendingUsers: pendingUsers.rows,
+//     });
+//   }
 
-  // ✅ fetch students per classroom
-  for (let c of classrooms.rows) {
-    const studentRows = await pool.query(
+//   if (section === "overview") {
+//     if (section === "overview") {
+//   // Get everything just like getDashboard
+//   const schoolDbId = req.session.user.school_id;
+
+//   const pendingUsers = await pool.query(
+//     `SELECT u.id, u.fullname, u.email, us.role_in_school, us.joined_at, u.profile_picture
+//      FROM users2 u
+//      JOIN user_school us ON u.id = us.user_id
+//      WHERE us.school_id = $1 AND us.approved = false`,
+//     [schoolDbId]
+//   );
+
+//   const classrooms = await pool.query(
+//     `SELECT c.id, c.name,
+//        COALESCE(STRING_AGG(u.fullname, ', '), 'Unassigned') AS teacher_names,
+//        COALESCE(ARRAY_AGG(u.id) FILTER (WHERE u.id IS NOT NULL), '{}') AS teacher_ids,
+//        (SELECT COUNT(*)
+//           FROM user_school us2
+//          WHERE us2.classroom_id = c.id
+//            AND us2.role_in_school = 'student'
+//            AND us2.approved = true) AS student_count
+//      FROM classrooms c
+//      LEFT JOIN classroom_teachers ct ON c.id = ct.classroom_id
+//      LEFT JOIN users2 u ON u.id = ct.teacher_id
+//      WHERE c.school_id = $1
+//      GROUP BY c.id, c.name;`,
+//     [schoolDbId]
+//   );
+
+//   const teachers = await pool.query(
+//     `SELECT u.id, u.fullname, u.email, us.joined_at
+//      FROM users2 u
+//      JOIN user_school us ON u.id = us.user_id
+//      WHERE us.school_id = $1 AND us.role_in_school = 'teacher' AND us.approved = true`,
+//     [schoolDbId]
+//   );
+
+//   const students = await pool.query(
+//     `SELECT u.id, u.fullname, u.email, us.joined_at
+//      FROM users2 u
+//      JOIN user_school us ON u.id = us.user_id
+//      WHERE us.school_id = $1 AND us.role_in_school = 'student' AND us.approved = true`,
+//     [schoolDbId]
+//   );
+
+//   return res.render("partials/overview", {
+//     schoolAdmin: req.session.user,
+//     school: { id: schoolDbId, name: req.session.user.school_name },
+//     pendingUsers: pendingUsers.rows,
+//     classrooms: classrooms.rows,
+//     teachers: teachers.rows,
+//     students: students.rows,
+//   });
+// }
+
+//   }
+
+//   return res.send("<p>Section not found.</p>");
+// };
+
+exports.loadSection = async (req, res) => {
+  const section = req.params.section;
+  const schoolId = req.session.user.school_id;
+
+  if (section === "teachers") {
+    const teachers = await pool.query(
       `SELECT u.id, u.fullname, u.email, us.joined_at
        FROM users2 u
        JOIN user_school us ON u.id = us.user_id
-       WHERE us.school_id = $1 AND us.classroom_id = $2 
-         AND us.role_in_school = 'student' AND us.approved = true`,
-      [req.session.user.school_id, c.id]
+       WHERE us.school_id = $1 AND us.role_in_school = 'teacher' AND us.approved = true`,
+      [schoolId]
     );
-    c.students = studentRows.rows;
-
-    // ❌ filter out students already in this classroom
-    c.availableStudents = availableStudents.rows.filter(
-      (stu) => !studentRows.rows.some((s) => s.id === stu.id)
-    );
+    return res.render("partials/teachers", { teachers: teachers.rows });
   }
-  
+
+  if (section === "students") {
+    const students = await pool.query(
+      `SELECT u.id, u.fullname, u.email, us.joined_at
+       FROM users2 u
+       JOIN user_school us ON u.id = us.user_id
+       WHERE us.school_id = $1 AND us.role_in_school = 'student' AND us.approved = true`,
+      [schoolId]
+    );
+    return res.render("partials/students", { students: students.rows });
+  }
+
+  if (section === "classrooms") {
+    const classrooms = await pool.query(
+      `SELECT c.id, c.name,
+         COALESCE(STRING_AGG(u.fullname, ', '), 'Unassigned') AS teacher_names,
+         COALESCE(ARRAY_AGG(u.id) FILTER (WHERE u.id IS NOT NULL), '{}') AS teacher_ids,
+         (SELECT COUNT(*) 
+            FROM user_school us2 
+           WHERE us2.classroom_id = c.id
+             AND us2.role_in_school = 'student'
+             AND us2.approved = true) AS student_count
+       FROM classrooms c
+       LEFT JOIN classroom_teachers ct ON c.id = ct.classroom_id
+       LEFT JOIN users2 u ON u.id = ct.teacher_id
+       WHERE c.school_id = $1
+       GROUP BY c.id, c.name;`,
+      [schoolId]
+    );
+
+    const availableStudents = await pool.query(
+      `SELECT u.id, u.fullname, u.email
+       FROM users2 u
+       JOIN user_school us ON u.id = us.user_id
+       WHERE us.school_id = $1 
+         AND us.role_in_school = 'student' 
+         AND us.approved = true`,
+      [schoolId]
+    );
+
+    for (let c of classrooms.rows) {
+      const studentRows = await pool.query(
+        `SELECT u.id, u.fullname, u.email, us.joined_at
+         FROM users2 u
+         JOIN user_school us ON u.id = us.user_id
+         WHERE us.school_id = $1 AND us.classroom_id = $2 
+           AND us.role_in_school = 'student' AND us.approved = true`,
+        [schoolId, c.id]
+      );
+      c.students = studentRows.rows;
+      c.availableStudents = availableStudents.rows.filter(
+        (stu) => !studentRows.rows.some((s) => s.id === stu.id)
+      );
+    }
 
     const openClassroom = req.query.openClassroom || null;
-  return res.render("partials/classrooms", {
-    classrooms: classrooms.rows,
-    openClassroom,
-  });
-}
-
+    return res.render("partials/classrooms", {
+      classrooms: classrooms.rows,
+      openClassroom,
+    });
+  }
 
   if (section === "approvals") {
     const pendingUsers = await pool.query(
@@ -419,73 +569,137 @@ if (section === "classrooms") {
        FROM users2 u
        JOIN user_school us ON u.id = us.user_id
        WHERE us.school_id = $1 AND us.approved = false`,
-      [req.session.user.school_id]
+      [schoolId]
     );
     return res.render("partials/approvals", {
       pendingUsers: pendingUsers.rows,
     });
   }
 
+  // === Quotes ===
+  if (section === "quotes") {
+    const quotes = await pool.query(
+      "SELECT id, requested_students, price_quote, status, created_at FROM quotes WHERE school_id=$1 ORDER BY id DESC",
+      [schoolId]
+    );
+    return res.render("partials/quotes", { quotes: quotes.rows });
+  }
+
+  //   // === Payments ===
+  //   if (section === "payments") {
+  //     const payments = await pool.query(
+  //       `SELECT p.id, p.amount, p.status, p.student_limit, p.start_date, p.end_date, p.created_at, q.price_quote
+  //      FROM school_payments p
+  //      LEFT JOIN quotes q ON p.quote_id = q.id
+  //      WHERE p.school_id = $1
+  //      ORDER BY p.created_at DESC`,
+  //       [schoolId]
+  //     );
+
+  //     return res.render("partials/payments", { payments: payments.rows });
+  //   }
+
+  // === Payments (with adjustments) ===
+  if (section === "payments") {
+    const payments = await pool.query(
+      `SELECT sp.id,
+            sp.amount AS base_amount,
+            COALESCE(SUM(adj.extra_amount), 0) AS adjustments_total,
+            (sp.amount + COALESCE(SUM(adj.extra_amount), 0)) AS total_amount,
+            sp.student_limit + COALESCE(SUM(adj.extra_students), 0) AS effective_student_limit,
+            sp.status,
+            sp.start_date,
+            sp.end_date,
+            sp.created_at
+     FROM school_payments sp
+     LEFT JOIN school_payment_adjustments adj
+       ON sp.id = adj.school_payment_id AND adj.status = 'paid'
+     WHERE sp.school_id = $1
+     GROUP BY sp.id
+     ORDER BY sp.created_at DESC`,
+      [schoolId]
+    );
+
+    return res.render("partials/payments", { payments: payments.rows });
+  }
+
+  // === Classroom ↔ Courses ===
+  if (section === "classroom-courses") {
+    const classrooms = await pool.query(
+      "SELECT id, name FROM classrooms WHERE school_id=$1",
+      [schoolId]
+    );
+    const courses = await pool.query("SELECT id, title FROM courses");
+    const classroomCourses = await pool.query(
+      `SELECT cc.id, c.name AS classroom, cr.title AS course
+       FROM classroom_courses cc
+       JOIN classrooms c ON cc.classroom_id = c.id
+       JOIN courses cr ON cc.course_id = cr.id
+       WHERE c.school_id=$1`,
+      [schoolId]
+    );
+    return res.render("partials/classroom-courses", {
+      classrooms: classrooms.rows,
+      courses: courses.rows,
+      classroomCourses: classroomCourses.rows,
+    });
+  }
+
   if (section === "overview") {
-    if (section === "overview") {
-  // Get everything just like getDashboard
-  const schoolDbId = req.session.user.school_id;
+    const pendingUsers = await pool.query(
+      `SELECT u.id, u.fullname, u.email, us.role_in_school, us.joined_at, u.profile_picture
+       FROM users2 u
+       JOIN user_school us ON u.id = us.user_id
+       WHERE us.school_id = $1 AND us.approved = false`,
+      [schoolId]
+    );
 
-  const pendingUsers = await pool.query(
-    `SELECT u.id, u.fullname, u.email, us.role_in_school, us.joined_at, u.profile_picture
-     FROM users2 u
-     JOIN user_school us ON u.id = us.user_id
-     WHERE us.school_id = $1 AND us.approved = false`,
-    [schoolDbId]
-  );
+    const classrooms = await pool.query(
+      `SELECT c.id, c.name,
+         COALESCE(STRING_AGG(u.fullname, ', '), 'Unassigned') AS teacher_names,
+         COALESCE(ARRAY_AGG(u.id) FILTER (WHERE u.id IS NOT NULL), '{}') AS teacher_ids,
+         (SELECT COUNT(*) 
+            FROM user_school us2 
+           WHERE us2.classroom_id = c.id
+             AND us2.role_in_school = 'student'
+             AND us2.approved = true) AS student_count
+       FROM classrooms c
+       LEFT JOIN classroom_teachers ct ON c.id = ct.classroom_id
+       LEFT JOIN users2 u ON u.id = ct.teacher_id
+       WHERE c.school_id = $1
+       GROUP BY c.id, c.name;`,
+      [schoolId]
+    );
 
-  const classrooms = await pool.query(
-    `SELECT c.id, c.name,
-       COALESCE(STRING_AGG(u.fullname, ', '), 'Unassigned') AS teacher_names,
-       COALESCE(ARRAY_AGG(u.id) FILTER (WHERE u.id IS NOT NULL), '{}') AS teacher_ids,
-       (SELECT COUNT(*) 
-          FROM user_school us2 
-         WHERE us2.classroom_id = c.id
-           AND us2.role_in_school = 'student'
-           AND us2.approved = true) AS student_count
-     FROM classrooms c
-     LEFT JOIN classroom_teachers ct ON c.id = ct.classroom_id
-     LEFT JOIN users2 u ON u.id = ct.teacher_id
-     WHERE c.school_id = $1
-     GROUP BY c.id, c.name;`,
-    [schoolDbId]
-  );
+    const teachers = await pool.query(
+      `SELECT u.id, u.fullname, u.email, us.joined_at
+       FROM users2 u
+       JOIN user_school us ON u.id = us.user_id
+       WHERE us.school_id = $1 AND us.role_in_school = 'teacher' AND us.approved = true`,
+      [schoolId]
+    );
 
-  const teachers = await pool.query(
-    `SELECT u.id, u.fullname, u.email, us.joined_at
-     FROM users2 u
-     JOIN user_school us ON u.id = us.user_id
-     WHERE us.school_id = $1 AND us.role_in_school = 'teacher' AND us.approved = true`,
-    [schoolDbId]
-  );
+    const students = await pool.query(
+      `SELECT u.id, u.fullname, u.email, us.joined_at
+       FROM users2 u
+       JOIN user_school us ON u.id = us.user_id
+       WHERE us.school_id = $1 AND us.role_in_school = 'student' AND us.approved = true`,
+      [schoolId]
+    );
 
-  const students = await pool.query(
-    `SELECT u.id, u.fullname, u.email, us.joined_at
-     FROM users2 u
-     JOIN user_school us ON u.id = us.user_id
-     WHERE us.school_id = $1 AND us.role_in_school = 'student' AND us.approved = true`,
-    [schoolDbId]
-  );
-
-  return res.render("partials/overview", {
-    schoolAdmin: req.session.user,
-    school: { id: schoolDbId, name: req.session.user.school_name },
-    pendingUsers: pendingUsers.rows,
-    classrooms: classrooms.rows,
-    teachers: teachers.rows,
-    students: students.rows,
-  });
-}
-
+    return res.render("partials/overview", {
+      schoolAdmin: req.session.user,
+      school: { id: schoolId, name: req.session.user.school_name },
+      pendingUsers: pendingUsers.rows,
+      classrooms: classrooms.rows,
+      teachers: teachers.rows,
+      students: students.rows,
+    });
   }
 
   return res.send("<p>Section not found.</p>");
 };
+
 
 exports.addStudentToClassroom = async (req, res) => {
   const classroomId = req.params.id;
@@ -544,5 +758,203 @@ exports.addStudentToClassroom = async (req, res) => {
   }
 };
 
+
+// ------------------ QUOTES ------------------ //
+exports.getQuotes = async (req, res) => {
+  try {
+    const schoolId = req.session.user.school_id;
+    const quotes = await pool.query(
+      "SELECT id, text, author FROM quotes WHERE school_id=$1 ORDER BY id DESC",
+      [schoolId]
+    );
+    res.render("partials/quotes", { quotes: quotes.rows });
+  } catch (err) {
+    console.error("Error fetching quotes:", err);
+    res.status(500).send("Server Error");
+  }
+};
+
+// exports.addQuote = async (req, res) => {
+//   try {
+//     const { text, author } = req.body;
+//     const schoolId = req.session.user.school_id;
+
+//     await pool.query(
+//       "INSERT INTO quotes (text, author, school_id) VALUES ($1, $2, $3)",
+//       [text, author, schoolId]
+//     );
+//     res.redirect("/school-admin/dashboard");
+//   } catch (err) {
+//     console.error("Error adding quote:", err);
+//     res.status(500).send("Server Error");
+//   }
+// };
+
+exports.addQuote = async (req, res) => {
+  try {
+    const { requested_students, price_quote } = req.body;
+    const schoolId = req.session.user.school_id;
+
+    await pool.query(
+      `INSERT INTO quotes (school_id, requested_students, price_quote, status) 
+       VALUES ($1, $2, $3, 'pending')`,
+      [schoolId, requested_students, price_quote]
+    );
+
+    res.redirect("/school-admin/dashboard");
+  } catch (err) {
+    console.error("Error adding quote:", err);
+    res.status(500).send("Server Error");
+  }
+};
+
+
+exports.deleteQuote = async (req, res) => {
+  try {
+    await pool.query("DELETE FROM quotes WHERE id=$1", [req.params.id]);
+    res.redirect("/school-admin/dashboard");
+  } catch (err) {
+    console.error("Error deleting quote:", err);
+    res.status(500).send("Server Error");
+  }
+};
+
+// ------------------ PAYMENTS ------------------ //
+exports.getPayments = async (req, res) => {
+  try {
+    const schoolId = req.session.user.school_id;
+    const payments = await pool.query(
+      `SELECT p.id, u.fullname, p.amount, p.status, p.updated_at
+       FROM payments p
+       JOIN users2 u ON p.user_id = u.id
+       WHERE p.school_id=$1
+       ORDER BY p.updated_at DESC`,
+      [schoolId]
+    );
+    res.render("partials/payments", { payments: payments.rows });
+  } catch (err) {
+    console.error("Error fetching payments:", err);
+    res.status(500).send("Server Error");
+  }
+};
+
+exports.updatePayment = async (req, res) => {
+  try {
+    const { paymentId, status } = req.body;
+    await pool.query("UPDATE payments SET status=$1 WHERE id=$2", [
+      status,
+      paymentId,
+    ]);
+    res.redirect("/school-admin/dashboard");
+  } catch (err) {
+    console.error("Error updating payment:", err);
+    res.status(500).send("Server Error");
+  }
+};
+
+// ------------------ CLASSROOM ↔ COURSES ------------------ //
+exports.getClassroomCourses = async (req, res) => {
+  try {
+    const schoolId = req.session.user.school_id;
+
+    const classrooms = await pool.query(
+      "SELECT id, name FROM classrooms WHERE school_id=$1",
+      [schoolId]
+    );
+
+    const courses = await pool.query(
+      "SELECT id, title FROM courses ORDER BY title"
+    );
+
+    const classroomCourses = await pool.query(
+      `SELECT cc.id, c.name AS classroom, cr.title AS course
+       FROM classroom_courses cc
+       JOIN classrooms c ON cc.classroom_id = c.id
+       JOIN courses cr ON cc.course_id = cr.id
+       WHERE c.school_id=$1
+       ORDER BY c.name, cr.title`,
+      [schoolId]
+    );
+
+    res.render("partials/classroom-courses", {
+      classrooms: classrooms.rows,
+      courses: courses.rows,
+      classroomCourses: classroomCourses.rows,
+    });
+  } catch (err) {
+    console.error("Error fetching classroom courses:", err);
+    res.status(500).send("Server Error");
+  }
+};
+
+exports.assignCourseToClassroom = async (req, res) => {
+  try {
+    const { classroomId, courseId } = req.body;
+
+    // prevent duplicate assignment
+    const exists = await pool.query(
+      "SELECT 1 FROM classroom_courses WHERE classroom_id=$1 AND course_id=$2",
+      [classroomId, courseId]
+    );
+
+    if (exists.rows.length === 0) {
+      await pool.query(
+        "INSERT INTO classroom_courses (classroom_id, course_id) VALUES ($1, $2)",
+        [classroomId, courseId]
+      );
+    }
+
+    res.redirect("/school-admin/dashboard");
+  } catch (err) {
+    console.error("Error assigning course:", err);
+    res.status(500).send("Server Error");
+  }
+};
+
+exports.updateClassroomCourse = async (req, res) => {
+  try {
+    const { courseId } = req.body;
+    const { id } = req.params; // classroom_course.id
+
+    await pool.query(
+      "UPDATE classroom_courses SET course_id=$1 WHERE id=$2",
+      [courseId, id]
+    );
+
+    res.redirect("/school-admin/dashboard");
+  } catch (err) {
+    console.error("Error updating classroom course:", err);
+    res.status(500).send("Server Error");
+  }
+};
+
+exports.deleteClassroomCourse = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await pool.query("DELETE FROM classroom_courses WHERE id=$1", [id]);
+
+    res.redirect("/school-admin/dashboard");
+  } catch (err) {
+    console.error("Error deleting classroom course:", err);
+    res.status(500).send("Server Error");
+  }
+};
+
+
+// POST /school/payments/:paymentId/adjustments
+exports.addPaymentAdjustment = async (req, res) => {
+  const { paymentId } = req.params;
+  const { extra_students, extra_amount } = req.body;
+
+  const result = await pool.query(
+    `INSERT INTO school_payment_adjustments (school_payment_id, extra_students, extra_amount)
+     VALUES ($1, $2, $3)
+     RETURNING *`,
+    [paymentId, extra_students, extra_amount]
+  );
+
+  res.json({ success: true, adjustment: result.rows[0] });
+};
 
 
