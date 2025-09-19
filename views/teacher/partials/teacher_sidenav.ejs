@@ -291,6 +291,38 @@
     background-color: #e53935;
 }
 
+  .cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 1rem; margin: 1rem 0; }
+  .card { background: #fff; padding: 1rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  .btn-view { display:inline-block; margin-top:.5rem; padding:.4rem .8rem; background:#2980b9; color:#fff; border-radius:6px; }
+  .profile-box { display:flex; align-items:center; gap:1rem; margin:1rem 0; }
+  .profile-pic { width:60px; height:60px; border-radius:50%; object-fit:cover; }
+
+.user-table th, .user-table td {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.user-table th {
+  background: #1270b0;
+  color: #fff;
+  position: sticky;
+  top: 0;
+}
+
+.user-table tr:hover {
+  background: #f9f9f9;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .user-table th, .user-table td {
+    font-size: 13px;
+    padding: 8px 6px;
+  }
+}
+
+
   /* Responsive */
   @media (max-width: 768px) {
     .sidenav {

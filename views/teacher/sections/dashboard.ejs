@@ -1,57 +1,129 @@
 <h1>👨‍🏫 Teacher Dashboard</h1>
 
-<!-- Stats Cards -->
+<!-- ✅ Profile / Greeting -->
+<div class="profile-box">
+  <img src="<%= profile.profile_picture || '/images/default-avatar.png' %>" 
+       alt="Profile" class="profile-pic">
+  <div>
+    <h2>Welcome, <%= profile.fullname %> 👋</h2>
+    <p><%= profile.email %></p>
+    <p><%= new Date().toLocaleDateString() %></p>
+  </div>
+</div>
+
+<!-- ✅ Key Stats -->
 <div class="cards">
-  <% classStats.forEach(stat => { %>
+  <div class="card">👥 Students <h3><%= keyStats.total_students || 0 %></h3></div>
+  <div class="card">🏫 Classes <h3><%= keyStats.total_classes || 0 %></h3></div>
+  <div class="card">📖 Lessons <h3><%= keyStats.lessons_completed || 0 %>/<%= keyStats.total_lessons || 0 %></h3></div>
+  <div class="card">📝 Avg Quiz <h3><%= keyStats.avg_quiz_score || "N/A" %></h3></div>
+  <div class="card">📑 Avg Assignment <h3><%= keyStats.avg_assignment_score || "N/A" %></h3></div>
+  <div class="card">⏳ Engagement <h3><%= keyStats.engagement_last7 || 0 %>%</h3></div>
+
+</div>
+
+<!-- ✅ Class Overview -->
+<h2>📚 Classes</h2>
+<div class="cards">
+  <% classStats.forEach(c => { %>
     <div class="card">
-      <h3><%= stat.classroom_name %></h3>
-      <p>👥 Students: <%= stat.total_students %></p>
-      <p>📚 Lessons: <%= stat.completed_lessons %> / <%= stat.total_lessons %></p>
-      <p>📝 Avg Quiz: <%= stat.avg_quiz %></p>
-      <p>📑 Avg Assignment: <%= stat.avg_assignment %></p>
-      <a style="text-decoration: none;" class="btn-view" href="/teacher/classroom/<%= stat.classroom_id %>/students">View Students</a>
+      <h3><%= c.class_name %></h3>
+      <p>👥 Students: <%= c.students %></p>
+      <p>📖 Lessons: <%= c.lessons_completed %> / <%= c.total_lessons %> 
+         (<%= c.total_lessons ? Math.round((c.lessons_completed / c.total_lessons) * 100) : 0 %>%)</p>
+      <p>📝 Avg Quiz: <%= c.avg_quiz_score || "N/A" %></p>
+      <p>📑 Avg Assignment: <%= c.avg_assignment_score || "N/A" %></p>
+      <p>⏳ Engagement: <%= c.engagement || 0 %>%</p>
+      <a class="btn-view" href="/teacher/classroom/<%= c.id %>/students">View Students</a>
     </div>
   <% }) %>
 </div>
+
+<!-- ✅ Charts -->
 <h2>📈 Class Progress</h2>
 <canvas id="lessonChart"></canvas>
 <canvas id="quizChart"></canvas>
-<!-- Load Chart.js -->
+
+<!-- ✅ Student Snapshots -->
+<h2>👨‍🎓 Top Students</h2>
+<div class="user-table-wrapper">
+  <table class="user-table">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Average Quiz</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% topStudents.forEach(s => { %>
+        <tr>
+          <td><%= s.fullname %></td>
+          <td><%= s.avg_score || "N/A" %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<h2>⚠️ Struggling Students</h2>
+<div class="user-table-wrapper">
+  <table class="user-table">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Lessons Done</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% strugglingStudents.forEach(s => { %>
+        <tr>
+          <td><%= s.fullname %></td>
+          <td><%= s.lessons_done || 0 %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ✅ Notifications -->
+<h2>📬 Notifications</h2>
+<p>Pending Assignments to Grade: <%= pendingAssignments %></p>
+
+<!-- ✅ Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- <script>
+  const labels = <%- JSON.stringify(classStats.map(c => c.class_name)) %>;
 
-<script>
-  console.log("Chart.js loaded:", typeof Chart); // should print "function"
-</script>
-
-<script>
-  const lessonLabels = <%- JSON.stringify(classStats.map(c => c.classroom_name)) %>;
-  const lessonData = <%- JSON.stringify(classStats.map(c => Math.round((c.completed_lessons / (c.total_lessons || 1)) * 100))) %>;
-
+  // Lessons Completion %
+  const lessonData = <%- JSON.stringify(classStats.map(c => 
+    c.total_lessons ? Math.round((c.lessons_completed / c.total_lessons) * 100) : 0
+  )) %>;
   new Chart(document.getElementById('lessonChart'), {
     type: 'bar',
-    data: {
-      labels: lessonLabels,
-      datasets: [{
-        label: 'Lesson Completion %',
-        data: lessonData,
-        backgroundColor: '#27ae60'
-      }]
-    },
+    data: { labels, datasets: [{ label: 'Lesson Completion %', data: lessonData, backgroundColor: '#27ae60' }] },
     options: { responsive: true, plugins: { legend: { display: false } } }
   });
 
-  const quizData = <%- JSON.stringify(classStats.map(c => c.avg_quiz || 0)) %>;
+  // Avg Quiz Scores
+  const quizData = <%- JSON.stringify(classStats.map(c => c.avg_quiz_score || 0)) %>;
   new Chart(document.getElementById('quizChart'), {
     type: 'line',
-    data: {
-      labels: lessonLabels,
-      datasets: [{
-        label: 'Average Quiz Score',
-        data: quizData,
-        borderColor: '#2980b9',
-        fill: false
-      }]
-    },
+    data: { labels, datasets: [{ label: 'Average Quiz Score', data: quizData, borderColor: '#2980b9', fill: false }] },
     options: { responsive: true }
   });
+</script> -->
+
+
+<script>
+  const labels = <%- JSON.stringify(classStats.map(c => c.class_name || "Unnamed Class")) %>;
+
+  const lessonData = <%- JSON.stringify(classStats.map(c => {
+    const completed = c.lessons_completed || 0;
+    const total = c.total_lessons || 0;
+    return total > 0 ? Math.round((completed / total) * 100) : 0;
+  })) %>;
+
+  const quizData = <%- JSON.stringify(classStats.map(c => c.avg_quiz_score || 0)) %>;
 </script>
+

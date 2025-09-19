@@ -11,59 +11,390 @@ exports.getDashboard = (req, res) => {
 };
 
 // ----------------- DASHBOARD SECTION -----------------
+// exports.getDashboardSection = async (req, res) => {
+//   try {
+//     const teacherId = req.user.id;
+
+//     // Get classes
+//     const classesRes = await pool.query(
+//       `SELECT c.id, c.name
+//        FROM classrooms c
+//        JOIN classroom_teachers ct ON ct.classroom_id = c.id
+//        WHERE ct.teacher_id = $1`,
+//       [teacherId]
+//     );
+
+//     const classes = classesRes.rows;
+//     let classStats = [];
+
+//     for (const classroom of classes) {
+//       const statsRes = await pool.query(
+//         `SELECT COUNT(DISTINCT u.id) AS total_students,
+//                 COUNT(DISTINCT l.id) AS total_lessons,
+//                 COUNT(DISTINCT ulp.lesson_id) FILTER (WHERE ulp.completed_at IS NOT NULL) AS completed_lessons,
+//                 ROUND(AVG(qs.score))::int AS avg_quiz,
+//                 ROUND(AVG(asub.total))::int AS avg_assignment
+//          FROM user_school us
+//          JOIN users2 u ON u.id = us.user_id
+//          LEFT JOIN classroom_courses cc ON cc.classroom_id = us.classroom_id
+//          LEFT JOIN courses co ON co.id = cc.course_id
+//          LEFT JOIN modules m ON m.course_id = co.id
+//          LEFT JOIN lessons l ON l.module_id = m.id
+//          LEFT JOIN user_lesson_progress ulp ON ulp.lesson_id = l.id AND ulp.user_id = u.id
+//          LEFT JOIN quiz_submissions qs ON qs.student_id = u.id
+//          LEFT JOIN assignment_submissions asub ON asub.student_id = u.id
+//          WHERE us.classroom_id = $1 AND us.role_in_school = 'student' AND us.approved = true`,
+//         [classroom.id]
+//       );
+
+//       classStats.push({
+//         classroom_id: classroom.id,
+//         classroom_name: classroom.name,
+//         total_students: statsRes.rows[0].total_students || 0,
+//         total_lessons: statsRes.rows[0].total_lessons || 0,
+//         completed_lessons: statsRes.rows[0].completed_lessons || 0,
+//         avg_quiz: statsRes.rows[0].avg_quiz || "N/A",
+//         avg_assignment: statsRes.rows[0].avg_assignment || "N/A",
+//       });
+//     }
+
+//     res.render("teacher/sections/dashboard", { classStats, teacher: req.user });
+//   } catch (err) {
+//     console.error("Teacher Dashboard Section Error:", err);
+//     res.status(500).send("<p>Error loading dashboard section</p>");
+//   }
+// };
+
+// exports.getDashboardSection = async (req, res) => {
+//   try {
+//     const teacherId = req.user.id;
+
+//     // ✅ Teacher profile
+//     const profileRes = await pool.query(
+//       `SELECT fullname, email, profile_picture
+//        FROM users2 
+//        WHERE id = $1`,
+//       [teacherId]
+//     );
+//     const profile = profileRes.rows[0] || {};
+
+//     // ✅ Key stats (with last_activity)
+//     const statsRes = await pool.query(
+//       `WITH last_activity AS (
+//          SELECT user_id, MAX(created_at) AS last_activity_at
+//          FROM activities
+//          GROUP BY user_id
+//        )
+//        SELECT 
+//           COUNT(DISTINCT ct.classroom_id) AS total_classes,
+//           COUNT(DISTINCT s.id) AS total_students,
+//           COUNT(DISTINCT l.id) AS total_lessons,
+//           COUNT(DISTINCT ulp.lesson_id) FILTER (WHERE ulp.completed_at IS NOT NULL) AS lessons_completed,
+//           ROUND(
+//             (COUNT(DISTINCT ulp.lesson_id) FILTER (WHERE ulp.completed_at IS NOT NULL)::numeric / 
+//              NULLIF(COUNT(DISTINCT l.id), 0)) * 100, 1
+//           ) AS lesson_progress,
+//           ROUND(AVG(qs.score::numeric),1) AS avg_quiz_score,
+//           ROUND(AVG(asub.grade::numeric),1) AS avg_assignment_score,
+//           ROUND(
+//             (COUNT(DISTINCT u.id) FILTER (WHERE la.last_login >= NOW() - INTERVAL '7 days')
+//             * 100.0 / NULLIF(COUNT(DISTINCT u.id),0))::numeric, 1
+//           ) AS engagement_last7
+//        FROM classroom_teachers ct
+//        JOIN user_school s 
+//          ON ct.classroom_id = s.classroom_id 
+//         AND s.role_in_school = 'student' 
+//         AND s.approved = true
+//        JOIN users2 u ON u.id = s.user_id
+//        LEFT JOIN last_activity la ON la.user_id = u.id
+//        LEFT JOIN classroom_courses cc ON ct.classroom_id = cc.classroom_id
+//        LEFT JOIN courses cr ON cc.course_id = cr.id
+//        LEFT JOIN modules m ON cr.id = m.course_id
+//        LEFT JOIN lessons l ON m.id = l.module_id
+//        LEFT JOIN user_lesson_progress ulp 
+//          ON ulp.user_id = u.id AND ulp.lesson_id = l.id
+//        LEFT JOIN quiz_submissions qs ON qs.student_id = u.id
+//        LEFT JOIN assignment_submissions asub ON asub.student_id = u.id
+//        WHERE ct.teacher_id = $1
+//        GROUP BY ct.teacher_id`,
+//       [teacherId]
+//     );
+//     const keyStats = statsRes.rows[0] || {};
+
+//     // ✅ Class overview
+//     const classStatsRes = await pool.query(
+//       `WITH last_activity AS (
+//          SELECT user_id, MAX(created_at) AS last_activity_at
+//          FROM activities
+//          GROUP BY user_id
+//        )
+//        SELECT 
+//           c.id, 
+//           c.name AS class_name,
+//           COUNT(DISTINCT s.id) AS students,
+//           COUNT(DISTINCT l.id) AS total_lessons,
+//           COUNT(DISTINCT ulp.lesson_id) FILTER (WHERE ulp.completed_at IS NOT NULL) AS lessons_completed,
+//           ROUND(AVG(qs.score::numeric),1) AS avg_quiz_score,
+//           ROUND(AVG(asub.grade::numeric),1) AS avg_assignment_score,
+//           ROUND(
+//            (COUNT(DISTINCT u.id) FILTER (WHERE la.last_login >= NOW() - INTERVAL '7 days')
+//              * 100.0 / NULLIF(COUNT(DISTINCT u.id),0))::numeric, 1
+//            ) AS engagement
+//        FROM classrooms c
+//        JOIN classroom_teachers ct ON c.id = ct.classroom_id
+//        JOIN user_school s ON s.classroom_id = c.id 
+//                           AND s.role_in_school = 'student' 
+//                           AND s.approved = true
+//        JOIN users2 u ON u.id = s.user_id
+//        LEFT JOIN last_activity la ON la.user_id = u.id
+//        LEFT JOIN classroom_courses cc ON c.id = cc.classroom_id
+//        LEFT JOIN courses cr ON cc.course_id = cr.id
+//        LEFT JOIN modules m ON cr.id = m.course_id
+//        LEFT JOIN lessons l ON l.module_id = m.id
+//        LEFT JOIN user_lesson_progress ulp ON ulp.user_id = u.id AND ulp.lesson_id = l.id
+//        LEFT JOIN quiz_submissions qs ON qs.student_id = u.id
+//        LEFT JOIN assignment_submissions asub ON asub.student_id = u.id
+//        WHERE ct.teacher_id = $1
+//        GROUP BY c.id, c.name
+//        ORDER BY c.name`,
+//       [teacherId]
+//     );
+//     const classStats = classStatsRes.rows;
+
+//     // ✅ Student snapshots (unchanged)
+//     const topStudentsRes = await pool.query(
+//       `SELECT u.id, u.fullname, ROUND(AVG(qs.score::numeric),1) AS avg_score
+//        FROM users2 u
+//        JOIN quiz_submissions qs ON qs.student_id = u.id
+//        WHERE u.id IN (
+//          SELECT us.user_id
+//          FROM user_school us
+//          JOIN classroom_teachers ct ON ct.classroom_id = us.classroom_id
+//          WHERE ct.teacher_id = $1 AND us.role_in_school='student'
+//        )
+//        GROUP BY u.id
+//        ORDER BY avg_score DESC NULLS LAST
+//        LIMIT 3`,
+//       [teacherId]
+//     );
+//     const topStudents = topStudentsRes.rows;
+
+//     const strugglingStudentsRes = await pool.query(
+//       `SELECT u.id, u.fullname,
+//               COUNT(ulp.lesson_id) FILTER (WHERE ulp.completed_at IS NOT NULL) AS lessons_done
+//        FROM users2 u
+//        JOIN user_school us ON us.user_id = u.id
+//        LEFT JOIN user_lesson_progress ulp ON ulp.user_id = u.id
+//        WHERE us.classroom_id IN (
+//          SELECT classroom_id FROM classroom_teachers WHERE teacher_id = $1
+//        )
+//        AND us.role_in_school = 'student'
+//        GROUP BY u.id
+//        ORDER BY lessons_done ASC NULLS FIRST
+//        LIMIT 3`,
+//       [teacherId]
+//     );
+//     const strugglingStudents = strugglingStudentsRes.rows;
+
+//     // ✅ Pending grading
+//     const pendingAssignmentsRes = await pool.query(
+//       `SELECT COUNT(asub.*) AS pending_assignments
+//        FROM assignment_submissions asub
+//        JOIN module_assignments ma ON ma.id = asub.assignment_id
+//        JOIN modules m ON m.id = ma.module_id
+//        JOIN courses cr ON cr.id = m.course_id
+//        JOIN classroom_courses cc ON cc.course_id = cr.id
+//        JOIN classroom_teachers ct ON ct.classroom_id = cc.classroom_id
+//        WHERE ct.teacher_id = $1
+//          AND asub.grade IS NULL`,
+//       [teacherId]
+//     );
+//     const pendingAssignments =
+//       pendingAssignmentsRes.rows[0]?.pending_assignments || 0;
+
+//     // ✅ Render dashboard
+//     res.render("teacher/sections/dashboard", {
+//       profile,
+//       keyStats,
+//       classStats,
+//       topStudents,
+//       strugglingStudents,
+//       pendingAssignments,
+//       teacher: req.user,
+//     });
+//   } catch (err) {
+//     console.error("Teacher Dashboard Section Error:", err);
+//     res.status(500).send("<p>Error loading dashboard section</p>");
+//   }
+// };
+
+
+// ----------------- DASHBOARD SECTION -----------------
 exports.getDashboardSection = async (req, res) => {
   try {
     const teacherId = req.user.id;
 
-    // Get classes
-    const classesRes = await pool.query(
-      `SELECT c.id, c.name
+    // ✅ Teacher profile
+    const profileRes = await pool.query(
+      `SELECT fullname, email, profile_picture
+       FROM users2 
+       WHERE id = $1`,
+      [teacherId]
+    );
+    const profile = profileRes.rows[0] || {};
+
+    // ✅ Key stats (with last_activity)
+    const statsRes = await pool.query(
+      `WITH last_activity AS (
+         SELECT user_id, MAX(created_at) AS last_login
+         FROM activities
+         GROUP BY user_id
+       )
+       SELECT 
+          COUNT(DISTINCT ct.classroom_id) AS total_classes,
+          COUNT(DISTINCT s.id) AS total_students,
+          COUNT(DISTINCT l.id) AS total_lessons,
+          COUNT(DISTINCT ulp.lesson_id) FILTER (WHERE ulp.completed_at IS NOT NULL) AS lessons_completed,
+          ROUND(
+            (COUNT(DISTINCT ulp.lesson_id) FILTER (WHERE ulp.completed_at IS NOT NULL)::numeric / 
+             NULLIF(COUNT(DISTINCT l.id), 0)) * 100, 1
+          ) AS lesson_progress,
+          ROUND(AVG(qs.score::numeric),1) AS avg_quiz_score,
+          ROUND(AVG(asub.grade::numeric),1) AS avg_assignment_score,
+          ROUND(
+            (COUNT(DISTINCT u.id) FILTER (WHERE la.last_login >= NOW() - INTERVAL '7 days')
+            * 100.0 / NULLIF(COUNT(DISTINCT u.id),0))::numeric, 1
+          ) AS engagement_last7
+
+       FROM classroom_teachers ct
+       JOIN user_school s 
+         ON ct.classroom_id = s.classroom_id 
+        AND s.role_in_school = 'student' 
+        AND s.approved = true
+       JOIN users2 u ON u.id = s.user_id
+       LEFT JOIN last_activity la ON la.user_id = u.id
+       LEFT JOIN classroom_courses cc ON ct.classroom_id = cc.classroom_id
+       LEFT JOIN courses cr ON cc.course_id = cr.id
+       LEFT JOIN modules m ON cr.id = m.course_id
+       LEFT JOIN lessons l ON m.id = l.module_id
+       LEFT JOIN user_lesson_progress ulp 
+         ON ulp.user_id = u.id AND ulp.lesson_id = l.id
+       LEFT JOIN quiz_submissions qs ON qs.student_id = u.id
+       LEFT JOIN assignment_submissions asub ON asub.student_id = u.id
+       WHERE ct.teacher_id = $1
+       GROUP BY ct.teacher_id`,
+      [teacherId]
+    );
+    const keyStats = statsRes.rows[0] || {};
+
+    // ✅ Class overview
+    const classStatsRes = await pool.query(
+      `WITH last_activity AS (
+         SELECT user_id, MAX(created_at) AS last_login
+         FROM activities
+         GROUP BY user_id
+       )
+       SELECT 
+          c.id, 
+          c.name AS class_name,
+          COUNT(DISTINCT s.id) AS students,
+          COUNT(DISTINCT l.id) AS total_lessons,
+          COUNT(DISTINCT ulp.lesson_id) FILTER (WHERE ulp.completed_at IS NOT NULL) AS lessons_completed,
+          ROUND(AVG(qs.score::numeric),1) AS avg_quiz_score,
+          ROUND(AVG(asub.grade::numeric),1) AS avg_assignment_score,
+          ROUND(
+            (COUNT(DISTINCT u.id) FILTER (WHERE la.last_login >= NOW() - INTERVAL '7 days')
+            * 100.0 / NULLIF(COUNT(DISTINCT u.id),0))::numeric, 1
+          ) AS engagement
+
        FROM classrooms c
-       JOIN classroom_teachers ct ON ct.classroom_id = c.id
-       WHERE ct.teacher_id = $1`,
+       JOIN classroom_teachers ct ON c.id = ct.classroom_id
+       JOIN user_school s ON s.classroom_id = c.id 
+                          AND s.role_in_school = 'student' 
+                          AND s.approved = true
+       JOIN users2 u ON u.id = s.user_id
+       LEFT JOIN last_activity la ON la.user_id = u.id
+       LEFT JOIN classroom_courses cc ON c.id = cc.classroom_id
+       LEFT JOIN courses cr ON cc.course_id = cr.id
+       LEFT JOIN modules m ON cr.id = m.course_id
+       LEFT JOIN lessons l ON l.module_id = m.id
+       LEFT JOIN user_lesson_progress ulp ON ulp.user_id = u.id AND ulp.lesson_id = l.id
+       LEFT JOIN quiz_submissions qs ON qs.student_id = u.id
+       LEFT JOIN assignment_submissions asub ON asub.student_id = u.id
+       WHERE ct.teacher_id = $1
+       GROUP BY c.id, c.name
+       ORDER BY c.name`,
+      [teacherId]
+    );
+    const classStats = classStatsRes.rows;
+
+    // ✅ Student snapshots
+    const topStudentsRes = await pool.query(
+      `SELECT u.id, u.fullname, ROUND(AVG(qs.score::numeric),1) AS avg_score
+       FROM users2 u
+       JOIN quiz_submissions qs ON qs.student_id = u.id
+       WHERE u.id IN (
+         SELECT us.user_id
+         FROM user_school us
+         JOIN classroom_teachers ct ON ct.classroom_id = us.classroom_id
+         WHERE ct.teacher_id = $1 AND us.role_in_school='student'
+       )
+       GROUP BY u.id
+       ORDER BY avg_score DESC NULLS LAST
+       LIMIT 3`,
+      [teacherId]
+    );
+    const topStudents = topStudentsRes.rows;
+
+    const strugglingStudentsRes = await pool.query(
+      `SELECT u.id, u.fullname,
+              COUNT(ulp.lesson_id) FILTER (WHERE ulp.completed_at IS NOT NULL) AS lessons_done
+       FROM users2 u
+       JOIN user_school us ON us.user_id = u.id
+       LEFT JOIN user_lesson_progress ulp ON ulp.user_id = u.id
+       WHERE us.classroom_id IN (
+         SELECT classroom_id FROM classroom_teachers WHERE teacher_id = $1
+       )
+       AND us.role_in_school = 'student'
+       GROUP BY u.id
+       ORDER BY lessons_done ASC NULLS FIRST
+       LIMIT 3`,
+      [teacherId]
+    );
+    const strugglingStudents = strugglingStudentsRes.rows;
+
+    const pendingAssignmentsRes = await pool.query(
+      `SELECT COUNT(asub.*) AS pending_assignments
+   FROM assignment_submissions asub
+   JOIN module_assignments ma ON ma.id = asub.assignment_id
+   JOIN modules m ON m.id = ma.module_id
+   JOIN courses cr ON cr.id = m.course_id
+   JOIN classroom_courses cc ON cc.course_id = cr.id
+   JOIN classroom_teachers ct ON ct.classroom_id = cc.classroom_id
+   WHERE ct.teacher_id = $1
+     AND asub.grade IS NULL`,
       [teacherId]
     );
 
-    const classes = classesRes.rows;
-    let classStats = [];
+    const pendingAssignments =
+      pendingAssignmentsRes.rows[0]?.pending_assignments || 0;
 
-    for (const classroom of classes) {
-      const statsRes = await pool.query(
-        `SELECT COUNT(DISTINCT u.id) AS total_students,
-                COUNT(DISTINCT l.id) AS total_lessons,
-                COUNT(DISTINCT ulp.lesson_id) FILTER (WHERE ulp.completed_at IS NOT NULL) AS completed_lessons,
-                ROUND(AVG(qs.score))::int AS avg_quiz,
-                ROUND(AVG(asub.total))::int AS avg_assignment
-         FROM user_school us
-         JOIN users2 u ON u.id = us.user_id
-         LEFT JOIN classroom_courses cc ON cc.classroom_id = us.classroom_id
-         LEFT JOIN courses co ON co.id = cc.course_id
-         LEFT JOIN modules m ON m.course_id = co.id
-         LEFT JOIN lessons l ON l.module_id = m.id
-         LEFT JOIN user_lesson_progress ulp ON ulp.lesson_id = l.id AND ulp.user_id = u.id
-         LEFT JOIN quiz_submissions qs ON qs.student_id = u.id
-         LEFT JOIN assignment_submissions asub ON asub.student_id = u.id
-         WHERE us.classroom_id = $1 AND us.role_in_school = 'student' AND us.approved = true`,
-        [classroom.id]
-      );
-
-      classStats.push({
-        classroom_id: classroom.id,
-        classroom_name: classroom.name,
-        total_students: statsRes.rows[0].total_students || 0,
-        total_lessons: statsRes.rows[0].total_lessons || 0,
-        completed_lessons: statsRes.rows[0].completed_lessons || 0,
-        avg_quiz: statsRes.rows[0].avg_quiz || "N/A",
-        avg_assignment: statsRes.rows[0].avg_assignment || "N/A",
-      });
-    }
-
-    res.render("teacher/sections/dashboard", { classStats, teacher: req.user });
+    // ✅ Render dashboard section
+    res.render("teacher/sections/dashboard", {
+      profile,
+      keyStats,
+      classStats,
+      topStudents,
+      strugglingStudents,
+      pendingAssignments,
+      teacher: req.user,
+    });
   } catch (err) {
     console.error("Teacher Dashboard Section Error:", err);
     res.status(500).send("<p>Error loading dashboard section</p>");
   }
 };
+
 
 // ----------------- CLASSES SECTION -----------------
 exports.getClassesSection = async (req, res) => {
