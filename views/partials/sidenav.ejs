@@ -57,11 +57,23 @@
   }
 
   /* Main content */
-  .main-content {
+  /* .main-content {
     margin-left: 240px;
     padding: 20px;
     transition: margin-left 0.3s ease-in-out;
-  }
+  } */
+
+  /* Main content */
+.main-content {
+  margin-left: 240px;   /* leave space for sidebar */
+  padding: 20px;
+  width: calc(100% - 240px);  /* fill remaining width beside sidebar */
+  box-sizing: border-box;     /* include padding in width */
+  min-height: 100vh;          /* stretch down */
+  background: #fdfdfd;        /* optional: light background */
+  transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+}
+
 
   /* Toggle button (for mobile) */
   .toggle-btn {
@@ -88,15 +100,13 @@
     .sidenav.active {
       transform: translateX(0);
     }
-    .main-content {
-      margin-left: 0;
-    }
     .toggle-btn {
       display: block;
     }
-      .main-content {
-    margin-left: 0;   /* remove the offset on mobile */
-    padding: 15px;    /* reduce padding for smaller screens */
+    .main-content {
+    margin-left: 0;            /* no sidebar space */
+    width: 100%;               /* full width on mobile */
+    padding: 15px;
   }
 
   /* Make content full width */
@@ -222,6 +232,82 @@
   display: inline;   /* keeps the form inline */
   margin: 0;         /* remove extra spacing */
   padding: 0;        /* no extra padding */
+}
+/* === KPI Cards === */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+.kpi-card {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+}
+.kpi-card:hover {
+  transform: translateY(-4px);
+}
+.kpi-card h3 {
+  margin: 10px 0;
+  font-size: 1.5rem;
+}
+
+/* === Charts Layout === */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin: 30px 0;
+}
+.chart-box {
+  background: #fff;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* === Activity Feed === */
+.activity-feed {
+  background: #fff;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.activity-feed ul {
+  list-style: none;
+  padding: 0;
+}
+.activity-feed li {
+  margin: 8px 0;
+}
+
+/* === Responsive Tweaks === */
+@media (max-width: 768px) {
+  .kpi-card h3 {
+    font-size: 1.2rem;
+  }
+  .chart-box h3 {
+    font-size: 1rem;
+  }
+  .charts-grid {
+    grid-template-columns: 1fr; /* stack charts on tablets/phones */
+  }
+}
+
+@media (max-width: 480px) {
+  .kpi-card {
+    padding: 15px;
+  }
+  .kpi-card h3 {
+    font-size: 1rem;
+  }
+  .charts-grid {
+    gap: 15px;
+  }
 }
 
 </style>

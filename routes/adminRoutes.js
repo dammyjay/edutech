@@ -3,6 +3,7 @@ const router = express.Router();
 // const parser = require("../middlewares/upload");
 // const upload = require("../middlewares/upload");
 const { ensureAdmin } = require("../middlewares/auth");
+const activityLoggerMiddleware = require("../middlewares/activityMiddleware");
 
 const adminController = require("../controllers/adminController");
 const companyController = require("../controllers/companyController");

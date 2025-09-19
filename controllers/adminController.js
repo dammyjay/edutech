@@ -8,6 +8,7 @@ const fs = require("fs");
 const { Parser } = require("json2csv");
 const PDFDocument = require("pdfkit");
 const puppeteer = require("puppeteer");
+const { logActivityForUser } = require("../utils/activityLogger")
 
 // Show forgot password form
 exports.showForgotPasswordForm = (req, res) => {
@@ -172,7 +173,7 @@ exports.login = async (req, res) => {
         school_id,
         school_name,
       };
-
+      await logActivityForUser(req, "School Admin logged in", `School Name: ${school_name}`);
       return res.redirect("/school-admin/dashboard");
     } else if (user.role === "teacher") {
       // 🔍 Get classrooms assigned to this teacher
@@ -194,10 +195,11 @@ exports.login = async (req, res) => {
         profile_pic: user.profile_picture,
         classrooms, // 👈 keep assigned classes in session
       };
-
+      await logActivityForUser(req, "teacher Logged in", `Classroom: ${user.fullname}`);
       return res.redirect("/teacher/dashboard");
 
     } else if (user.role === "parent") {
+      await logActivityForUser(req, "parent logged in", `Classroom: ${user.fullname}`);
       return res.redirect("/parent/dashboard");
 
     } else if (user.role === "individual_student" || user.role === "student") {
@@ -329,7 +331,11 @@ exports.updateUser = async (req, res) => {
       "UPDATE users2 SET fullname = $1, email = $2, phone = $3, gender = $4, role = $5, wallet_balance2 = $6 WHERE id = $7",
       [fullname, email, phone, gender, role, wallet_balance2, userId]
     );
-
+    await logActivityForUser(
+      req,
+      "User updated",
+      `user name: ${fullname}`
+    );
     res.redirect("/admin/dashboard");
   } catch (error) {
     console.error("Error updating user:", error);
@@ -342,6 +348,11 @@ exports.deleteUser = async (req, res) => {
 
   try {
     await pool.query("DELETE FROM users2 WHERE id = $1", [userId]);
+    await logActivityForUser(
+      req,
+      "User Deleted",
+      `User's name: ${fullname}`
+    );
     res.redirect("/admin/dashboard");
   } catch (error) {
     console.error("Error deleting user:", error);
@@ -372,6 +383,11 @@ exports.updateAdminProfile = async (req, res) => {
     [fullname, phone, profile_picture, dob, req.session.user.id]
   );
   req.session.user.profile_picture = profile_picture; // update session
+  await logActivityForUser(
+    req,
+    "Admin Profile Updated ",
+    `Admin name: ${fullname}`
+  );
   res.redirect("/admin/profile");
 };
 
@@ -435,7 +451,11 @@ exports.createPathway = async (req, res) => {
       show_on_homepage === "true",
     ]
   );
-
+  await logActivityForUser(
+    req,
+    "Pathway Created",
+    `Pathway name: ${title}`
+  );
   res.redirect("/admin/pathways");
 };
 
@@ -443,6 +463,11 @@ exports.createPathway = async (req, res) => {
 exports.deletePathway = async (req, res) => {
   const { id } = req.params;
   await pool.query("DELETE FROM career_pathways WHERE id = $1", [id]);
+  await logActivityForUser(
+    req,
+    "Pathway deleted",
+    `Pathway ID: ${id}`
+  );
   res.redirect("/admin/pathways");
 };
 
@@ -499,7 +524,11 @@ exports.editPathway = async (req, res) => {
       id,
     ]
   );
-
+await logActivityForUser(
+  req,
+  "Pathway edited",
+  `Pathway title: ${title}`
+);
   res.redirect("/admin/pathways");
 };
 
@@ -564,6 +593,11 @@ exports.createCourse = async (req, res) => {
     [title, description, level, career_pathway_id || null, thumbnail_url, sort_order]
   );
 
+  await logActivityForUser(
+    req,
+    "Course Create",
+    `Course title: ${title}`
+  );
   res.redirect("/admin/courses");
 };
 
@@ -611,6 +645,11 @@ exports.editCourse = async (req, res) => {
       ]
     );
 
+    await logActivityForUser(
+      req,
+      "Course edited",
+      `Course title: ${title}`
+    );
     res.redirect("/admin/courses");
   } catch (err) {
     console.error("❌ Error editing course:", err.message);
@@ -623,6 +662,11 @@ exports.deleteCourse = async (req, res) => {
 
   try {
     await pool.query("DELETE FROM courses WHERE id = $1", [id]);
+    await logActivityForUser(
+      req,
+      "Course deleted",
+      `Course ID: ${id}`
+    );
     res.redirect("/admin/courses");
   } catch (err) {
     console.error("❌ Error deleting course:", err.message);
@@ -684,8 +728,6 @@ exports.createCourseUnderPathway = async (req, res) => {
   res.redirect(`/admin/pathways/${id}/courses`);
 };
 
-
-
 exports.showBenefits = async (req, res) => {
   const infoResult = await pool.query(
     "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
@@ -719,7 +761,11 @@ exports.createBenefit = async (req, res) => {
     "INSERT INTO benefits (title, description, icon) VALUES ($1, $2, $3)",
     [title, description, icon]
   );
-
+  await logActivityForUser(
+    req,
+    "Benefit created",
+    `Benefit title: ${title}`
+  );
   res.redirect("/admin/benefits");
 }
 
@@ -823,7 +869,11 @@ exports.createEvent = async (req, res) => {
         show_on_homepage
       ]
     );
-
+    await logActivityForUser(
+      req,
+      "Event created",
+      `Event title: ${title}`
+    );
     res.redirect("/admin/events");
   } catch (err) {
     console.error("Error creating event:", err.message);
@@ -1886,6 +1936,11 @@ exports.approveQuote = async (req, res) => {
     await pool.query("UPDATE quotes SET status = 'approved' WHERE id = $1", [
       id,
     ]);
+    await logActivityForUser(
+      req,
+      "Quote approved",
+      `Quote ID: ${id}`
+    );
     res.redirect("/admin/quotes");
   } catch (err) {
     console.error("Error approving quote:", err);

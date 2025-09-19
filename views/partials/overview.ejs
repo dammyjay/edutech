@@ -32,6 +32,304 @@ function openEditModal(classroomId, classroomName, teacherIds) {
 </script>
 
 
+<div class="kpi-row">
+  <div class="kpi-card">
+    👨‍🏫 <h3><%= teachers.length %></h3>
+    <p>Total Teachers</p>
+  </div>
+  <div class="kpi-card">
+    🎓 <h3><%= students.length %></h3>
+    <p>Total Students</p>
+  </div>
+  <div class="kpi-card">
+    🏫 <h3><%= classrooms.length %></h3>
+    <p>Total Classrooms</p>
+  </div>
+  <div class="kpi-card">
+    ⏳ <h3><%= pendingUsers.length %></h3>
+    <p>Pending Approvals</p>
+  </div>
+  <div class="kpi-card">
+    📚 <h3><%= classrooms.filter(c => c.modules_count > 0).length %></h3>
+    <p>Active Courses</p>
+  </div>
+</div>
+
+<div class="charts-grid">
+  <div class="chart-box">
+    <h3>Teachers vs Students</h3>
+    <canvas id="teacherStudentChart"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>Students per Classroom</h3>
+    <canvas id="classroomChart"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>Pending vs Approved</h3>
+    <canvas id="pendingChart"></canvas>
+  </div>
+</div>
+
+
+<!-- <div class="activity-feed">
+<h3>📰 Recent Activity</h3>
+<ul>
+  <% recentActivities.forEach(a => { %>
+    <li>
+      <strong><%= a.fullname || a.role || "System" %></strong> - <%= a.action %>
+      <% if (a.details) { %>: <%= a.details %><% } %>
+      <small>(<%= new Date(a.created_at).toLocaleDateString() %>)</small>
+    </li>
+  <% }) %>
+</ul>
+
+</div> -->
+<div class="collapsible-header" onclick="toggleCollapse('recent-activity')">
+📰 Recent Activity
+</div>
+<div id="recent-activity" class="collapsible-content">
+  <div class="table-responsive">
+    <table class="user-table">
+        <thead>
+        <tr>
+            <th>User</th>
+            <th>Role</th>
+            <th>Action</th>
+            <th>Details</th>
+            <th>Date</th>
+        </tr>
+        </thead>
+        <tbody>
+        <% if (recentActivities && recentActivities.length > 0) { %>
+            <% recentActivities.forEach(a => { %>
+            <tr>
+                <td><%= a.fullname || "System" %></td>
+                <td><%= a.role || "-" %></td>
+                <td><%= a.action %></td>
+                <td><%= a.details || "-" %></td>
+                <td><%= new Date(a.created_at).toLocaleDateString() %></td>
+            </tr>
+            <% }) %>
+        <% } else { %>
+            <tr>
+            <td colspan="5" class="text-center">No recent activity</td>
+            </tr>
+        <% } %>
+        </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="collapsible-header" onclick="toggleCollapse('teacher-performance')">
+📊 Teacher Performance Snapshot
+</div>
+<div id="teacher-performance" class="collapsible-content">
+  <div class="table-responsive">
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Classrooms Managed</th>
+          <th>Students</th>
+          <th>Avg. Engagement</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% teacherPerformance.forEach(t => { %>
+          <tr>
+            <td><%= t.fullname %></td>
+            <td><%= t.email %></td>
+            <td><%= t.classrooms_assigned %></td>
+            <td><%= t.total_students %></td>
+            <td>
+              <% if (t.avg_engagement && t.avg_engagement > 0) { 
+                   let rate = Number(t.avg_engagement).toFixed(1);
+                   let color = rate >= 70 ? "green" : rate >= 40 ? "orange" : "red";
+              %>
+                <span style="color:<%= color %>; font-weight:600;">
+                  <%= rate %>%
+                </span>
+              <% } else { %>
+                <span style="color:gray;">N/A</span>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+
+<div class="collapsible-header" onclick="toggleCollapse('student-engagement')">
+🎯 Student Engagement Snapshot
+</div>
+<!-- <div id="student-engagement" class="collapsible-content">
+  <div class="table-responsive">
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Lessons Completed</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% studentEngagement.forEach(s => { %>
+          <tr>
+            <td><%= s.fullname %></td>
+            <td><%= s.email %></td>
+            <td><%= s.lessons_completed %></td>
+            <td>
+              <% if (s.lessons_completed < 5) { %>
+                🚨 At Risk
+              <% } else { %>
+                ✅ Active
+              <% } %>
+            </td>
+            <td>
+              <button class="btn-edit">📩 Remind</button>
+              <button class="btn-view">👨‍🏫 Assign Mentor</button>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div> -->
+
+<div id="student-engagement" class="collapsible-content">
+  <div class="table-responsive">
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Lessons Completed</th>
+          <th>Engagement</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% studentEngagement.forEach(s => { %>
+          <tr>
+            <td><%= s.fullname %></td>
+            <td><%= s.email %></td>
+            <td><%= s.lessons_completed %> / <%= s.total_lessons %></td>
+            <td><%= s.engagement_rate %>%</td>
+            <td>
+              <% if (s.engagement_rate < 30) { %>
+                🚨 At Risk
+              <% } else if (s.engagement_rate < 70) { %>
+                ⚠️ Needs Attention
+              <% } else { %>
+                ✅ Active
+              <% } %>
+            </td>
+            <td>
+              <button class="btn-edit">📩 Remind</button>
+              <button class="btn-view">👨‍🏫 Assign Mentor</button>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- <form method="POST" action="/school-admin/approvals/bulk">
+  <select name="filterRole" onchange="this.form.submit()">
+    <option value="">All</option>
+    <option value="teacher">Teachers</option>
+    <option value="student">Students</option>
+  </select>
+  
+  <button type="submit" name="action" value="approve">Approve Selected</button>
+  <button type="submit" name="action" value="reject">Reject Selected</button>
+  
+  <table>
+    <thead>
+      <tr>
+        <th><input type="checkbox" onclick="toggleAll(this)"></th>
+        <th>Name</th><th>Email</th><th>Role</th><th>Applied On</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% pendingUsers.forEach(u => { %>
+        <tr>
+          <td><input type="checkbox" name="userIds" value="<%= u.id %>"></td>
+          <td><%= u.fullname %></td>
+          <td><%= u.email %></td>
+          <td><%= u.role_in_school %></td>
+          <td><%= new Date(u.joined_at).toDateString() %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</form> -->
+
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Get data from EJS locals
+  const teachers = <%- JSON.stringify(teachers) %>;
+  const students = <%- JSON.stringify(students) %>;
+  const classrooms = <%- JSON.stringify(classrooms) %>;
+  const pendingUsers = <%- JSON.stringify(pendingUsers) %>;
+
+  // === Chart 1: Teachers vs Students ===
+  new Chart(document.getElementById("teacherStudentChart"), {
+    type: "pie",
+    data: {
+      labels: ["Teachers", "Students"],
+      datasets: [{
+        data: [teachers.length, students.length],
+        backgroundColor: ["#36A2EB", "#FF6384"]
+      }]
+    }
+  });
+
+  // === Chart 2: Students per Classroom ===
+  new Chart(document.getElementById("classroomChart"), {
+    type: "bar",
+    data: {
+      labels: classrooms.map(c => c.name),
+      datasets: [{
+        label: "Students",
+        data: classrooms.map(c => c.student_count),
+        backgroundColor: "#4BC0C0"
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
+  // === Chart 3: Pending vs Approved ===
+  const approvedCount = teachers.length + students.length;
+  const pendingCount = pendingUsers.length;
+
+  new Chart(document.getElementById("pendingChart"), {
+    type: "doughnut",
+    data: {
+      labels: ["Approved", "Pending"],
+      datasets: [{
+        data: [approvedCount, pendingCount],
+        backgroundColor: ["#4CAF50", "#FFCE56"]
+      }]
+    }
+  });
+</script>
+
+
 
 
     <!-- Pending Approvals -->
@@ -237,7 +535,7 @@ function openEditModal(classroomId, classroomName, teacherIds) {
     </div>
     </div>
 
-    <!-- Create Classroom Modal -->\
+    <!-- Create Classroom Modal -->
     <div id="createClassroomModal" class="modal-overlay">
     <div class="modal-content">
         <span class="close-btn" onclick="closeModal('createClassroomModal')">&times;</span>
@@ -320,6 +618,3 @@ function openClassroom(classroomId) {
 }
 </script>
 
-
-  <!-- </div> -->
-<!-- </div> -->

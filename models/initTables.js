@@ -592,6 +592,20 @@ async function createTables() {
 
       `);
 
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS activities (
+          id SERIAL PRIMARY KEY,
+          school_id INT REFERENCES schools(id) ON DELETE CASCADE,  -- nullable if not school-specific
+          user_id INT REFERENCES users2(id) ON DELETE SET NULL,    -- who triggered the action
+          role TEXT,                                               -- e.g. 'parent', 'school_admin', 'teacher', 'student'
+          action TEXT NOT NULL,                                    -- short description: "New student joined"
+          details TEXT,                                            -- optional: "John Doe (email)"
+          scope TEXT DEFAULT 'global',                             -- 'global', 'school', 'classroom'
+          created_at TIMESTAMP DEFAULT NOW()
+        );
+
+      `);
+
     console.log("✅ All tables are updated and ready.");
   } catch (err) {
     console.error("❌ Error creating tables:", err.message);

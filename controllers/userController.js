@@ -424,6 +424,11 @@ exports.addChild = async (req, res) => {
       [parent.id, child.id]
     );
 
+    await logActivityForUser(
+      req,
+      "Parent assigned child",
+      `Parent ID: ${parent.id}`
+    );
     // res.send("✅ Request sent! Waiting for the student’s approval.");
     res.redirect("/parent/dashboard");
   } catch (err) {
