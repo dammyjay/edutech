@@ -207,6 +207,31 @@
       </div>
     </section>
 
+    <section class="stats-overview">
+      <div class="stat-box schools">
+        <i class="fas fa-school"></i>
+        <h2 class="count" data-target="<%= stats.schools %>">0</h2>
+        <p>Schools</p>
+      </div>
+      <div class="stat-box teachers">
+        <i class="fas fa-chalkboard-teacher"></i>
+        <h2 class="count" data-target="<%= stats.teachers %>">0</h2>
+        <p>Teachers</p>
+      </div>
+      <div class="stat-box students">
+        <i class="fas fa-user-graduate"></i>
+        <h2 class="count" data-target="<%= stats.students %>">0</h2>
+        <p>Students</p>
+      </div>
+      <div class="stat-box users">
+        <i class="fas fa-users"></i>
+        <h2 class="count" data-target="<%= stats.totalUsers %>">0</h2>
+        <p>Total Users</p>
+      </div>
+    </section>
+
+
+
     <section id="parents" class="section" style="text-align:center; margin: 40px 0;">
         <h2>👨‍👩‍👧 For Parents</h2>
         <p>Stay connected to your child’s learning journey. Monitor progress, assignments, and achievements.</p>
@@ -344,6 +369,33 @@
         </form>
       </div>
     </footer>
+
+    <!-- script for stats overview -->
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const counters = document.querySelectorAll(".count");
+
+        const speed = 100; // lower = faster
+        counters.forEach(counter => {
+          const updateCount = () => {
+            const target = +counter.getAttribute("data-target");
+            const count = +counter.innerText;
+
+            const increment = Math.ceil(target / speed);
+
+            if (count < target) {
+              counter.innerText = count + increment;
+              setTimeout(updateCount, 30);
+            } else {
+              counter.innerText = target;
+            }
+          };
+
+          updateCount();
+        });
+      });
+    </script>
+
 
     <!-- script for faq toggle show/hide answer -->
     <script> 
