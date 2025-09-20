@@ -144,6 +144,26 @@
     background-color: #e53935;
 }
 
+.back-btn {
+  display: inline-block;
+  background-color: #000;
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: background 0.2s ease-in-out;
+  margin-bottom: 15px;
+}
+
+.back-btn:hover {
+  background-color: #333;
+}
+.btns{
+  display: flex;
+  justify-content: space-between;
+  margin: auto;
+}
   /* Responsive */
   @media (max-width: 768px) {
     .sidenav {
@@ -179,7 +199,12 @@
 
 
 <div >
-    <a style="padding: 5px 10px; background-color: black; color: white; text-decoration: none;" href="/teacher/dashboard"> Back to dashboard</a>
+    <div class="btns">
+   <a href="javascript:void(0);" onclick="history.back()" class="back-btn">⬅ Back to students</a>
+   
+   <a class="back-btn" 
+    href="/teacher/dashboard">⬅ Back to dashboard</a>
+</div>
   <h2>📊 Student Progress: <%= student.fullname %></h2>
   <p><strong>Email:</strong> <%= student.email %></p>
 

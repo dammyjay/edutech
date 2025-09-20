@@ -1,5 +1,16 @@
 <h1>👨‍🏫 Teacher Dashboard</h1>
 
+<!-- ✅ Class Selector -->
+<div class="class-selector">
+  <label for="classSelect">Select Class:</label>
+  <select id="classSelect">
+    <option value="all">All Classes</option>
+    <% classStats.forEach(c => { %>
+      <option value="<%= c.id %>"><%= c.class_name %></option>
+    <% }) %>
+  </select>
+</div>
+
 <!-- ✅ Profile / Greeting -->
 <div class="profile-box">
   <img src="<%= profile.profile_picture || '/images/default-avatar.png' %>" 
@@ -11,119 +22,131 @@
   </div>
 </div>
 
-<!-- ✅ Key Stats -->
-<div class="cards">
-  <div class="card">👥 Students <h3><%= keyStats.total_students || 0 %></h3></div>
-  <div class="card">🏫 Classes <h3><%= keyStats.total_classes || 0 %></h3></div>
-  <div class="card">📖 Lessons <h3><%= keyStats.lessons_completed || 0 %>/<%= keyStats.total_lessons || 0 %></h3></div>
-  <div class="card">📝 Avg Quiz <h3><%= keyStats.avg_quiz_score || "N/A" %></h3></div>
-  <div class="card">📑 Avg Assignment <h3><%= keyStats.avg_assignment_score || "N/A" %></h3></div>
-  <div class="card">⏳ Engagement <h3><%= keyStats.engagement_last7 || 0 %>%</h3></div>
+<!-- ✅ Dashboard Content -->
+<div id="dashboardContent">
+  <!-- ✅ Key Stats -->
+  <div class="cards">
+    <div class="card">👥 Students <h3><%= keyStats.total_students || 0 %></h3></div>
+    <div class="card">🏫 Classes <h3><%= keyStats.total_classes || 0 %></h3></div>
+    <div class="card">📖 Lessons <h3><%= keyStats.lessons_completed || 0 %>/<%= keyStats.total_lessons || 0 %></h3></div>
+    <div class="card">📝 Avg Quiz <h3><%= keyStats.avg_quiz_score || "N/A" %></h3></div>
+    <div class="card">📑 Avg Assignment <h3><%= keyStats.avg_assignment_score || "N/A" %></h3></div>
+    <div class="card">⏳ Engagement <h3><%= keyStats.engagement_last7 || 0 %>%</h3></div>
+  </div>
 
-</div>
+  <!-- ✅ Class Overview -->
+  <h2>📚 Classes</h2>
+  <div class="cards">
+    <% classStats.forEach(c => { %>
+      <div class="card">
+        <h3><%= c.class_name %></h3>
+        <p>👥 Students: <%= c.students %></p>
+        <p>📖 Lessons: <%= c.lessons_completed %> / <%= c.total_lessons %> 
+           (<%= c.total_lessons ? Math.round((c.lessons_completed / c.total_lessons) * 100) : 0 %>%)</p>
+        <p>📝 Avg Quiz: <%= c.avg_quiz_score || "N/A" %></p>
+        <p>📑 Avg Assignment: <%= c.avg_assignment_score || "N/A" %></p>
+        <p>⏳ Engagement: <%= c.engagement || 0 %>%</p>
+        <a class="btn-view" href="/teacher/classroom/<%= c.id %>/students">View Students</a>
+      </div>
+    <% }) %>
+  </div>
 
-<!-- ✅ Class Overview -->
-<h2>📚 Classes</h2>
-<div class="cards">
-  <% classStats.forEach(c => { %>
-    <div class="card">
-      <h3><%= c.class_name %></h3>
-      <p>👥 Students: <%= c.students %></p>
-      <p>📖 Lessons: <%= c.lessons_completed %> / <%= c.total_lessons %> 
-         (<%= c.total_lessons ? Math.round((c.lessons_completed / c.total_lessons) * 100) : 0 %>%)</p>
-      <p>📝 Avg Quiz: <%= c.avg_quiz_score || "N/A" %></p>
-      <p>📑 Avg Assignment: <%= c.avg_assignment_score || "N/A" %></p>
-      <p>⏳ Engagement: <%= c.engagement || 0 %>%</p>
-      <a class="btn-view" href="/teacher/classroom/<%= c.id %>/students">View Students</a>
-    </div>
-  <% }) %>
-</div>
+  <!-- ✅ Charts -->
+  <h2>📈 Class Progress</h2>
+  <canvas id="lessonChart"></canvas>
+  <canvas id="quizChart"></canvas>
 
-<!-- ✅ Charts -->
-<h2>📈 Class Progress</h2>
-<canvas id="lessonChart"></canvas>
-<canvas id="quizChart"></canvas>
-
-<!-- ✅ Student Snapshots -->
-<h2>👨‍🎓 Top Students</h2>
-<div class="user-table-wrapper">
-  <table class="user-table">
-    <thead>
-      <tr>
-        <th>Student</th>
-        <th>Average Quiz</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% topStudents.forEach(s => { %>
+  <!-- ✅ Student Snapshots -->
+  <h2>👨‍🎓 Top Students</h2>
+  <div class="user-table-wrapper">
+    <table class="user-table">
+      <thead>
         <tr>
-          <td><%= s.fullname %></td>
-          <td><%= s.avg_score || "N/A" %></td>
+          <th>Student</th>
+          <th>Average Quiz</th>
         </tr>
-      <% }) %>
-    </tbody>
-  </table>
-</div>
+      </thead>
+      <tbody>
+        <% topStudents.forEach(s => { %>
+          <tr>
+            <td><%= s.fullname %></td>
+            <td><%= s.avg_score || "N/A" %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
 
-<h2>⚠️ Struggling Students</h2>
-<div class="user-table-wrapper">
-  <table class="user-table">
-    <thead>
-      <tr>
-        <th>Student</th>
-        <th>Lessons Done</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% strugglingStudents.forEach(s => { %>
+  <h2>⚠️ Struggling Students</h2>
+  <div class="user-table-wrapper">
+    <table class="user-table">
+      <thead>
         <tr>
-          <td><%= s.fullname %></td>
-          <td><%= s.lessons_done || 0 %></td>
+          <th>Student</th>
+          <th>Lessons Done</th>
         </tr>
-      <% }) %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% strugglingStudents.forEach(s => { %>
+          <tr>
+            <td><%= s.fullname %></td>
+            <td><%= s.lessons_done || 0 %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ✅ Notifications -->
+  <h2>📬 Notifications</h2>
+  <p>Pending Assignments to Grade: <%= pendingAssignments %></p>
 </div>
-
-
-<!-- ✅ Notifications -->
-<h2>📬 Notifications</h2>
-<p>Pending Assignments to Grade: <%= pendingAssignments %></p>
 
 <!-- ✅ Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- <script>
-  const labels = <%- JSON.stringify(classStats.map(c => c.class_name)) %>;
 
-  // Lessons Completion %
-  const lessonData = <%- JSON.stringify(classStats.map(c => 
-    c.total_lessons ? Math.round((c.lessons_completed / c.total_lessons) * 100) : 0
-  )) %>;
+<script>
+  const labels = <%- JSON.stringify(classStats.map(c => c.class_name || "Unnamed Class")) %>;
+  const lessonData = <%- JSON.stringify(classStats.map(c => {
+    const completed = c.lessons_completed || 0;
+    const total = c.total_lessons || 0;
+    return total > 0 ? Math.round((completed / total) * 100) : 0;
+  })) %>;
+  const quizData = <%- JSON.stringify(classStats.map(c => c.avg_quiz_score || 0)) %>;
+
   new Chart(document.getElementById('lessonChart'), {
     type: 'bar',
     data: { labels, datasets: [{ label: 'Lesson Completion %', data: lessonData, backgroundColor: '#27ae60' }] },
     options: { responsive: true, plugins: { legend: { display: false } } }
   });
 
-  // Avg Quiz Scores
-  const quizData = <%- JSON.stringify(classStats.map(c => c.avg_quiz_score || 0)) %>;
   new Chart(document.getElementById('quizChart'), {
     type: 'line',
     data: { labels, datasets: [{ label: 'Average Quiz Score', data: quizData, borderColor: '#2980b9', fill: false }] },
     options: { responsive: true }
   });
-</script> -->
 
+  document.getElementById('classSelect').addEventListener('change', async function() {
+    const classId = this.value;
+    try {
+      const res = await fetch(`/teacher/dashboard/data?classId=${classId}`);
+      const html = await res.text();
+      document.getElementById('dashboardContent').innerHTML = html;
 
-<script>
-  const labels = <%- JSON.stringify(classStats.map(c => c.class_name || "Unnamed Class")) %>;
-
-  const lessonData = <%- JSON.stringify(classStats.map(c => {
-    const completed = c.lessons_completed || 0;
-    const total = c.total_lessons || 0;
-    return total > 0 ? Math.round((completed / total) * 100) : 0;
-  })) %>;
-
-  const quizData = <%- JSON.stringify(classStats.map(c => c.avg_quiz_score || 0)) %>;
+      // re-run scripts inside new content (for charts)
+      const scriptTags = document.getElementById('dashboardContent').querySelectorAll("script");
+      scriptTags.forEach(oldScript => {
+        const newScript = document.createElement("script");
+        if (oldScript.src) {
+          newScript.src = oldScript.src;
+        } else {
+          newScript.textContent = oldScript.textContent;
+        }
+        document.body.appendChild(newScript);
+        oldScript.remove();
+      });
+    } catch (err) {
+      console.error('Error loading class dashboard:', err);
+    }
+  });
 </script>
-

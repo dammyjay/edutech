@@ -140,6 +140,68 @@
     background-color: #e53935;
 }
 
+/* Card grid */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin: 20px 0;
+}
+
+.card {
+  background: #f4f4f4;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+.card h3 {
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.card-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1270b0;
+}
+
+.back-btn {
+  display: inline-block;
+  background-color: #000;
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: background 0.2s ease-in-out;
+  margin-bottom: 15px;
+}
+
+.back-btn:hover {
+  background-color: #333;
+}
+.btns{
+  display: flex;
+  justify-content: space-between;
+  margin: auto;
+}
+
+
+/* On very large screens, limit card width */
+@media (min-width: 1200px) {
+  .card-grid {
+    max-width: 1000px;
+  }
+}
+
+
   /* Responsive */
   @media (max-width: 768px) {
     .sidenav {
@@ -170,34 +232,163 @@
         width: 35px !important;
         height: 35px !important;
     }
+    .card-grid {
+    width: 100%;
+  }
   }
 </style>
 
-     <a style="padding: 5px 10px; background-color: black; color: white; text-decoration: none;" href="/teacher/dashboard"> Back to dashboard</a>
-    <h2>👥 Classroom Students</h2>
-    <div class="table-responsive">
-        <table class="user-table"  border="1" cellpadding="8" cellspacing="0" width="100%">
-        <thead>
-            <tr>
-            <th>ID</th>
-            <th>Full Name</th>
-            <th>Email</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% if (students.length > 0) { %>
-            <% students.forEach(stu => { %>
-                <tr>
-                <td><%= stu.id %></td>
-                <td><%= stu.fullname %></td>
-                <td><%= stu.email %></td>
-                </tr>
-            <% }) %>
-            <% } else { %>
-            <tr>
-                <td colspan="3">No students found in this class.</td>
-            </tr>
-            <% } %>
-        </tbody>
-        </table>
-    </div>
+<div class="btns">
+   <a href="javascript:void(0);" onclick="history.back()" class="back-btn">⬅ Back to classes</a>
+   
+   <a class="back-btn" 
+    href="/teacher/dashboard">⬅ Back to dashboard</a>
+</div>
+
+
+<h2>📊 Classroom Overview</h2>
+
+<!-- <div style="display:flex; gap:20px; margin:20px 0; flex-wrap:wrap;">
+ 
+  <div style="flex:1; min-width:200px; background:#f4f4f4; padding:20px; border-radius:8px; text-align:center;">
+    <h3>📘 Avg Progress</h3>
+    <p style="font-size:22px; font-weight:bold;"><%= avgProgress %>%</p>
+  </div>
+
+ 
+  <div style="flex:1; min-width:200px; background:#f4f4f4; padding:20px; border-radius:8px; text-align:center;">
+    <h3>🏅 Top Student</h3>
+    <% if (topStudent && topStudent.fullname) { %>
+      <p><strong><%= topStudent.fullname %></strong></p>
+      <p>Quiz Avg: <%= topStudent.avg_quiz_score || "–" %></p>
+    <% } else { %>
+      <p>No student data</p>
+    <% } %>
+  </div>
+
+
+  <div style="flex:1; min-width:200px; background:#f4f4f4; padding:20px; border-radius:8px; text-align:center;">
+    <h3>👩‍🎓 Gender Ratio</h3>
+    <canvas id="genderChart"></canvas>
+  </div>
+</div> -->
+
+<div class="card-grid">
+ 
+  <div class="card">
+    <h3>📘 Avg Progress</h3>
+    <p class="card-value"><%= avgProgress %>%</p>
+  </div>
+
+ 
+  <div class="card">
+    <h3>🏅 Top Student</h3>
+    <% if (topStudent && topStudent.fullname) { %>
+      <p><strong><%= topStudent.fullname %></strong></p>
+      <p>Quiz Avg: <%= topStudent.avg_quiz_score || "–" %></p>
+    <% } else { %>
+      <p>No student data</p>
+    <% } %>
+  </div>
+
+
+  <div class="card">
+    <h3>👩‍🎓 Gender Ratio</h3>
+    <canvas id="genderChart"></canvas>
+  </div>
+</div>
+
+<!-- Charts -->
+<h2>📈 Class Analytics</h2>
+<div style="display:flex; gap:30px; flex-wrap:wrap;">
+  <div style="flex:1; min-width:300px;">
+    <h3>Progress Distribution</h3>
+    <canvas id="progressChart"></canvas>
+  </div>
+  <div style="flex:1; min-width:300px;">
+    <h3>Quiz Performance</h3>
+    <canvas id="quizChart"></canvas>
+  </div>
+</div>
+
+<!-- Student Table -->
+<h2>👥 Student Details</h2>
+<div class="table-responsive">
+  <table class="user-table" border="1" cellpadding="8" cellspacing="0" width="100%">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Full Name</th>
+        <th>Email</th>
+        <th>Gender</th>
+        <th>Lessons</th>
+        <th>Quiz Avg</th>
+        <th>Assignment Avg</th>
+        <th>Last Active</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (students.length > 0) { %>
+        <% students.forEach(stu => { %>
+          <tr>
+            <td><%= stu.id %></td>
+            <td><%= stu.fullname %></td>
+            <td><%= stu.email %></td>
+            <td><%= stu.gender || "–" %></td>
+            <td><%= stu.lessons_completed %> / <%= stu.total_lessons %></td>
+            <td><%= stu.avg_quiz_score || "–" %></td>
+            <td><%= stu.avg_assignment_score || "–" %></td>
+            <td><%= stu.last_login ? stu.last_login.toLocaleString() : "Never" %></td>
+          </tr>
+        <% }) %>
+      <% } else { %>
+        <tr>
+          <td colspan="8">No students found in this class.</td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Gender chart
+  new Chart(document.getElementById('genderChart'), {
+    type: 'doughnut',
+    data: {
+      labels: <%- JSON.stringify(genderSummary.map(g => g.gender || "Unknown")) %>,
+      datasets: [{
+        data: <%- JSON.stringify(genderSummary.map(g => parseInt(g.count))) %>,
+        backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56']
+      }]
+    }
+  });
+
+  // Progress distribution
+  new Chart(document.getElementById('progressChart'), {
+    type: 'bar',
+    data: {
+      labels: ['0–49%', '50–74%', '75–100%'],
+      datasets: [{
+        label: 'Number of Students',
+        data: [<%= progressDist.low %>, <%= progressDist.mid %>, <%= progressDist.high %>],
+        backgroundColor: ['#e74c3c', '#f39c12', '#27ae60']
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+
+  // Quiz scores per student
+  new Chart(document.getElementById('quizChart'), {
+    type: 'bar',
+    data: {
+      labels: <%- JSON.stringify(students.map(s => s.fullname)) %>,
+      datasets: [{
+        label: 'Avg Quiz Score',
+        data: <%- JSON.stringify(students.map(s => s.avg_quiz_score || 0)) %>,
+        backgroundColor: '#2980b9'
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+</script>
