@@ -247,7 +247,25 @@
         </div>
       </section>
 
-       
+       <% if (carouselImages && carouselImages.length > 0) { %>
+        <section class="hero-carousel">
+          <h1>Here are some of our Highlights</h1>
+
+          <% carouselImages.forEach(function(img, idx) { %>
+            <div class="carousel-slide" 
+                style="background-image: url('<%= img.image_url %>'); <%= idx === 0 ? '' : 'display:none;' %>">
+              <div class="carousel-overlay">
+                <h2><%= img.title %></h2>
+              </div>
+            </div>
+          <% }) %>
+
+          <button class="carousel-btn prev" onclick="prevSlide()">&#10094;</button>
+          <button class="carousel-btn next" onclick="nextSlide()">&#10095;</button>
+        </section>
+      <% } %>
+
+
 
     
     <% if (isLoggedIn) { %>
@@ -328,7 +346,7 @@
     </footer>
 
     <!-- script for faq toggle show/hide answer -->
-    <!-- <script> 
+    <script> 
       function toggleFaq(index) { 
         const answer = document.getElementById(`answer-${index}`); 
         const icon = document.getElementById(`icon-${index}`); 
@@ -342,7 +360,7 @@
           icon.classList.add('fa-plus'); 
         } 
       } 
-    </script> -->
+    </script>
 
 <!-- for redirect if user is not logged in -->
 <script>
@@ -409,7 +427,7 @@
 
 
 <!-- script for carousel  -->
-<!-- <script>
+ <script>
   let currentSlide = 0;
   const slides = document.querySelectorAll('.carousel-slide');
 
@@ -432,7 +450,7 @@
 
   setInterval(nextSlide, 4000); // Change every 4 seconds
   if (slides.length > 0) showSlide(0);
-</script> -->
+</script>
 
 <!-- script to preview announcement -->
 <!-- <script>
