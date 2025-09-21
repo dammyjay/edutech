@@ -326,6 +326,31 @@
           <p id="fullTestimonyName" style="text-align: right; font-weight: bold;"></p>
         </div>
       </div>
+
+       <!-- Frequently Asked Questions -->    
+    <section id="faq" class="section"> 
+      <h2>Frequently Asked Questions</h2> 
+      <div class="faq-list"> 
+        <% faqs.forEach((faq, index) => { %> 
+          <div class="faq-item">
+             
+            <div class="faq-question" onclick="toggleFaq(<%- index %>)">
+              <h4>Q: <%- faq.question %></h4> 
+              <i id="icon-<%= index %>" class="fas fa-plus"></i> 
+            </div> 
+            <div id="answer-<%= index %>" class="faq-answer hidden"> 
+              <% if (faq.answer) { %> 
+                <p><strong>A:</strong> <%- faq.answer %></p> 
+                <% } else { %> 
+                  <p><em>Answer coming soon...</em></p> 
+                  <% } %> 
+                </div> 
+              </div> <% }) %> 
+      </div> 
+      <div style="text-align: center; margin-top: 20px">
+        <a href="/faq" class="login-button">Ask a question</a>
+      </div>
+    </section>
     
     <% if (isLoggedIn) { %>
       <!-- <a href="/make-payment" class="btn btn-primary">Make a Payment</a> -->

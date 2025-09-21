@@ -257,6 +257,38 @@ router.get("/", async (req, res) => {
 });
 
 
+router.get("/faq", async (req, res) => {
+  try {
+    const search = req.query.search || "";
+    let faqResult;
+
+    if (search) {
+      faqResult = await pool.query(
+        "SELECT * FROM faqs WHERE LOWER(question) LIKE $1 ORDER BY created_at DESC",
+        [`%${search.toLowerCase()}%`]
+      );
+    } else {
+      faqResult = await pool.query(
+        "SELECT * FROM faqs ORDER BY created_at DESC"
+      );
+    }
+
+    const infoResult = await pool.query(
+      "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
+    );
+
+    res.render("faq", {
+      info: infoResult.rows[0] || {},
+      faqs: faqResult.rows,
+      search, // pass current search back to the EJS view
+      user: req.session.user || null,
+    });
+  } catch (err) {
+    console.error("Error fetching FAQs:", err);
+    res.status(500).send("Error loading FAQs");
+  }
+});
+
 router.post("/faq/ask", async (req, res) => {
   const { question, email } = req.body;
 
@@ -274,7 +306,7 @@ router.post("/faq/ask", async (req, res) => {
 // Show Testimony Form Page (optional if part of another page)
 router.get("/testimony", async (req, res) => {
   const infoResult = await pool.query(
-    "SELECT * FROM ministry_info ORDER BY id DESC LIMIT 1"
+    "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
   );
   const testimonyResult = await pool.query(
     "SELECT * FROM testimonies WHERE is_published = true ORDER BY id"

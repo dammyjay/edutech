@@ -97,6 +97,11 @@ app.use("/", aboutRoutes);
 const galleryRoutes = require("./routes/galleryRoutes");
 app.use("/", galleryRoutes);
 
+const publicFaqRoutes = require("./routes/publicFaqRoutes.js");
+app.use("/", publicFaqRoutes);
+
+const adminFaqRoutes = require("./routes/adminFaqRoutes");
+app.use("/", adminFaqRoutes);
 
 const studentRoutes = require("./routes/student");
 app.use("/student", studentRoutes);

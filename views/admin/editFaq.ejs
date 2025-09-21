@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit FAQ</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="icon" type="image/x-icon" href="/logo.png" />
+    <script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="logo-title">
+       <a href="/"> <img src="/logo.png" alt="Logo" /></a>
+  
+        <p>C&S Church Online</p>
+      </div>
+      <button class="nav-toggle" onclick="toggleNav()">☰</button>
+      <nav id="main-nav">
+        <a href="/admin/dashboard">Dashboard</a>
+        <a href="/admin/articles">Articles</a>
+        <a href="/admin/videos">Videos</a>
+        <a href="/admin/ministry">About Us</a>
+        <a href="/profile">Profile</a>
+        
+        <!-- Assuming About refers to Mission & Vision -->
+        <a href="/admin/logout" class="logout-button">Logout</a>
+        <!-- Login remains a page link -->
+        
+      </nav>
+    </header>
+    <h2>Edit FAQ</h2>
+    <form action="/admin/faqs/update/<%= faq.id %>" method="POST">
+      <p><strong>Question:</strong> <%- faq.question %></p>
+      <label for="answer">Answer:</label><br />
+      <textarea name="answer" id="content" rows="5"><%- faq.answer || '' %></textarea
+      ><br /><br />
+
+      <label>
+        <input type="checkbox" name="is_published" <%= faq.is_published ? 'checked' : '' %>> Publish this answer
+      </label><br><br>
+      
+      <button type="submit">Save</button>
+      <a href="/admin/faqs">Cancel</a>
+      
+    </form>
+    <script> CKEDITOR.replace('content'); </script>
+    <script>
+      function toggleNav() {
+        var nav = document.getElementById("main-nav");
+        nav.classList.toggle("open");
+      }
+    </script>
+  </body>
+</html>

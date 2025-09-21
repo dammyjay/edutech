@@ -41,7 +41,7 @@ const pool = require("../models/db");
 // Show All Testimonies
 router.get("/admin/testimonies", async (req, res) => {
   const info =
-    (await pool.query("SELECT * FROM ministry_info ORDER BY id DESC LIMIT 1"))
+    (await pool.query("SELECT * FROM company_info ORDER BY id DESC LIMIT 1"))
       .rows[0] || {};
   const testimonies = (
     await pool.query("SELECT * FROM testimonies ORDER BY created_at DESC")

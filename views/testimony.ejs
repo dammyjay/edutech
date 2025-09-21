@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>FAQs</title>
+    <link rel="icon" type="image/x-icon" href="/logo.png" />
+    <script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+      integrity="sha512-..."
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="logo-title">
+        <% if (info?.logo_url) { %>
+        <a href="/home2"><img src="<%= info.logo_url %>" alt="Logo" /></a>
+        <% } %>
+        <p><%= info?.name || 'C&S Church Online' %></p>
+      </div>
+      <button class="nav-toggle" onclick="toggleNav()">☰</button>
+      <nav id="main-nav">
+        <a href="/home2">Home</a>
+        <a href="/articles">Articles</a>
+        <a href="/videos">Videos</a>
+        <a href="/devotionals">Devotionals</a>
+        <a href="/about">About Us</a>
+        <a class="active" href="/testimony">Testimonies</a>
+        <a href="/faq">FAQ</a>
+        <a href="/profile">Profile</a>
+        <!-- Assuming About refers to Mission & Vision -->
+        <a href="/admin/logout" class="logout-button">Logout</a>
+        <!-- Login remains a page link -->
+      </nav>
+    </header>
+    <section class="section">
+      <h2>Share Your Testimony</h2>
+      <form method="POST" action="/testimony">
+        <input type="text" name="name" placeholder="Your Name" required /><br /><br />
+        <input type="email" name="email" placeholder="Email (optional)" /><br /><br />
+        <textarea name="message" placeholder="Your testimony..." required></textarea><br /><br />
+        <button type="submit">Submit</button>
+      </form>
+      <hr style="margin: 40px 0" />
+
+    </section>
+
+    <!-- All questions are answered by our admin team. If you have a question that is not listed here, please submit it using the form above. We will get back to you as soon as possible. -->
+   <!-- <section class="section">
+      <h2>Frequently Asked Questions</h2>
+      <div class="faq-list">
+        <% testimonies.forEach(t => { %>
+          <blockquote>
+            “<%= t.message %>”<br />
+            — <strong><%= t.name %></strong>
+          </blockquote>
+        <% }) %>
+      </div>
+    </section> -->
+    <section class="section">   
+      <h3 style="text-align:center;">Testimonies</h3>
+      <div class="testimony-grid">
+        <% testimonies.forEach(t => { %>
+          <div class="testimony-card" onclick='openTestimonyModal(<%- JSON.stringify(t.message) %>, <%- JSON.stringify(t.name) %>)'>
+            <p class="testimony-message">“<%= t.message.substring(0, 200) %>...”</p>
+            <p class="testimony-name">— <strong><%= t.name %></strong></p>
+            <!-- <p class="testimony-name">— <strong>Anonymous</strong></p> -->
+          </div>
+        <% }) %>
+      </div>
+    </section>
+
+    <div id="testimonyModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close" onclick="closeTestimonyModal()">&times;</span>
+        <h3 style="text-align: center; color: #a9712f;">Full Testimony</h3>
+        <p id="fullTestimonyMessage" style="text-align: justify;"></p>
+        <p id="fullTestimonyName" style="text-align: right; font-weight: bold;"></p>
+      </div>
+    </div>
+
+    <!-- open and close modal script -->
+    <script>
+      function openTestimonyModal(message, name) {
+        document.getElementById("fullTestimonyMessage").innerText = message;
+        // document.getElementById("fullTestimonyName").innerText = `— ${name}`;
+        document.getElementById("fullTestimonyName").innerText = "— Anonymous";
+        document.getElementById("testimonyModal").style.display = "block";
+      }
+    
+      function closeTestimonyModal() {
+        document.getElementById("testimonyModal").style.display = "none";
+      }
+    
+      window.addEventListener("click", function (e) {
+        const modal = document.getElementById("testimonyModal");
+        if (e.target === modal) {
+          modal.style.display = "none";
+        }
+      });
+    </script>
+    
+
+<!-- search script  -->
+<script>
+  document.getElementById('faqSearch').addEventListener('input', function() {
+    const searchValue = this.value.toLowerCase();
+    document.querySelectorAll('.article-card-filter').forEach(card => {
+      const title = card.querySelector('h3').innerText.toLowerCase();
+      if (title.includes(searchValue)) {
+        card.style.display = '';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  });
+</script>
+
+
+    <footer class="site-footer">
+      <div class="footer-container"> 
+        <div class="footer-about"> 
+            <a href="/"><img src="/logo.png" alt="Logo" width="50px" height="50px"/></a>
+            
+          <h3>C&S Church Online</h3> 
+          <p>Empowering lives through the gospel of Christ. Join us to learn, grow and connect with a family of faith.</p> 
+        </div>
+
+        <div class="footer-about">
+          <P>You can also support willingly</P>
+          <h3>Account Name: Cherubim and Seraphim Church Online</h4>
+          <h1 style="color: white;">Account Number: 0126607952</h1>
+          <h3>Bank: wema bank</h3>
+        </div>
+     
+      <div class="footer-social"> <h4>Connect with us</h4> 
+        <div class="social-links"> 
+          <a href="https://chat.whatsapp.com/KDcpdDfv3kX9NDnnQZVU72" target="_blank" aria-label="WhatsApp"> 
+            <i class="fab fa-whatsapp"></i> 
+          </a> 
+
+          <a href="https://facebook.com/profile.php?id=100083934734942" target="_blank" aria-label="WhatsApp"> 
+            <i class="fab fa-facebook"></i> 
+          </a> 
+          
+          <a href="https://instagram.com/cands.online" target="_blank" aria-label="Instagram"> 
+            <i class="fab fa-instagram"></i> 
+          </a> 
+          
+          <a href="https://youtube.com/@candschurchonline" target="_blank" aria-label="YouTube"> 
+            <i class="fab fa-youtube"></i> 
+          </a> 
+          
+          <a href="https://t.me/cherubimandseraphimchurchonline" target="_blank" aria-label="Telegram"> 
+            <i class="fab fa-telegram-plane"></i> 
+          </a> 
+          
+          <a href="mailto:candschurchonline@gmail.com" target="_blank" aria-label="Email"> 
+            <i class="fas fa-envelope"></i> 
+          </a>
+        </div>
+       </div>
+
+      <div class="footer-subscribe">
+        <h4>Subscribe to our newsletter</h4>
+        <form method="POST" action="/subscribe" class="subscribe-form">
+          <input
+            type="email"
+            name="email"
+            placeholder="Enter your email"
+            required
+          />
+          <button type="submit">Subscribe</button>
+        </form>
+      </div>
+    </footer>
+    <script>
+      CKEDITOR.replace("content");
+    </script>
+    <script>
+      function toggleFaq(index) {
+        const answer = document.getElementById(`answer-${index}`);
+        const icon = document.getElementById(`icon-${index}`);
+        if (answer.classList.contains("hidden")) {
+          answer.classList.remove("hidden");
+          icon.classList.remove("fa-plus");
+          icon.classList.add("fa-minus");
+        } else {
+          answer.classList.add("hidden");
+          icon.classList.remove("fa-minus");
+          icon.classList.add("fa-plus");
+        }
+      }
+    </script>
+
+    <!-- For the navigation toggle -->
+<script>
+  function toggleNav() {
+    const nav = document.getElementById("main-nav");
+    nav.classList.toggle("open");
+  }
+
+  // Close nav when clicking outside
+  document.addEventListener("click", function(event) {
+    const nav = document.getElementById("main-nav");
+    const toggleBtn = document.querySelector(".nav-toggle");
+
+    const clickedInsideNav = nav.contains(event.target);
+    const clickedToggle = toggleBtn.contains(event.target);
+
+    if (!clickedInsideNav && !clickedToggle) {
+      nav.classList.remove("open");
+    }
+  });
+</script>
+
+    
+  </body>
+</html>
