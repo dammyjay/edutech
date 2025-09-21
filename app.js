@@ -130,6 +130,9 @@ app.get("/api/check-school/:schoolId", async (req, res) => {
   }
 });
 
+const adminTestimonyRoutes = require("./routes/adminTestimonyRoutes");
+app.use("/", adminTestimonyRoutes);
+
 
 runNewsletterScheduler();
 

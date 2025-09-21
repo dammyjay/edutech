@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Manage Testimonies</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="icon" type="image/x-icon" href="/logo.png" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="logo-title">
+        <% if (info.logo_url) { %>
+        <img src="<%= info.logo_url %>" alt="Logo" />
+        <% } %>
+        <p><%= info.name || 'C&S Church Online' %></p>
+      </div>
+      <button class="nav-toggle" onclick="toggleNav()">☰</button>
+      <nav id="main-nav">
+        <a href="/admin/dashboard">Dashboard</a>
+        <a href="/admin/faqs">FAQs</a>
+        <a class="active" href="/admin/testimonies">Testimonies</a>
+        <a href="/admin/devotionals">Devotionals</a>
+        <a href="/admin/newsletter">Newsletter</a>
+      </nav>
+    </header>
+
+    <h2>Manage Testimonies</h2>
+
+    <div class="article-card">
+      <% testimonies.forEach(t => { %>
+        <div class="faq-item">
+          <p><strong>Name:</strong> <%= t.name %></p>
+          <p><strong>Email:</strong> <%= t.email || "Anonymous" %></p>
+          <p><strong>Message:</strong><br><%= t.message %></p>
+          <p><small>Created: <%= new Date(t.created_at).toLocaleString() %></small></p>
+          <p><small>Published: <%= t.is_published ? "✅ Yes" : "❌ No" %></small></p>
+          
+          <div class="article-buttons">
+            <form action="/admin/testimonies/toggle/<%= t.id %>" method="POST">
+              <input type="hidden" name="publish" value="<%= !t.is_published %>">
+              <button type="submit"><%= t.is_published ? "Unpublish" : "Publish" %></button>
+            </form>
+
+            <form action="/admin/testimonies/delete/<%= t.id %>" method="POST" onsubmit="return confirm('Delete this testimony?');">
+              <button type="submit" style="color: red;">Delete</button>
+            </form>
+          </div>
+          <hr />
+        </div>
+      <% }) %>
+    </div>
+
+<!-- For the navigation toggle -->
+<script>
+  function toggleNav() {
+    const nav = document.getElementById("main-nav");
+    nav.classList.toggle("open");
+  }
+
+  // Close nav when clicking outside
+  document.addEventListener("click", function(event) {
+    const nav = document.getElementById("main-nav");
+    const toggleBtn = document.querySelector(".nav-toggle");
+
+    const clickedInsideNav = nav.contains(event.target);
+    const clickedToggle = toggleBtn.contains(event.target);
+
+    if (!clickedInsideNav && !clickedToggle) {
+      nav.classList.remove("open");
+    }
+  });
+</script>
+  </body>
+</html>

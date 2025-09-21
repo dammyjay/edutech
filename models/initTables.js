@@ -174,7 +174,7 @@ async function createTables() {
 `
     );
 
-    // table for testimonials
+    // table for about sections
     await pool.query(
       `CREATE TABLE IF NOT EXISTS about_sections (
         id SERIAL PRIMARY KEY,
@@ -184,6 +184,30 @@ async function createTables() {
         updated_at TIMESTAMP DEFAULT NOW()
       );`
     );
+
+    // tables for testimonies 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS testimonies (
+        id SERIAL PRIMARY KEY,
+        name TEXT,
+        email TEXT,
+        message TEXT,
+        is_published BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // table for faqs
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS faqs (
+        id SERIAL PRIMARY KEY,
+        question TEXT NOT NULL,
+        answer TEXT,
+        email TEXT,
+        is_published BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
 
     // table for gallery categories
     await pool.query(

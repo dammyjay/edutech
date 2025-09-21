@@ -291,7 +291,41 @@
       <% } %>
 
 
+<section id="testimony" class="testimonial-slider">
+        <h2>What People Are Saying</h2>
+        <div class="slider-container" id="testimony-slider">
+          <% for (let i = 0; i < testimonies.length; i += 1) { %>
+            <div class="testimony-row slide <%= i === 0 ? 'active' : '' %>">
+              <div class="testimony-group">
+                <% for (let j = i; j < i + 1 && j < testimonies.length; j++) { %>
+                  <div class="testimony-card" onclick="openTestimonyModal(`<%- testimonies[j].message.replace(/`/g, '\\`') %>`, '<%= testimonies[j].name %>')">
+                    <p class="testimony-message">“<%= testimonies[j].message.substring(0, 200) %>...”</p>
+                    <!-- <p class="testimony-name">— <strong><%= testimonies[j].name %></strong></p> -->
+                    <p class="testimony-name">— <strong>Anonymous</strong></p>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          <% } %>
+          <button class="prev" onclick="changeTestimonySlide(-1)">❮</button>
+          <button class="next" onclick="changeTestimonySlide(1)">❯</button>
+        </div>
+        <p>You can click on the testimony to view full details</p>
+        <div style="text-align: center; margin-top: 20px">
+          <a href="/testimony" class="login-button">View All Testimony</a>
+        </div>
+      </section>
 
+
+      <!-- Testimony Modal -->
+      <div id="testimonyModal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <span class="close" onclick="closeTestimonyModal()">&times;</span>
+          <h3 style="color: #a9712f; text-align: center;">Testimony</h3>
+          <p id="fullTestimonyMessage" style="margin: 1rem 0; text-align: justify;"></p>
+          <p id="fullTestimonyName" style="text-align: right; font-weight: bold;"></p>
+        </div>
+      </div>
     
     <% if (isLoggedIn) { %>
       <!-- <a href="/make-payment" class="btn btn-primary">Make a Payment</a> -->
@@ -503,6 +537,26 @@
   setInterval(nextSlide, 4000); // Change every 4 seconds
   if (slides.length > 0) showSlide(0);
 </script>
+
+<!-- script for testimony -->
+<script>
+        let currentTestimonySlide = 0;
+        const testimonySlides = document.querySelectorAll('.testimony-row');
+      
+        function showTestimonySlide(index) {
+          testimonySlides.forEach((slide, i) => {
+            slide.classList.toggle('active', i === index);
+          });
+        }
+      
+        function changeTestimonySlide(step) {
+          currentTestimonySlide = (currentTestimonySlide + step + testimonySlides.length) % testimonySlides.length;
+          showTestimonySlide(currentTestimonySlide);
+        }
+      
+        // Auto switch every 15 seconds (optional)
+        setInterval(() => changeTestimonySlide(1), 15000);
+      </script>
 
 <!-- script to preview announcement -->
 <!-- <script>
