@@ -1442,6 +1442,7 @@ nav a:hover {
     border-radius: 6px;
     text-align: center;
     margin-bottom: 15px;
+    color: #000;
     }
     .dashboard-stats {
     display: flex;
@@ -1449,6 +1450,10 @@ nav a:hover {
     margin-bottom: 20px;
     flex-wrap: wrap;
     justify-content: space-between;
+    color:#000000 ;
+    }
+    .dashboard-stats h3 p {
+        color: #000;
     }
 
 .testimony-grid {

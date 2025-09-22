@@ -893,23 +893,21 @@ canvas {
     border-radius: 50%;
     margin-right: 10px;
 }
+/* 
 .stats-boxes {
     display: flex;
     flex-wrap: wrap;
-    /* Allow wrapping on smaller screens */
     gap: 20px;
     margin-bottom: 30px;
 }
 
 .stat-box {
     flex: 1 1 calc(25% - 20px);
-    /* Each box takes up 25% of row minus the gap */
     padding: 20px;
     border-radius: 8px;
     text-align: center;
     background: #f1f1f1;
     min-width: 220px;
-    /* Prevent too small items on very small screens */
     box-sizing: border-box;
 }
 
@@ -921,6 +919,76 @@ canvas {
 .stat-box p {
     font-size: 1.6rem;
     font-weight: bold;
+} */
+
+.stats-boxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 30px;
+    justify-content: center;
+    /* center align on wider screens */
+}
+
+.stat-box {
+    flex: 1 1 calc(25% - 20px);
+    /* 4 per row on desktop */
+    min-width: 220px;
+    /* stop shrinking too much */
+    max-width: 280px;
+    /* optional: keep them from stretching too far */
+
+    padding: 25px 20px;
+    border-radius: 12px;
+    text-align: center;
+    background: #f9f9f9;
+    box-sizing: border-box;
+    color: #000;
+
+    /* style effects */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* Headings inside stat-box */
+.stat-box h4 {
+    font-size: 1rem;
+    margin-bottom: 12px;
+    color: #444;
+}
+
+/* Numbers inside stat-box */
+.stat-box p {
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: #222;
+    margin: 0;
+}
+
+/* Color variations */
+.stat-box.light-blue {
+    background: #e3f2fd;
+    color: #0d47a1;
+}
+
+.stat-box.light-pink {
+    background: #fce4ec;
+    color: #880e4f;
+}
+
+.stat-box.light-yellow {
+    background: #fff8e1;
+    color: #f57f17;
+}
+
+.stat-box.light-grey {
+    background: #f5f5f5;
+    color: #424242;
 }
 
 .analytics-wrapper {
