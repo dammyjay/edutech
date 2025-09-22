@@ -47,8 +47,8 @@ exports.signup = async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expires = new Date(Date.now() + 10 * 60 * 1000);
 
-    // ====== CASE 1: OTP roles (admin, parent, individual student) ======
-   if (["school_admin", "parent", "individual_student"].includes(role)) {
+    // ====== CASE 1: OTP roles (admin, parent, user) ======
+   if (["school_admin", "parent", "user"].includes(role)) {
      await pool.query(
        `INSERT INTO pending_users 
       (fullname, email, phone, gender, password, otp_code, otp_expires, profile_picture, role, created_at, dob) 
@@ -76,7 +76,7 @@ exports.signup = async (req, res) => {
      }
 
      await sendEmail(
-       "dammykirchhoff@gmail.com",
+       email,
        "Your OTP Code",
        `Your code is: ${otp}`
      );
@@ -241,7 +241,7 @@ exports.verifyOtp = async (req, res) => {
 
 
       await sendEmail(
-        "dammykirchhoff@gmail.com",
+        email,
         "For your teacher and student to register ",
         `Your SchoolID is: ${schoolId}`
       );
