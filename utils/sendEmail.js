@@ -109,35 +109,29 @@
 
 // ---------------------------------------------------------------------------------------
 
-
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com",
-  port: 587, // use 465 if you prefer SSL
-  secure: false, // true for 465, false for 587
+  host: process.env.BREVO_HOST || "smtp-relay.brevo.com",
+  port: process.env.BREVO_PORT || 587,
+  secure: false, // STARTTLS (Brevo works with port 587)
   auth: {
-    user: process.env.BREVO_USER, // your Brevo login email
-    pass: process.env.BREVO_SMTP_KEY, // generated from Brevo dashboard
+    user: process.env.BREVO_USER,
+    pass: process.env.BREVO_PASS,
   },
 });
 
-async function sendEmail(to, subject, html) {
+async function sendEmail(to, subject, message) {
   try {
-    // await transporter.sendMail({
-    //   from: `"JKT Hub" <${process.env.BREVO_USER}>`, // ✅ verified sender
-    //   to,
-    //   subject,
-    //   html,
-    // });
-
-    await transporter.sendMail({
-      from: `"JKT Hub" <jaykirchtechhub@gmail.com>`, // ✅ verified sender
+    const info = await transporter.sendMail({
+      from: `"JKT Hub" <${process.env.BREVO_FROM}>`, // must be verified sender
       to,
       subject,
-      html,
+      html: message,
     });
-    console.log(`✅ Email sent to ${to}`);
+
+    console.log("✅ Email sent:", info.messageId);
+    return info;
   } catch (err) {
     console.error("❌ Email sending failed:", err.message);
     throw err;

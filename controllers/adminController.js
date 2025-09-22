@@ -350,8 +350,7 @@ exports.deleteUser = async (req, res) => {
     await pool.query("DELETE FROM users2 WHERE id = $1", [userId]);
     await logActivityForUser(
       req,
-      "User Deleted",
-      `User's name: ${fullname}`
+      "User Deleted"
     );
     res.redirect("/admin/dashboard");
   } catch (error) {
