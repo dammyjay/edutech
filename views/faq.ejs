@@ -16,28 +16,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   </head>
   <body>
-    <header class="header">
-      <div class="logo-title">
-        <% if (info?.logo_url) { %>
-        <a href="/"><img src="<%= info.logo_url %>" alt="Logo" /></a>
-        <% } %>
-        <p><%= info?.company_name || 'C&S Church Online' %></p>
-      </div>
-      <button class="nav-toggle" onclick="toggleNav()">☰</button>
-      <nav id="main-nav">
-        <a href="/home2">Home</a>
-        <a href="/articles">Articles</a>
-        <a href="/videos">Videos</a>
-        <a href="/devotionals">Devotionals</a>
-        <a href="/about">About Us</a>
-        <a href="/testimony">Testimonies</a>
-        <a class="active" href="/faq">FAQ</a>
-        <a href="/profile">Profile</a>
-        <!-- Assuming About refers to Mission & Vision -->
-        <a href="/admin/logout" class="logout-button">Logout</a>
-        <!-- Login remains a page link -->
-      </nav>
-    </header>
+    <%- include('./partials/userHeader', { title: 'FAQs' }) %>
     <section class="section">
       <h3>Have a Question?</h3>
       <form action="/faq/ask" method="POST" class="faq-form">
@@ -118,7 +97,7 @@
 </script>
 
 
-    <footer class="site-footer">
+    <!-- <footer class="site-footer">
       <div class="footer-container"> 
         <div class="footer-about"> 
             <a href="/"><img src="/logo.png" alt="Logo" width="50px" height="50px"/></a>
@@ -174,10 +153,13 @@
           <button type="submit">Subscribe</button>
         </form>
       </div>
-    </footer>
-    <script>
+    </footer> -->
+    <%- include('./partials/userFooter') %>
+
+   <script>
       CKEDITOR.replace("content");
     </script>
+
     <script>
       function toggleFaq(index) {
         const answer = document.getElementById(`answer-${index}`);

@@ -533,7 +533,7 @@ const { askTutor } = require("../utils/ai");
 // };
 
 exports.getDashboard = async (req, res) => {
-  const studentId = req.user.id;
+  const studentId = req.session.user.id;
   const role = req.session.user.role; // "student", "individual_student", "user"
 
   try {

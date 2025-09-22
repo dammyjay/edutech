@@ -38,6 +38,8 @@ router.get("/faq", async (req, res) => {
       faqs: faqResult.rows,
       search, // pass current search back to the EJS view
       user: req.session.user || null,
+      isLoggedIn: !!req.session.user,
+      subscribed: req.query.subscribed,
     });
   } catch (err) {
     console.error("Error fetching FAQs:", err);

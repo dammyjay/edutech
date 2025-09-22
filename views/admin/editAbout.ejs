@@ -63,25 +63,6 @@
       </button>
     </div>
 
-    <!-- <table>
-      <tr>
-        <th>Section</th>
-        <th>Actions</th>
-      </tr>
-      <% sections.forEach(section => { %>
-      <tr>
-        <td><%= section.section_title %></td>
-        <td>
-          <button
-            onclick="openEditModal('<%= section.section_key %>', '<%= section.section_title %>', `<%- section.content.replace(/`/g, '\\`') %>`)"
-          >
-            ✏️ Edit
-          </button>
-        </td>
-      </tr>
-      <% }) %>
-    </table> -->
-
     <table class="user-table">
       <tr>
         <th>Section</th>
@@ -92,12 +73,20 @@
         <td><%= section.section_title %></td>
         <td>
           <div class="article-buttons">
-            <button
+            <!-- <button
               class="btn-edit"
               onclick="openEditModal('<%= section.section_key %>', '<%= section.section_title %>', `<%- section.content.replace(/`/g, '\\`') %>`)"
             >
               ✏️ Edit
+            </button> -->
+
+            <button
+              class="btn-edit"
+              onclick="openEditModal('<%= section.id %>', '<%= section.section_key %>', '<%= section.section_title %>', `<%- section.content.replace(/`/g, '\\`') %>`, '<%= section.section_order %>')"
+            >
+              ✏️ Edit
             </button>
+
 
             <form
               method="POST"
@@ -119,24 +108,9 @@
       <% }) %>
     </table>
 
-    <!-- Modal -->
-    <!-- <div id="editModal" class="modal">
-      <div class="modal-content">
-        <form method="POST" action="/admin/about/update">
-          <h3 id="modal-title">Edit Section</h3>
-          <span class="close" onclick="closeModal()">&times;</span>
-          <textarea id="modal-textarea" name="content" rows="10"></textarea>
-          <input type="hidden" id="modal-section-key" name="section_key" />
-          <div class="modal-actions">
-            <button type="submit">✅ Save</button>
-            <button type="button" onclick="closeModal()">❌ Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div> -->
 
     <!-- Modal for Creating Section -->
-    <div id="createModal" class="modal">
+    <!-- <div id="createModal" class="modal">
       <div class="modal-content">
         <form method="POST" action="/admin/about/create">
           <h3>Create New About Section</h3>
@@ -157,55 +131,121 @@
           </div>
         </form>
       </div>
+    </div> -->
+
+    <div id="createModal" class="modal">
+      <div class="modal-content">
+        <form method="POST" action="/admin/about/create" enctype="multipart/form-data">
+          <h3>Create New About Section</h3>
+          <span class="close" onclick="closeModal()">&times;</span>
+
+          <label>Section Key (unique):</label>
+          <input type="text" name="section_key" placeholder="e.g. mission" required />
+
+          <label>Section Title:</label>
+          <input type="text" name="section_title" placeholder="Mission Statement" required />
+
+          <label>Content:</label>
+          <textarea name="content" rows="8"></textarea>
+
+          <label>Section Order:</label>
+          <input type="number" name="section_order" placeholder="1" />
+
+          <label>Section Image (optional):</label>
+          <input type="file" name="section_image" accept="image/*"
+                onchange="previewImage(this, 'create-image-preview')" />
+          <img id="create-image-preview" src="" 
+              style="max-width:200px; margin-top:10px; display:none;" />
+
+
+          <div class="modal-actions">
+            <button type="submit">✅ Save</button>
+            <button type="button" onclick="closeModal()">❌ Cancel</button>
+          </div>
+        </form>
+      </div>
     </div>
 
+    <!-- Edit Modal -->
+<!-- <div id="editModal" class="modal">
+  <div class="modal-content">
+    <form id="editForm" method="POST" action="/admin/about/edit/:id" enctype="multipart/form-data">
+      <h3 id="modal-title">Edit About Section</h3>
+      <span class="close" onclick="closeModal()">&times;</span>
+
+      <input type="hidden" name="id" id="modal-id" />
+      <label>Section Key:</label>
+      <input type="text" name="section_key" id="modal-section-key" readonly />
+
+      <label>Section Title:</label>
+      <input type="text" name="section_title" id="modal-section-title" required />
+
+      <label>Content:</label>
+      <textarea name="content" id="modal-textarea" rows="8"></textarea>
+
+      <label>Section Order:</label>
+      <input type="number" name="section_order" id="modal-section-order" />
+
+      <label>Section Image (optional):</label>
+      <input type="file" name="section_image" id="modal-section-image" accept="image/*" />
+
+      <div class="modal-actions">
+        <button type="submit">💾 Update</button>
+        <button type="button" onclick="closeModal()">❌ Cancel</button>
+      </div>
+    </form>
+  </div>
+</div> -->
+
+<form id="editForm" method="POST" enctype="multipart/form-data">
+  <h3 id="modal-title">Edit About Section</h3>
+  <span class="close" onclick="closeModal()">&times;</span>
+
+  <input type="hidden" name="id" id="modal-id" />
+  <label>Section Key:</label>
+  <input type="text" name="section_key" id="modal-section-key" readonly />
+
+  <label>Section Title:</label>
+  <input type="text" name="section_title" id="modal-section-title" required />
+
+  <label>Content:</label>
+  <textarea name="content" id="modal-textarea" rows="8"></textarea>
+
+  <label>Section Order:</label>
+  <input type="number" name="section_order" id="modal-section-order" />
+
+  <label>Section Image (optional):</label>
+  <input type="file" name="section_image" id="modal-section-image" accept="image/*"
+        onchange="previewImage(this, 'edit-image-preview')" />
+
+  <!-- Preview of current/selected image -->
+  <img id="edit-image-preview" src="" 
+      style="max-width:200px; margin-top:10px; display:none;" />
+
+  <!-- Remove Image Option -->
+  <div style="margin-top:10px;">
+    <label>
+      <input type="checkbox" name="remove_image" id="remove-image-checkbox" value="true" />
+      Remove existing image
+    </label>
+  </div>
+
+
+
+  <div class="modal-actions">
+    <button type="submit">💾 Update</button>
+    <button type="button" onclick="closeModal()">❌ Cancel</button>
+  </div>
+</form>
+
+
+<script>
+  // Optional: Add WYSIWYG editor
+  CKEDITOR.replace("content");
+</script>
+
+
     <!-- <script>
-      function openEditModal(sectionKey, title, content) {
-        document.getElementById("modal-title").innerText = "Edit " + title;
-        document.getElementById("modal-section-key").value = sectionKey;
-        document.getElementById("modal-textarea").value = content;
-        document.getElementById("editModal").classList.add("open");
-      }
-
-      function closeModal() {
-        document.getElementById("editModal").classList.remove("open");
-      }
-    </script> -->
-
-    <!-- script for opening and closing the modal -->
-    <!-- <script>
-      function openModal() {
-        document.getElementById("editModal").style.display = "block";
-      }
-
-      function closeModal() {
-        document.getElementById("editModal").style.display = "none";
-      }
-
-      function openEditModal(id) {
-        document.getElementById("editModal-" + id).style.display = "block";
-      }
-
-      function closeEditModal(id) {
-        document.getElementById("editModal-" + id).style.display = "none";
-      }
-
-      // Close modal when clicking outside the modal content
-      // window.onclick = function (event) {
-      //   const modal = document.getElementById("createModal");
-      //   if (event.target == modal) {
-      //     modal.style.display = "none";
-      //   }
-      // };
-      // Close any modal when clicking outside it
-      window.onclick = function (event) {
-        if (event.target.classList.contains("modal")) {
-          event.target.style.display = "none";
-        }
-      };
-    </script> -->
-
-    <script>
       function openModal() {
         document.getElementById("createModal").style.display = "block";
       }
@@ -215,12 +255,28 @@
         document.getElementById("editModal").style.display = "none";
       }
 
-      function openEditModal(sectionKey, title, content) {
-        document.getElementById("modal-title").innerText = "Edit " + title;
-        document.getElementById("modal-section-key").value = sectionKey;
-        document.getElementById("modal-textarea").value = content;
-        document.getElementById("editModal").style.display = "block";
-      }
+      // function openEditModal(sectionKey, title, content) {
+      //   document.getElementById("modal-title").innerText = "Edit " + title;
+      //   document.getElementById("modal-section-key").value = sectionKey;
+      //   document.getElementById("modal-textarea").value = content;
+      //   document.getElementById("editModal").style.display = "block";
+      // }
+
+      // function openEditModal(id, sectionKey, title, content, order) {
+      //   document.getElementById("modal-title").innerText = "Edit " + title;
+
+      //   const form = document.getElementById("editForm");
+      //   form.action = "/admin/about/update/" + id;   // 👈 correct dynamic action
+
+      //   document.getElementById("modal-id").value = id;
+      //   document.getElementById("modal-section-key").value = sectionKey;
+      //   document.getElementById("modal-section-title").value = title;
+      //   document.getElementById("modal-textarea").value = content;
+      //   document.getElementById("modal-section-order").value = order || "";
+
+      //   document.getElementById("editModal").style.display = "block";
+      // }
+
 
       window.onclick = function (event) {
         if (event.target.classList.contains("modal")) {
@@ -231,8 +287,120 @@
       CKEDITOR.replace("content");
     </script>
 
-    <script>
-      CKEDITOR.replace("content");
-    </script>
+<script>
+  // Create modal textarea
+  CKEDITOR.replace("content");
+
+  // Edit modal textarea
+  CKEDITOR.replace("modal-textarea");
+
+  function openEditModal(id, sectionKey, title, content, order) {
+    document.getElementById("modal-title").innerText = "Edit " + title;
+
+    const form = document.getElementById("editForm");
+    form.action = "/admin/about/update/" + id;
+
+    document.getElementById("modal-id").value = id;
+    document.getElementById("modal-section-key").value = sectionKey;
+    document.getElementById("modal-section-title").value = title;
+
+    // Put content into CKEditor, not the raw textarea
+    if (CKEDITOR.instances["modal-textarea"]) {
+      CKEDITOR.instances["modal-textarea"].setData(content);
+    } else {
+      document.getElementById("modal-textarea").value = content;
+    }
+
+    document.getElementById("modal-section-order").value = order || "";
+    document.getElementById("editModal").style.display = "block";
+  }
+</script> -->
+
+<script>
+  // ---------- Modal Controls ----------
+  function openModal() {
+    document.getElementById("createModal").style.display = "block";
+  }
+
+  function closeModal() {
+    document.getElementById("createModal").style.display = "none";
+    document.getElementById("editModal").style.display = "none";
+  }
+
+  window.onclick = function (event) {
+    if (event.target.classList.contains("modal")) {
+      event.target.style.display = "none";
+    }
+  };
+
+  // ---------- CKEditor Init ----------
+  if (document.getElementById("content")) {
+    CKEDITOR.replace("content");
+  }
+  if (document.getElementById("modal-textarea")) {
+    CKEDITOR.replace("modal-textarea");
+  }
+
+  // ---------- Open Edit Modal ----------
+  function openEditModal(id, sectionKey, title, content, order, imageUrl) {
+  document.getElementById("modal-title").innerText = "Edit " + title;
+
+  const form = document.getElementById("editForm");
+  form.action = "/admin/about/update/" + id;
+
+  document.getElementById("modal-id").value = id;
+  document.getElementById("modal-section-key").value = sectionKey;
+  document.getElementById("modal-section-title").value = title;
+
+  // Load content into CKEditor
+  if (CKEDITOR.instances["modal-textarea"]) {
+    CKEDITOR.instances["modal-textarea"].setData(content);
+  } else {
+    document.getElementById("modal-textarea").value = content;
+  }
+
+  document.getElementById("modal-section-order").value = order || "";
+
+  // Reset remove checkbox
+  document.getElementById("remove-image-checkbox").checked = false;
+
+  // Show current image if available
+  const preview = document.getElementById("edit-image-preview");
+  if (imageUrl) {
+    preview.src = imageUrl;
+    preview.style.display = "block";
+  } else {
+    preview.style.display = "none";
+  }
+
+  document.getElementById("editModal").style.display = "block";
+}
+
+
+  // ---------- Ensure CKEditor Data is Submitted ----------
+  document.addEventListener("submit", function (e) {
+    for (let instance in CKEDITOR.instances) {
+      CKEDITOR.instances[instance].updateElement();
+    }
+  });
+
+  // ---------- Image Preview ----------
+  function previewImage(input, previewId) {
+    const preview = document.getElementById(previewId);
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        preview.src = e.target.result;
+        preview.style.display = "block";
+      };
+      reader.readAsDataURL(input.files[0]);
+    } else {
+      preview.style.display = "none";
+    }
+  }
+</script>
+
+
+
   </body>
 </html>

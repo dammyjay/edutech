@@ -181,7 +181,9 @@ async function createTables() {
         section_title TEXT NOT NULL,
         section_key TEXT UNIQUE NOT NULL,
         content TEXT NOT NULL,
-        updated_at TIMESTAMP DEFAULT NOW()
+        updated_at TIMESTAMP DEFAULT NOW(),
+        section_image TEXT,
+        section_order INT
       );`
     );
 

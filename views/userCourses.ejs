@@ -13,61 +13,7 @@
   </head>
   <body>
     <!-- Header -->
-    <header class="header">
-      <div class="logo-title">
-        <% if (info?.logo_url) { %>
-        <a href="/"><img src="<%= info.logo_url %>" alt="Logo" /></a>
-        <% } %>
-        <p><%= info?.company_name || 'C&S Church Online' %></p>
-      </div>
-
-      <button class="nav-toggle" onclick="toggleNav()">☰</button>
-      <nav id="main-nav">
-        <a  href="/">Home</a>
-        <!-- <a href="/pathways">Pathways</a> -->
-        <a class="active" href="/courses">Courses</a>
-        <a href="/about">About Us</a>
-        <a href="/gallery">Gallery</a>
-        <!-- <a href="#faq">FAQ</a> -->
-        <% if (isLoggedIn) { %>
-          <% if (users?.profile_picture) { %>
-            <img src="<%= users.profile_picture %>" alt="Profile" style="width:32px;height:32px;border-radius:50%;vertical-align:middle;margin-right:8px;">
-          <% } %>
-          <a style="background-color: red;" href="/admin/logout" class="login-button">Logout</a>
-          <div class="dropdown">
-            <button class="dropbtn" onclick="toggleDropdown('profileMenu')">Profile ▾</button>
-            <!-- <div class="dropdown-content" id="profileMenu">
-              <a href="/profile">View Profile</a>
-              <a style="background-color: black; padding: 5px 10px;" href="/make-payment" class="btn btn-primary">Fund wallet</a>
-              <a href="/admin/dashboard">Dashboard</a>
-              <a href="/admin/courses">Courses</a>
-              <a href="/admin/pathways">Pathways</a>
-              <a href="/admin/gallery">Gallery</a>
-              <a href="/admin/videos">Videos</a>
-            </div> -->
-
-            <div class="dropdown-content" id="profileMenu">
-              <p style="color: black;">💰 Wallet: ₦<%= walletBalance.toLocaleString() %></p>
-              <a  href="/make-payment">Fund wallet</a>
-              <a href="/profile">View Profile</a>
-            </div>
-            
-          </div>
-          <a href="/student/dashboard"> Dashboard</a>
-          
-          
-          
-        <% } else { %>
-          <a href="/admin/login" class="login-button">Login</a>
-          <a
-            href="/signup"
-            style="background-color: rgb(0, 0, 0); color: rgb(255, 255, 255)"
-            class="login-button"
-          >Signup</a>
-          
-        <% } %>
-      </nav>
-    </header>
+    <%- include('./partials/userHeader', { title: 'Courses for you' }) %>
 
     <div class="wallet-btn" style="display: flex; justify-content: right; margin-top: 1rem; width: 100%;">
       <% if (isLoggedIn) { %>
@@ -99,127 +45,131 @@
     <h2 style="margin-top: 2rem; color: goldenrod;"><%= pathway %></h2>
 
     <% for (let level in groupedCourses[pathway]) { %>
-      <div class="course-level-section" data-level="<%= level %>">
-        <h3 style="margin-top: 1rem; color: #444;"><%= level %> Level</h3>
-        <div class="section">
-          <section class="course-scroll-container">
-            <% groupedCourses[pathway][level].forEach(course => { %>
-              <div class="article-card scroll-card">
-                <% if (course.thumbnail_url) { %>
-                  <img src="<%= course.thumbnail_url %>" alt="Course Thumbnail"  />
-                <% } %>
 
-                <h4><%= course.title %></h4>
-                <div class="article-body" id="desc-<%= course.id %>" data-full="<%- course.description.replace(/"/g, '&quot;') %>">
-                  
-                   <%- course.description.length > 60 ? course.description.substring(0, 60) + '...' : course.description %>
-                </div>
-
-
-                <% if (course.description.length > 60) { %>
-                  <a href="javascript:void(0);" class="toggle-article" onclick="toggleDescription(<%= course.id %>, `<%- course.description.replace(/`/g, '\\`').replace(/"/g, '&quot;') %>`)">
-                    Show More
-                  </a>
-                <% } %>
-                <!-- <div class="article-buttons">
-                  <button class="btn-edit" onclick="openEditModal(<%= course.id %>)">Edit</button>
-                  <form action="/admin/courses/delete/<%= course.id %>" method="POST" onsubmit="return confirm('Delete this course?');">
-                    <button class="btn-delete" type="submit">Delete</button>
-                  </form>
-                </div> -->
-
-                <% if (course.amount == 0) { %>
-                  <p><strong>This is a free course</strong></p>
-                <% } else { %>
-                  <p><strong>Price:</strong> ₦<%= course.amount %></p>
-                <% } %>
-
-                <div style="display: flex; width: 100%;">
-                <% const isEnrolled = enrolledCourseIds?.includes(course.id); %>
-
-                  <!-- <% if (isLoggedIn && !isEnrolled) { %>
-                    <form action="/student/courses/enroll/<%= course.id %>" method="POST" onsubmit="return confirmEnroll(<%= course.amount %>)">
-                      <button type="submit" class="btn-create">
-                        <% if (course.amount == 0) { %>
-                          Enroll for Free
-                        <% } else { %>
-                          Enroll (₦<%= course.amount.toLocaleString() %> from wallet)
-                        <% } %>
-                      </button>
-                    </form>
-                  <% } else if (isLoggedIn && isEnrolled) { %>
-                    <p style="color: green;"><i class="fas fa-check-circle"></i> Already Enrolled</p>
-                  <% } else { %>
-                    <button class="btn-create" onclick="promptLogin()">Login to Enroll</button>
-                  <% } %> -->
-
-                  <% if (isLoggedIn && !isEnrolled) { %>
-                    <% if (course.amount == 0) { %>
-                      <!-- Free course -->
-                      <form action="/student/courses/enroll/<%= course.id %>" method="POST">
-                        <button type="submit" class="btn-create">Enroll for Free</button>
-                      </form>
-                    <% } else if (walletBalance >= course.amount) { %>
-                      <!-- Paid course and balance is enough -->
-                      <form action="/student/courses/enroll/<%= course.id %>" method="POST">
-                        <button type="submit" class="btn-create">
-                          Enroll (₦<%= course.amount.toLocaleString() %> from wallet)
-                        </button>
-                      </form>
-                    <% } else { %>
-                      <!-- Not enough balance -->
-                      <p style="color:red;font-weight:bold;">❌ Not sufficient funds. <a class="btn-create" href="/make-payment">Fund wallet</a></p>
-                    <% } %>
-                  <% } else if (isLoggedIn && isEnrolled) { %>
-                    <p style="color: green;"><i class="fas fa-check-circle"></i> Already Enrolled</p>
-                  <% } else { %>
-                    <button class="btn-create" onclick="promptLogin()">Login to Enroll</button>
+        <div class="course-level-section" data-level="<%= level %>">
+          <h3 class="collapsible-header <%= level.toLowerCase() %>" onclick="toggleLevel('<%= pathway %>-<%= level %>')">
+            <i class="fas fa-chevron-right"></i> <%= level %> Level
+          </h3>
+          <div id="level-<%= pathway %>-<%= level %>" class="collapsible-content">
+            <section class="course-scroll-container">
+              <% groupedCourses[pathway][level].forEach(course => { %>
+                <div class="article-card scroll-card">
+                  <% if (course.thumbnail_url) { %>
+                    <img src="<%= course.thumbnail_url %>" alt="Course Thumbnail"  />
                   <% } %>
 
+                  <h4><%= course.title %></h4>
+                  <div class="article-body" id="desc-<%= course.id %>" data-full="<%- course.description.replace(/"/g, '&quot;') %>">
+                    
+                    <%- course.description.length > 60 ? course.description.substring(0, 60) + '...' : course.description %>
                   </div>
 
-              </div>
 
-              <!-- Edit Modal for this course -->
-              <div id="editModal-<%= course.id %>" class="modal">
-                <div class="modal-content">
-                  <span class="close" onclick="closeEditModal(<%= course.id %>)">&times;</span>
-                  <h2>Edit Course</h2>
-                  <form action="/admin/courses/edit/<%= course.id %>" method="POST" enctype="multipart/form-data">
-                    <input type="text" name="title" value="<%= course.title %>" required /><br />
-                    <!-- <textarea id="content" name="description"><%- course.description %></textarea><br /> -->
-                    <textarea id="editContent-<%= course.id %>" name="description"><%- course.description %></textarea>
+                  <% if (course.description.length > 60) { %>
+                    <a href="javascript:void(0);" class="toggle-article" onclick="toggleDescription(<%= course.id %>, `<%- course.description.replace(/`/g, '\\`').replace(/"/g, '&quot;') %>`)">
+                      Show More
+                    </a>
+                  <% } %>
+                  <!-- <div class="article-buttons">
+                    <button class="btn-edit" onclick="openEditModal(<%= course.id %>)">Edit</button>
+                    <form action="/admin/courses/delete/<%= course.id %>" method="POST" onsubmit="return confirm('Delete this course?');">
+                      <button class="btn-delete" type="submit">Delete</button>
+                    </form>
+                  </div> -->
 
-                    <select name="level" required>
-                      <option value="">Select Level</option>
-                      <option value="Beginner" <%= course.level === 'Beginner' ? 'selected' : '' %>>Beginner</option>
-                      <option value="Intermediate" <%= course.level === 'Intermediate' ? 'selected' : '' %>>Intermediate</option>
-                      <option value="Advanced" <%= course.level === 'Advanced' ? 'selected' : '' %>>Advanced</option>
-                    </select><br /><br>
+                  <% if (course.amount == 0) { %>
+                    <p><strong>This is a free course</strong></p>
+                  <% } else { %>
+                    <p><strong>Price:</strong> ₦<%= course.amount %></p>
+                  <% } %>
 
-                    <select name="career_pathway_id" required>
-                      <option value="">-- Career Pathway --</option>
-                      <% careerPathways.forEach(path => { %>
-                        <option value="<%= path.id %>" <%= path.id === course.career_pathway_id ? 'selected' : '' %>><%= path.title %></option>
-                      <% }) %>
-                    </select><br /><br>
+                  <div style="display: flex; width: 100%;">
+                  <% const isEnrolled = enrolledCourseIds?.includes(course.id); %>
 
-                    <label for="">Sort Number</label>
-                    <input type="number" name="sort_order" value="<%= course.sort_order %>" /><br />
+                    <!-- <% if (isLoggedIn && !isEnrolled) { %>
+                      <form action="/student/courses/enroll/<%= course.id %>" method="POST" onsubmit="return confirmEnroll(<%= course.amount %>)">
+                        <button type="submit" class="btn-create">
+                          <% if (course.amount == 0) { %>
+                            Enroll for Free
+                          <% } else { %>
+                            Enroll (₦<%= course.amount.toLocaleString() %> from wallet)
+                          <% } %>
+                        </button>
+                      </form>
+                    <% } else if (isLoggedIn && isEnrolled) { %>
+                      <p style="color: green;"><i class="fas fa-check-circle"></i> Already Enrolled</p>
+                    <% } else { %>
+                      <button class="btn-create" onclick="promptLogin()">Login to Enroll</button>
+                    <% } %> -->
 
-                    <% if (course.thumbnail_url) { %>
-                      <img src="<%= course.thumbnail_url %>" width="100" /><br />
+                    <% if (isLoggedIn && !isEnrolled) { %>
+                      <% if (course.amount == 0) { %>
+                        <!-- Free course -->
+                        <form action="/student/courses/enroll/<%= course.id %>" method="POST">
+                          <button type="submit" class="btn-create">Enroll for Free</button>
+                        </form>
+                      <% } else if (walletBalance >= course.amount) { %>
+                        <!-- Paid course and balance is enough -->
+                        <form action="/student/courses/enroll/<%= course.id %>" method="POST">
+                          <button type="submit" class="btn-create">
+                            Enroll (₦<%= course.amount.toLocaleString() %> from wallet)
+                          </button>
+                        </form>
+                      <% } else { %>
+                        <!-- Not enough balance -->
+                        <p style="color:red;font-weight:bold;">❌ Not sufficient funds. <a class="btn-create" href="/make-payment">Fund wallet</a></p>
+                      <% } %>
+                    <% } else if (isLoggedIn && isEnrolled) { %>
+                      <p style="color: green;"><i class="fas fa-check-circle"></i> Already Enrolled</p>
+                    <% } else { %>
+                      <button class="btn-create" onclick="promptLogin()">Login to Enroll</button>
                     <% } %>
-                    <input type="file" name="thumbnail" /><br />
-                    <button type="submit">Update Course</button>
-                  </form>
-                </div>
-              </div>
 
-            <% }) %>
-          </section>
+                    </div>
+
+                </div>
+
+                <!-- Edit Modal for this course -->
+                <div id="editModal-<%= course.id %>" class="modal">
+                  <div class="modal-content">
+                    <span class="close" onclick="closeEditModal(<%= course.id %>)">&times;</span>
+                    <h2>Edit Course</h2>
+                    <form action="/admin/courses/edit/<%= course.id %>" method="POST" enctype="multipart/form-data">
+                      <input type="text" name="title" value="<%= course.title %>" required /><br />
+                      <!-- <textarea id="content" name="description"><%- course.description %></textarea><br /> -->
+                      <textarea id="editContent-<%= course.id %>" name="description"><%- course.description %></textarea>
+
+                      <select name="level" required>
+                        <option value="">Select Level</option>
+                        <option value="Beginner" <%= course.level === 'Beginner' ? 'selected' : '' %>>Beginner</option>
+                        <option value="Intermediate" <%= course.level === 'Intermediate' ? 'selected' : '' %>>Intermediate</option>
+                        <option value="Advanced" <%= course.level === 'Advanced' ? 'selected' : '' %>>Advanced</option>
+                      </select><br /><br>
+
+                      <select name="career_pathway_id" required>
+                        <option value="">-- Career Pathway --</option>
+                        <% careerPathways.forEach(path => { %>
+                          <option value="<%= path.id %>" <%= path.id === course.career_pathway_id ? 'selected' : '' %>><%= path.title %></option>
+                        <% }) %>
+                      </select><br /><br>
+
+                      <label for="">Sort Number</label>
+                      <input type="number" name="sort_order" value="<%= course.sort_order %>" /><br />
+
+                      <% if (course.thumbnail_url) { %>
+                        <img src="<%= course.thumbnail_url %>" width="100" /><br />
+                      <% } %>
+                      <input type="file" name="thumbnail" /><br />
+                      <button type="submit">Update Course</button>
+                    </form>
+                  </div>
+                </div>
+              <% }) %>
+            </section>
+          </div>
         </div>
-      </div>
+
+
     <% } %>
   </div>
 <% } %>
@@ -232,64 +182,7 @@
     <% if (subscribed === 'success') { %>
 
       <p style="color: green; text-align: center;">Thank you for subscribing!</p> <% } else if (subscribed === 'fail') { %> <p style="color: red; text-align: center;">There was a problem with your subscription.</p> <% } %>
-    <footer class="site-footer">
-      <div class="footer-container"> 
-        <div class="footer-about"> 
-            <a href="/"><img src="/images/JKT logo bg.png" alt="Logo" width="50px" height="50px"/></a>
-            
-          <h3>Jaykirch Tech Hub </h3> 
-          <p>Welcome to the Future of Learning — Empowering Students, Teachers, and Schools with Smart Education Tools.</p>
-         </div>
-
-  <!-- 
-          <div class="footer-about">
-            <P>You can also support willingly</P>
-            <h3>Account Name: Cherubim and Seraphim Church Online</h4>
-            <h1 style="color: white;">Account Number: 0126607952</h1>
-            <h3>Bank: wema bank</h3>
-          </div> -->
-
-      <div class="footer-social"> <h4>Connect with us</h4> 
-        <div class="social-links"> 
-          <a href="https://wa.link/wv7jtg" target="_blank" aria-label="WhatsApp"> 
-            <i class="fab fa-whatsapp"></i> 
-          </a> 
-
-          <a href="https://www.facebook.com/share/14DpdxEmwVk/" target="_blank" aria-label="WhatsApp"> 
-            <i class="fab fa-facebook"></i> 
-          </a> 
-          
-          <a href="https://instagram.com/jkt_hub" target="_blank" aria-label="Instagram"> 
-            <i class="fab fa-instagram"></i> 
-          </a> 
-          
-          <a href="https://youtube.com/@JKT_hub" target="_blank" aria-label="YouTube"> 
-            <i class="fab fa-youtube"></i> 
-          </a> 
-          
-          <a href="https://t.me/Jaykirch" target="_blank" aria-label="Telegram"> 
-            <i class="fab fa-telegram-plane"></i> 
-          </a> 
-          
-          <a href="mailto:jaykirchtechhub@gmail.com" target="_blank" aria-label="Email"> 
-            <i class="fas fa-envelope"></i> 
-          </a>
-        </div>
-       </div>
-
-      <div class="footer-subscribe">
-        <h4>Subscribe to our newsletter</h4>
-        <form method="POST" action="/subscribe" class="subscribe-form">
-          <input
-            type="email"
-            name="email"
-            placeholder="Enter your email"
-            required
-          />
-          <button type="submit">Subscribe</button>
-        </form>
-      </div>
-    </footer>
+    <%- include('./partials/userFooter') %>
 
     <!-- script for faq toggle show/hide answer -->
     <!-- <script> 
@@ -353,6 +246,27 @@
         nav.classList.toggle("open");
     }
     </script>
+
+   <!-- script for collapsible and expand header -->
+   <script>
+      // function toggleLevel(id) {
+      //   const content = document.getElementById("level-" + id);
+      //   const header = content.previousElementSibling;
+
+      //   content.classList.toggle("open");
+      //   header.classList.toggle("open");
+      // }
+
+      function toggleLevel(levelId) {
+        const header = document.querySelector(`[onclick="toggleLevel('${levelId}')"]`);
+        const content = document.getElementById("level-" + levelId);
+
+        header.classList.toggle("open");
+        content.classList.toggle("open");
+      }
+
+    </script>
+
 
     <!-- script for confirm enrollment -->
     <script>

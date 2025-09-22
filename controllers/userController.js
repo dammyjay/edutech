@@ -288,6 +288,7 @@ exports.getUserProfile = async (req, res) => {
     return res.render("userProfile", {
       user: currentUser,
       title: "User Profile",
+      activePage: "profilw", // 👈 Pass active page
     });
   }
 };
@@ -352,7 +353,8 @@ exports.showEvent = async (req, res) => {
       users: req.session.user,
       subscribed: req.query.subscribed,
       paid,
-      walletBalance
+      walletBalance,
+      activePage: "event", // 👈 Pass active page
     });
   } catch (err) {
     console.error("Error loading event:", err);

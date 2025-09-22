@@ -90,7 +90,8 @@ router.get("/register/:id", async (req, res) => {
       isLoggedIn,
       users: req.session.user,
       subscribed: req.query.subscribed,
-      walletBalance
+      walletBalance,
+      activePage: "event",   // 👈 Pass active page
     });
   } catch (err) {
     console.error("Error loading event registration form:", err.message);

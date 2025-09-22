@@ -13,74 +13,47 @@
   </head>
   <body>
     <!-- Header -->
-    <header class="header">
-      <div class="logo-title">
-        <% if (info?.logo_url) { %>
-        <a href="/"><img src="<%= info.logo_url %>" alt="Logo" /></a>
+    <%- include('./partials/userHeader', { title: 'About Us' }) %>
+
+
+<!-- <section class="about-section">
+  <% sections.forEach(section => { %>
+    <div class="about-block about-<%= section.section_key %>">
+      
+      <div class="about-style">
+        <% if (section.section_image) { %>
+          <div class="about-image">
+            <img src="<%= section.section_image %>" alt="<%= section.section_title %>" />
+          </div>
         <% } %>
-        <p><%= info?.company_name || 'C&S Church Online' %></p>
+
+        <div class="about-content">
+          <h2><%= section.section_title %></h2>
+          <%- section.content %>
+        </div>
+      </div>
+    </div>
+  <% }) %>
+</section> -->
+
+<section class="about-section">
+  <% sections.forEach(section => { %>
+    <div class="about-block about-<%= section.section_key %>">
+      <!-- Title always on top -->
+      <h2><%= section.section_title %></h2>
+
+      <!-- Image + Content wrapper -->
+      <div class="about-body">
+        <% if (section.section_image) { %>
+          <div class="about-image">
+            <img src="<%= section.section_image %>" alt="<%= section.section_title %>" />
+          </div>
+        <% } %>
+        <div class="about-content">
+          <%- section.content %>
+        </div>
       </div>
 
-      <button class="nav-toggle" onclick="toggleNav()">☰</button>
-      <nav id="main-nav">
-        <a href="/">Home</a>
-        <!-- <a href="/pathways">Pathways</a> -->
-        <a href="/courses">Courses</a>
-        <a class="active" href="/about">About Us</a>
-        <a href="/gallery">Gallery</a>
-        <a href="#faq">FAQ</a>
-        <% if (isLoggedIn) { %>
-          <% if (users?.profile_picture) { %>
-            <img src="<%= users.profile_picture %>" alt="Profile" style="width:32px;height:32px;border-radius:50%;vertical-align:middle;margin-right:8px;">
-          <% } %>
-          <a style="background-color: red;" href="/admin/logout" class="login-button">Logout</a>
-          <div class="dropdown">
-            <button class="dropbtn" onclick="toggleDropdown('profileMenu')">Profile ▾</button>
-            <!-- <div class="dropdown-content" id="profileMenu">
-              <a href="/profile">View Profile</a>
-              <a style="background-color: black; padding: 5px 10px;" href="/make-payment" class="btn btn-primary">Fund wallet</a>
-              <a href="/admin/dashboard">Dashboard</a>
-              <a href="/admin/courses">Courses</a>
-              <a href="/admin/pathways">Pathways</a>
-              <a href="/admin/gallery">Gallery</a>
-              <a href="/admin/videos">Videos</a>
-            </div> -->
-
-            <div class="dropdown-content" id="profileMenu">
-              <p style="color: black;">💰 Wallet: ₦<%= walletBalance.toLocaleString() %></p>
-              <a  href="/make-payment">Fund wallet</a>
-              <a href="/profile">View Profile</a>
-            </div>
-          </div>
-          
-          
-          
-        <% } else { %>
-          <a href="/admin/login" class="login-button">Login</a>
-          <a
-            href="/signup"
-            style="background-color: rgb(0, 0, 0); color: rgb(255, 255, 255)"
-            class="login-button"
-          >Signup</a>
-          
-        <% } %>
-      </nav>
-    </header>
-
-    <!-- <main class="about-page">
-        <% sections.forEach(section => { %>
-            <section class="section">
-            <h2><%= section.section_title %></h2>
-            <p><%- section.content %></p>
-            </section>
-        <% }) %>
-    </main> -->
-
-    <section class="about-section">
-  <% sections.forEach(section => { %>
-    <div class="about-block">
-      <h2><%= section.section_title %></h2>
-      <div><%- section.content %></div>
     </div>
   <% }) %>
 </section>
@@ -90,64 +63,7 @@
     <% if (subscribed === 'success') { %>
 
       <p style="color: green; text-align: center;">Thank you for subscribing!</p> <% } else if (subscribed === 'fail') { %> <p style="color: red; text-align: center;">There was a problem with your subscription.</p> <% } %>
-    <footer class="site-footer">
-      <div class="footer-container"> 
-        <div class="footer-about"> 
-            <a href="/"><img src="/images/JKT logo bg.png" alt="Logo" width="50px" height="50px"/></a>
-            
-          <h3>Jaykirch Tech Hub </h3> 
-          <p>Welcome to the Future of Learning — Empowering Students, Teachers, and Schools with Smart Education Tools.</p>
-         </div>
-
-  <!-- 
-          <div class="footer-about">
-            <P>You can also support willingly</P>
-            <h3>Account Name: Cherubim and Seraphim Church Online</h4>
-            <h1 style="color: white;">Account Number: 0126607952</h1>
-            <h3>Bank: wema bank</h3>
-          </div> -->
-
-      <div class="footer-social"> <h4>Connect with us</h4> 
-        <div class="social-links"> 
-          <a href="https://wa.link/wv7jtg" target="_blank" aria-label="WhatsApp"> 
-            <i class="fab fa-whatsapp"></i> 
-          </a> 
-
-          <a href="https://www.facebook.com/share/14DpdxEmwVk/" target="_blank" aria-label="WhatsApp"> 
-            <i class="fab fa-facebook"></i> 
-          </a> 
-          
-          <a href="https://instagram.com/jkt_hub" target="_blank" aria-label="Instagram"> 
-            <i class="fab fa-instagram"></i> 
-          </a> 
-          
-          <a href="https://youtube.com/@JKT_hub" target="_blank" aria-label="YouTube"> 
-            <i class="fab fa-youtube"></i> 
-          </a> 
-          
-          <a href="https://t.me/Jaykirch" target="_blank" aria-label="Telegram"> 
-            <i class="fab fa-telegram-plane"></i> 
-          </a> 
-          
-          <a href="mailto:jaykirchtechhub@gmail.com" target="_blank" aria-label="Email"> 
-            <i class="fas fa-envelope"></i> 
-          </a>
-        </div>
-       </div>
-
-      <div class="footer-subscribe">
-        <h4>Subscribe to our newsletter</h4>
-        <form method="POST" action="/subscribe" class="subscribe-form">
-          <input
-            type="email"
-            name="email"
-            placeholder="Enter your email"
-            required
-          />
-          <button type="submit">Subscribe</button>
-        </form>
-      </div>
-    </footer>
+    <%- include('./partials/userFooter') %>
 
 
     <!-- For the navigation toggle -->
@@ -236,6 +152,52 @@
     }
     </script>
 
+<script>
+  // Cool warm professional palette
+  const colors = [
+  { bg: "#2a9d8f", text: "#ffffff" }, // green-teal
+  { bg: "#e9c46a", text: "#222222" }, // golden sand
+  { bg: "#f4a261", text: "#222222" }, // soft orange
+  { bg: "#e76f51", text: "#ffffff" }, // terracotta red
+  { bg: "#457b9d", text: "#ffffff" }, // steel blue
+  { bg: "#8d99ae", text: "#ffffff" }, // cool gray-blue
+
+  // 🌿 Fresh & calm
+  { bg: "#6a994e", text: "#ffffff" }, // leafy green
+  { bg: "#a7c957", text: "#222222" }, // lime moss
+  { bg: "#386641", text: "#ffffff" }, // forest green
+
+  // ☀️ Warm & inviting
+  { bg: "#f7b267", text: "#222222" }, // pastel apricot
+  { bg: "#f79d65", text: "#222222" }, // coral-peach
+  { bg: "#f4845f", text: "#ffffff" }, // warm coral
+  { bg: "#ffb703", text: "#222222" }, // sunflower
+
+  // 🌌 Cool professional
+  { bg: "#3a506b", text: "#ffffff" }, // muted navy
+  { bg: "#1c2541", text: "#ffffff" }, // midnight blue
+  { bg: "#5bc0be", text: "#222222" }, // soft aqua
+  { bg: "#118ab2", text: "#ffffff" }, // teal blue
+
+  // 🎨 Muted pastels
+  { bg: "#b5838d", text: "#ffffff" }, // dusty rose
+  { bg: "#6d597a", text: "#ffffff" }, // muted plum
+  { bg: "#355070", text: "#ffffff" }, // denim indigo
+  { bg: "#ffafcc", text: "#222222" }, // cotton candy pink
+  { bg: "#cdb4db", text: "#222222" }  // soft lavender
+];
+
+
+  document.querySelectorAll(".about-block").forEach(block => {
+    const random = colors[Math.floor(Math.random() * colors.length)];
+    block.style.backgroundColor = random.bg;
+    block.style.color = random.text;
+
+    // make headings stand out
+    const h2 = block.querySelector("h2");
+    if (h2) h2.style.color = random.text;
+  });
+</script>
 
 
 </body>

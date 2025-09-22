@@ -16,28 +16,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   </head>
   <body>
-    <header class="header">
-      <div class="logo-title">
-        <% if (info?.logo_url) { %>
-        <a href="/home2"><img src="<%= info.logo_url %>" alt="Logo" /></a>
-        <% } %>
-        <p><%= info?.name || 'C&S Church Online' %></p>
-      </div>
-      <button class="nav-toggle" onclick="toggleNav()">☰</button>
-      <nav id="main-nav">
-        <a href="/home2">Home</a>
-        <a href="/articles">Articles</a>
-        <a href="/videos">Videos</a>
-        <a href="/devotionals">Devotionals</a>
-        <a href="/about">About Us</a>
-        <a class="active" href="/testimony">Testimonies</a>
-        <a href="/faq">FAQ</a>
-        <a href="/profile">Profile</a>
-        <!-- Assuming About refers to Mission & Vision -->
-        <a href="/admin/logout" class="logout-button">Logout</a>
-        <!-- Login remains a page link -->
-      </nav>
-    </header>
+    <%- include('./partials/userHeader', { title: 'Testimonials' }) %>
     <section class="section">
       <h2>Share Your Testimony</h2>
       <form method="POST" action="/testimony">
@@ -84,6 +63,7 @@
       </div>
     </div>
 
+    <%- include('./partials/userFooter') %>
     <!-- open and close modal script -->
     <script>
       function openTestimonyModal(message, name) {

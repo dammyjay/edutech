@@ -154,6 +154,81 @@
 .course-level-section{
     width: 100%;
 }
+/* Shared header style */
+.collapsible-header {
+    cursor: pointer;
+    color: #fff;
+    padding: 14px 18px;
+    margin: 12px 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Beginner – soft gold (approachable, warm) */
+.collapsible-header.beginner {
+    background: linear-gradient(135deg, #d4af37, #b8860b);
+}
+
+/* Intermediate – charcoal with subtle gold edge */
+.collapsible-header.intermediate {
+    background: linear-gradient(135deg, #444, #222);
+    border-left: 6px solid #d4af37;
+}
+
+/* Advanced – deep black with warm golden accent */
+.collapsible-header.advanced {
+    background: #000;
+    border-left: 6px solid #b8860b;
+}
+
+/* Hover animation */
+.collapsible-header:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+}
+
+/* Chevron rotation */
+.collapsible-header i {
+    font-size: 1.1rem;
+    transition: transform 0.3s ease;
+}
+
+.collapsible-header.open i {
+    transform: rotate(90deg);
+}
+
+/* Collapsible content */
+.collapsible-content {
+    display: none;
+    padding: 16px;
+    margin: 8px 0 18px;
+    border-radius: 8px;
+    background: #fafafa;
+    border-left: 4px solid #ccc;
+    animation: fadeIn 0.3s ease;
+}
+
+.collapsible-content.open {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 
 .course-scroll-container::-webkit-scrollbar {
     height: 8px;
@@ -375,38 +450,81 @@
 }
 
 .about-block {
-    margin-bottom: 40px;
     padding: 20px;
-    border-bottom: 1px solid #ddd;
-    box-shadow: 0 4px 15px rgba(4, 154, 241, 0.05);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    background: #fff;
+    /* optional, lets the colors you add pop */
 }
 
 .about-block h2 {
-    color: #bfa046;
-    margin-bottom: 10px;
-}
-/* 
-.gallery-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 15px;
-    margin-bottom: 40px;
-}
-
-.gallery-item {
-    background-color: #fff;
-    padding: 10px;
     text-align: center;
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    color: #bfa046;
+    margin-bottom: 20px;
+}
+.about-body {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 20px;
 }
 
-.gallery-item img {
+.about-image,
+.about-content {
+    flex: 1;
+    /* Each takes 50% of space */
+}
+
+.about-image img {
     width: 100%;
-    height: 140px;
+    /* Fill the flex area */
+    height: auto;
+    border-radius: 10px;
     object-fit: cover;
-    border-radius: 4px;
-} */
+    box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.about-content {
+    text-align: justify;
+    line-height: 1.6;
+}
+
+
+.about-style{
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    width: 100%;
+}
+
+/* About Page */
+.about-section {
+    max-width: 1000px;
+    margin: 60px auto;
+    padding: 0 20px;
+    display: grid;
+    gap: 32px;
+}
+
+.about-block:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+}
+
+.about-block div {
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
+/* Add playful icons for each block */
+.about-block::before {
+    font-size: 1.6rem;
+    margin-right: 10px;
+    vertical-align: middle;
+    color: #d4af37;
+    display: inline-block;
+}
+
 
 .gallery-grid {
     display: flex;
@@ -431,12 +549,6 @@
     border-radius: 6px;
 }
 
-/* .article-buttons {
-    margin-top: 10px;
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-} */
 
 .img-modal {
     position: fixed;
@@ -633,17 +745,6 @@
 }
 
 /* === Sidebar === */
-/* .sidebar {
-    width: 220px;
-    background-color: #222;
-    color: white;
-    padding: 20px;
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    overflow-y: auto;
-    z-index: 1000;
-} */
 
 .sidebar {
     width: 200px;
@@ -1657,6 +1758,26 @@ canvas {
         right: 2.5%;
         bottom: 0;
         max-height: 70vh; /* 70% of viewport */
+    }
+
+    .about-body {
+            flex-direction: column;
+        }
+
+    .about-content {
+        text-align: center;
+    }
+
+    .about-section {
+        gap: 20px;
+    }
+
+    .about-block {
+        padding: 18px;
+    }
+
+    .about-block h2 {
+        font-size: 1.5rem;
     }
     
     .event-container {

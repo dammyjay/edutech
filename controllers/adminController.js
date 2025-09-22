@@ -202,7 +202,7 @@ exports.login = async (req, res) => {
       await logActivityForUser(req, "parent logged in", `Classroom: ${user.fullname}`);
       return res.redirect("/parent/dashboard");
 
-    } else if (user.role === "individual_student" || user.role === "student") {
+    } else if (user.role === "user" || user.role === "student") {
       return res.redirect("/student/dashboard");
       
     }

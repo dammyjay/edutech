@@ -8,121 +8,6 @@ const sendEmail = require("../utils/sendEmail");
 
 router.get("/events/:id", userController.showEvent);
 
-// router.get("/", async (req, res) => {
-//   try {
-
-//     const [
-//       infoResult,
-//       career_pathwaysResult,
-//       usersResult,
-//       benefitsRes,
-//       allImagesResult,
-//       coursesResult,
-//       eventsResult,
-//       schoolsCountRes,
-//       teachersCountRes,
-//       studentsCountRes,
-//       totalUsersRes,
-//     ] = await Promise.all([
-//       pool.query("SELECT * FROM company_info ORDER BY id DESC LIMIT 1"),
-//       pool.query(
-//         "SELECT * FROM career_pathways WHERE show_on_homepage = true ORDER BY created_at"
-//       ),
-//       pool.query("SELECT * FROM users2"),
-//       pool.query("SELECT * FROM benefits ORDER BY created_at ASC"),
-//       pool.query("SELECT image_url, title FROM gallery_images"),
-//       pool.query(`
-//         SELECT courses.*, cp.title AS pathway_name
-//         FROM courses
-//         LEFT JOIN career_pathways cp ON cp.id = courses.career_pathway_id
-//         ORDER BY cp.title ASC, courses.level ASC, sort_order ASC LIMIT 10
-//       `),
-//       pool.query(
-//         "SELECT * FROM events WHERE show_on_homepage = true ORDER BY event_date ASC LIMIT 5"
-//       ),
-//       pool.query("SELECT COUNT(*) FROM schools"),
-//       pool.query(`
-//         SELECT COUNT(*)
-//         FROM user_school us
-//         JOIN users2 u ON u.id = us.user_id
-//         WHERE us.role_in_school = 'teacher'
-//       `),
-//       pool.query(`
-//         SELECT COUNT(*)
-//         FROM user_school us
-//         JOIN users2 u ON u.id = us.user_id
-//         WHERE us.role_in_school = 'student'
-//       `),
-//       pool.query("SELECT COUNT(*) FROM users2"),
-//     ]);
-
-//     const info = infoResult.rows[0];
-//     const users = usersResult.rows;
-//     const career_pathways = career_pathwaysResult.rows;
-//     const allImages = allImagesResult.rows;
-
-//     // daily shuffle
-//     function getDailyImages(images, count) {
-//       const today = new Date();
-//       let seed =
-//         today.getFullYear() * 10000 +
-//         (today.getMonth() + 1) * 100 +
-//         today.getDate();
-//       let arr = images.slice();
-//       let random = function () {
-//         var x = Math.sin(seed++) * 10000;
-//         return x - Math.floor(x);
-//       };
-//       for (let i = arr.length - 1; i > 0; i--) {
-//         const j = Math.floor(random() * (i + 1));
-//         [arr[i], arr[j]] = [arr[j], arr[i]];
-//       }
-//       return arr.slice(0, count);
-//     }
-
-//     const carouselImages = getDailyImages(allImages, 5);
-
-//     const events = eventsResult.rows;
-
-//     let walletBalance = 0;
-//     if (req.session.user) {
-//       const walletResult = await pool.query(
-//         "SELECT wallet_balance2 FROM users2 WHERE email = $1",
-//         [req.session.user.email]
-//       );
-//       walletBalance = walletResult.rows[0]?.wallet_balance2 || 0;
-//     }
-
-//     // ✅ Collect stats
-//     const stats = {
-//       schools: schoolsCountRes.rows[0].count,
-//       teachers: teachersCountRes.rows[0].count,
-//       students: studentsCountRes.rows[0].count,
-//       totalUsers: totalUsersRes.rows[0].count,
-//     };
-
-//     res.render("home", {
-//       info,
-//       users,
-//       events,
-//       walletBalance,
-//       career_pathways,
-//       title: "Company Home",
-//       profilePic: req.session.user ? req.session.user.profile_picture : null,
-//       benefits: benefitsRes.rows,
-//       courses: coursesResult.rows,
-//       isLoggedIn: !!req.session.user,
-//       subscribed: req.query.subscribed,
-//       carouselImages,
-//       stats, // 👈 pass to template
-//     });
-//   } catch (err) {
-//     console.error("Error fetching homepage data:", err);
-//     res.status(500).send("Server Error");
-//   }
-// });
-
-
 router.get("/", async (req, res) => {
   try {
     const today = new Date().toISOString().split("T")[0];
@@ -238,6 +123,7 @@ router.get("/", async (req, res) => {
       walletBalance,
       career_pathways,
       title: "Company Home",
+      activePage: "home", // 👈 Pass active page
       profilePic: req.session.user ? req.session.user.profile_picture : null,
       benefits: benefitsRes.rows,
       courses: coursesResult.rows,
@@ -247,6 +133,7 @@ router.get("/", async (req, res) => {
       stats,
       faqs,
       testimonies,
+      activePage: "home", // 👈 Pass active page
     });
   } catch (err) {
     console.error("❌ Error fetching homepage data:", err.message);
@@ -261,6 +148,14 @@ router.get("/faq", async (req, res) => {
   try {
     const search = req.query.search || "";
     let faqResult;
+    let walletBalance = 0;
+    if (req.session.user) {
+      const walletResult = await pool.query(
+        "SELECT wallet_balance2 FROM users2 WHERE email = $1",
+        [req.session.user.email]
+      );
+      walletBalance = walletResult.rows[0]?.wallet_balance2 || 0;
+    }
 
     if (search) {
       faqResult = await pool.query(
@@ -281,7 +176,11 @@ router.get("/faq", async (req, res) => {
       info: infoResult.rows[0] || {},
       faqs: faqResult.rows,
       search, // pass current search back to the EJS view
-      user: req.session.user || null,
+      users: req.session.user || null,
+      isLoggedIn: !!req.session.user,
+      subscribed: req.query.subscribed,
+      walletBalance,
+      activePage: "faq", // 👈 Pass active page
     });
   } catch (err) {
     console.error("Error fetching FAQs:", err);
@@ -315,6 +214,9 @@ router.get("/testimony", async (req, res) => {
     info: infoResult.rows[0] || {},
     testimonies: testimonyResult.rows,
     title: "Submit Testimony",
+    activePage: "testimony", // 👈 Pass active page
+    isLoggedIn: !!req.session.user,
+    subscribed: req.query.subscribed,
   });
 });
 
@@ -353,6 +255,9 @@ router.get("/testimonies", async (req, res) => {
   res.render("testimonies", {
     testimonies: result.rows,
     title: "Testimonies",
+    activePage: "testimony", // 👈 Pass active page
+    isLoggedIn: !!req.session.user,
+    subscribed: req.query.subscribed,
   });
 });
 
@@ -379,6 +284,7 @@ router.get("/make-payment", async (req, res) => {
     res.render("payment", {
       title: "Make Payment",
       fullname: user.fullname,
+      activePage: "payment", // 👈 Pass active page
       email: user.email,
       profilePic: user.profile_picture || null,
     });
@@ -517,6 +423,7 @@ router.get("/courses", async (req, res) => {
     groupedCourses,
     careerPathways: careerPathwaysResult.rows,
     subscribed: req.query.subscribed,
+    activePage: "courses", // 👈 Pass active page
   });
 });
 
@@ -693,6 +600,7 @@ router.get("/pathways/:id", async (req, res) => {
        groupedCourses,
        subscribed: req.query.subscribed,
        walletBalance,
+       activePage: "pathway", // 👈 Pass active page
      });
    } catch (err) {
      console.error("❌ Error fetching pathway details:", err.message);
@@ -761,6 +669,7 @@ router.get("/courses/:id", async (req, res) => {
       walletBalance,
       modules,
       subscribed: req.query.subscribed,
+      activePage: "courses", // 👈 Pass active page
     });
   } catch (err) {
     console.error("❌ Error fetching course details:", err.message);
