@@ -5,7 +5,7 @@
 </button>
 
 <div class="dashboard-container">
-  <aside class="sidebar">
+  <!-- <aside class="sidebar">
     <div class="logo-title">
         <% if (info?.logo_url) { %>
         <a href="/"><img src="<%= info.logo_url %>" alt="Logo" /></a>
@@ -34,8 +34,6 @@
     <ul class="sidebar-nav">
       <li><a href="/student/dashboard">🏠 Dashboard</a></li>
 
-      <!-- Profile -->
-      <!-- <li><a href="/student/profile">👤 My Profile</a></li> -->
        <li><a href="/student/dashboard?section=profile">👤 My Profile</a></li>
        <p style="color: rgb(255, 255, 255);">💰 Wallet: ₦<%= walletBalance.toLocaleString() %></p>
 
@@ -53,8 +51,6 @@
           <p><strong>Teacher:</strong> <%= teacher?.fullname || 'Unassigned' %></p>
 
           <div style="margin-top:10px;">
-            <!-- <a href="/student/classroom" class="btn-edit">👥 View Classmates</a>
-            <a href="/student/teacher" class="btn-edit">👨‍🏫 Your Teacher</a> -->
             <div  style="display: flex; gap: 10px; flex-wrap: wrap;">
               <a href="/student/dashboard?section=classroom" class="btn-view" style="text-decoration: none;">👥Classmates</a>
               <a href="/student/dashboard?section=teacher" class="btn-edit" style="text-decoration: none;">👨‍🏫 Your Teacher</a>
@@ -99,7 +95,6 @@
   <p>No pending parent requests.</p>
 <% } %>
 
-      <!-- Pathways / Courses -->
       <li>
         <button class="dropdown-btn">📂 My Pathways ▾</button>
         
@@ -118,7 +113,101 @@
 
       <li><a href="/admin/logout">🚪 Logout</a></li>
     </ul>
-  </aside>
+  </aside> -->
+
+<aside class="sidebar">
+  <div class="logo-title">
+    <% if (info?.logo_url) { %>
+      <a href="/"><img src="<%= info.logo_url %>" alt="Logo" /></a>
+    <% } %>
+    <p><%= info?.company_name || 'C&S Church Online' %></p>
+  </div>
+
+  <div class="sidebar-header">
+    <% if (profilePic) { %>
+      <img src="<%= profilePic %>" alt="Profile Picture" class="profile-pic" />
+    <% } else { %>
+      <img src="/images/profile male.png" alt="Default Profile Picture" class="profile-pic" />
+    <% } %>
+  </div>
+
+  <h2 style="font-size: 14px;">👤 <%= student.fullname %></h2>
+  <h2 style="font-size: 14px; color: #e5f0ff;">🪙 Xp: <%= student.xp %> points</h2>
+
+  <ul class="sidebar-nav">
+    <li><a href="/student/dashboard">🏠 Dashboard</a></li>
+    <li><a href="/student/dashboard?section=profile">👤 My Profile</a></li>
+    <p style="color: rgb(255, 255, 255);">💰 Wallet: ₦<%= walletBalance.toLocaleString() %></p>
+
+    <!-- Collapsible: School Info -->
+    <% if (student.role === 'student' && school) { %>
+      <li>
+        <button class="dropdown-btn">🏫 School Info ▾</button>
+        <div class="dropdown-container">
+          <% if (school.logo_url) { %>
+            <img src="<%= school.logo_url %>" alt="School Logo" style="height:50px; margin-bottom:10px;">
+          <% } %>
+          <p><strong>School:</strong> <%= school.name %></p>
+          <p><strong>Classroom:</strong> <%= classroom?.name || 'Not assigned yet' %></p>
+          <p><strong>Teacher:</strong> <%= teacher?.fullname || 'Unassigned' %></p>
+          <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="/student/dashboard?section=classroom" class="btn-view">👥 Classmates</a>
+            <a href="/student/dashboard?section=teacher" class="btn-edit">👨‍🏫 Your Teacher</a>
+          </div>
+        </div>
+      </li>
+    <% } %>
+
+    <!-- Collapsible: Parents -->
+    <li>
+      <button class="dropdown-btn">👨‍👩‍👧 Parents ▾</button>
+      <div class="dropdown-container">
+        <% if (parents && parents.length > 0) { %>
+          <ul>
+            <% parents.forEach(parent => { %>
+              <li><strong><%= parent.fullname %></strong> (<%= parent.email %>)</li>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p>No parent linked yet.</p>
+        <% } %>
+
+        <% if (parentRequests && parentRequests.length > 0) { %>
+          <h4>📩 Requests</h4>
+          <ul>
+            <% parentRequests.forEach(req => { %>
+              <li>
+                <strong><%= req.parent_name %></strong> (<%= req.parent_email %>)
+                <form action="/student/parent-request/respond" method="POST" style="display:inline-flex; gap:6px;">
+                  <input type="hidden" name="requestId" value="<%= req.id %>">
+                  <button type="submit" name="action" value="approve">✅</button>
+                  <button type="submit" name="action" value="reject">❌</button>
+                </form>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </div>
+    </li>
+
+    <!-- Collapsible: Pathways -->
+    <li>
+      <button class="dropdown-btn">📂 My Pathways ▾</button>
+      <ul class="dropdown-container">
+        <% Object.keys(pathwayCourses).forEach(pathway => { %>
+          <li>
+            <a href="/student/dashboard?pathway=<%= encodeURIComponent(pathway) %>">
+              <%= pathway %>
+            </a>
+          </li>
+        <% }) %>
+      </ul>
+    </li>
+
+    <li><a href="/admin/logout">🚪 Logout</a></li>
+  </ul>
+</aside>
+
 
  <main class="main-content">
   <% if (section === 'profile') { %>

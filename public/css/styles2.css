@@ -796,7 +796,48 @@
 .sidebar ul li a:hover,
 .sidebar ul li a.active {
     background-color: #444;
+} 
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
 }
+
+.sidebar .dropdown-btn {
+    width: 100%;
+    background: none;
+    border: none;
+    color: #fff;
+    text-align: left;
+    font-size: 0.95rem;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: 0.3s;
+}
+
+.sidebar .dropdown-btn:hover {
+    background-color: #444;
+}
+
+.sidebar .dropdown-container {
+    display: none;
+    padding-left: 12px;
+    margin-top: 6px;
+}
+
+.sidebar .dropdown-container a {
+    font-size: 0.9rem;
+    color: #ddd;
+}
+
+.sidebar .dropdown-container p,
+.sidebar .dropdown-container li {
+    font-size: 0.85rem;
+    color: #ccc;
+    margin: 5px 0;
+}
+
 
 /* === Main Content === */
 .main-content {
