@@ -245,8 +245,8 @@
                 <% for (let j = i; j < i + 1 && j < testimonies.length; j++) { %>
                   <div class="testimony-card" onclick="openTestimonyModal(`<%- testimonies[j].message.replace(/`/g, '\\`') %>`, '<%= testimonies[j].name %>')">
                     <p class="testimony-message">“<%= testimonies[j].message.substring(0, 200) %>...”</p>
-                    <!-- <p class="testimony-name">— <strong><%= testimonies[j].name %></strong></p> -->
-                    <p class="testimony-name">— <strong>Anonymous</strong></p>
+                    <p class="testimony-name">— <strong><%= testimonies[j].name %></strong></p>
+                    <!-- <p class="testimony-name">— <strong>Anonymous</strong></p> -->
                   </div>
                 <% } %>
               </div>
