@@ -6,7 +6,7 @@ const sendEmail = require("../utils/sendEmail"); // adjust if your util file is 
 router.get("/test-email", async (req, res) => {
   try {
     await sendEmail(
-      "yourpersonalemail@example.com", // use your real inbox
+      "dammykirchhoff@gmail.com", // use your real inbox
       "Railway Brevo Test",
       "<h2>✅ Railway + Brevo test email</h2><p>If you see this, SMTP works!</p>"
     );
