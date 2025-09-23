@@ -138,6 +138,8 @@ app.get("/api/check-school/:schoolId", async (req, res) => {
 const adminTestimonyRoutes = require("./routes/adminTestimonyRoutes");
 app.use("/", adminTestimonyRoutes);
 
+const testRoutes = require("./routes/testRoutes");
+app.use("/", testRoutes);
 
 runNewsletterScheduler();
 
