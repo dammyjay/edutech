@@ -65,6 +65,7 @@ router.post(
 );
 
 
+
 // Quotes
 router.get("/section/quotes", schoolAdminController.getQuotes);
 router.post(

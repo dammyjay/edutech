@@ -39,13 +39,29 @@
         method="post"
         enctype="multipart/form-data"
       >
+
+      <div class="container">
+          <label for="">Role</label>
+          <select name="role" id="role" required>
+            <option value="">-- Select Role --</option>
+            <option value="school_admin">School Admin</option>
+            <option value="teacher">Teacher</option>
+            <option value="student">School Student</option>
+            <option value="user">Individual Student</option>
+            <option value="parent">Parent</option>
+          </select>
+        </div> <br>
+        
         <!-- <input type="email" name="email" required placeholder="Email" /> -->
-        <div class="container">
-          <input type="text" name="email" placeholder="Email" required />
-          <span class="toggle-password">
-            <i class="fa fa-envelope"></i>
-          </span>
+         <div class="emailcheck" id="emailcheck" style="display: block;">
+          <div class="container">
+            <input type="text" name="email" placeholder="Email" required />
+            <span class="toggle-password">
+              <i class="fa fa-envelope"></i>
+            </span>
+          </div>
         </div>
+
 
         <!-- <input type="text" name="username" required placeholder="Username" />
         -->
@@ -104,17 +120,6 @@
           </select>
         </div> -->
 
-        <div class="container">
-          <label for="">Role</label>
-          <select name="role" id="role" required>
-            <option value="">-- Select Role --</option>
-            <option value="school_admin">School Admin</option>
-            <option value="teacher">Teacher</option>
-            <option value="student">School Student</option>
-            <option value="user">Individual Student</option>
-            <option value="parent">Parent</option>
-          </select>
-        </div>
 
         <!-- Extra fields for School Admin -->
         <!-- <div id="school-admin-fields" style="display:none;">
@@ -328,18 +333,33 @@
       const schoolIdField = document.getElementById("school-id-field");
       const schoolNameDisplay = document.getElementById("school-name-display");
       const schoolIdInput = document.getElementById("schoolId");
+      const emailcheck = document.getElementById("emailcheck");
+      const emailInput = emailcheck.querySelector("input[name='email']");
 
       roleSelect.addEventListener("change", () => {
         const role = roleSelect.value;
         schoolAdminFields.style.display = "none";
         schoolIdField.style.display = "none";
+        emailcheck.style.display = "block"; // default visible
+        
 
         if (role === "school_admin") {
           schoolAdminFields.style.display = "block";
-        } else if (role === "teacher" || role === "student") {
+        } 
+        if (role === "teacher" || role === "student") {
           schoolIdField.style.display = "block";
         }
+
+        if (role === "student") {
+          // hide and disable email field
+          emailcheck.style.display = "none"; 
+          // remove "required" so browser won't block submit
+          emailInput.removeAttribute("required");
+          // clear any existing value
+          emailInput.value = "";
+        }
       });
+
 
       // Auto-check school name when schoolId is entered
       schoolIdInput?.addEventListener("blur", async () => {

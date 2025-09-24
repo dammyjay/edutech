@@ -90,7 +90,7 @@ exports.signup = async (req, res) => {
 
 
     // ====== CASE 2: Teacher / School Student ======
-    if (role === "teacher" || role === "student") {
+    if (role === "teacher") {
       if (!schoolId) {
         return res
           .status(400)
@@ -139,6 +139,55 @@ exports.signup = async (req, res) => {
         needsOtp: false,
       });
     }
+
+    if (role === "student") {
+      if (!schoolId) {
+        return res.status(400).send("School ID is required for students");
+      }
+
+      // check school exists
+      const schoolCheck = await pool.query(
+        "SELECT * FROM schools WHERE school_id = $1",
+        [schoolId]
+      );
+      if (schoolCheck.rowCount === 0) {
+        return res.status(400).send("Invalid School ID");
+      }
+      const school = schoolCheck.rows[0];
+    
+      // ✅ auto-generate email for students
+      const fullNameClean = username.replace(/\s+/g, ""); // remove spaces
+      const schoolFirstWord = school.name.split(" ")[0].toLowerCase(); // take first word of school name
+      const emailGenerated = `${fullNameClean.toLowerCase()}@${schoolFirstWord}school.com`;
+
+      const newUser = await pool.query(
+        `INSERT INTO users2 (fullname, email, phone, gender, password, profile_picture, role, created_at, dob) 
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+        [
+          username,
+          emailGenerated, // 👈 auto-generated
+          phone,
+          gender,
+          hashed,
+          profile_picture,
+          role,
+          created_at,
+          dob,
+        ]
+      );
+
+      // link user to school
+      await pool.query(
+        `INSERT INTO user_school (user_id, school_id, role_in_school) VALUES ($1,$2,$3)`,
+        [newUser.rows[0].id, school.id, role]
+      );
+
+      return res.status(200).json({
+        message: "Signup successful, pending school admin approval.",
+        needsOtp: false,
+      });
+    }
+
 
     res.status(400).send("Invalid role.");
   } catch (err) {
