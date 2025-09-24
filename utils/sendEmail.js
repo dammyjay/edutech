@@ -109,32 +109,66 @@
 
 // ---------------------------------------------------------------------------------------
 
-const nodemailer = require("nodemailer");
+// const nodemailer = require("nodemailer");
 
-const transporter = nodemailer.createTransport({
-  host: process.env.BREVO_HOST || "smtp-relay.brevo.com",
-  port: process.env.BREVO_PORT || 587,
-  secure: false, // STARTTLS (Brevo works with port 587)
-  auth: {
-    user: process.env.BREVO_USER,
-    pass: process.env.BREVO_PASS,
-  },
-});
+// const transporter = nodemailer.createTransport({
+//   host: process.env.BREVO_HOST || "smtp-relay.brevo.com",
+//   port: process.env.BREVO_PORT || 587,
+//   secure: false, // STARTTLS (Brevo works with port 587)
+//   auth: {
+//     user: process.env.BREVO_USER,
+//     pass: process.env.BREVO_PASS,
+//   },
+// });
 
-async function sendEmail(to, subject, message) {
+// async function sendEmail(to, subject, message) {
+//   try {
+//     const info = await transporter.sendMail({
+//       from: `"JKT Hub" <${process.env.BREVO_FROM}>`, // must be verified sender
+//       to,
+//       subject,
+//       html: message,
+//     });
+
+//     console.log("✅ Email sent:", info.messageId);
+//     return info;
+//   } catch (err) {
+//     console.error("❌ Email sending failed:", err.message);
+//     throw err;
+//   }
+// }
+
+// module.exports = sendEmail;
+
+
+
+
+// ---------------------------------------------------------------------------------------------------
+
+
+const Brevo = require("@getbrevo/brevo");
+
+const apiInstance = new Brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(
+  Brevo.TransactionalEmailsApiApiKeys.apiKey,
+  process.env.BREVO_API_KEY
+);
+
+async function sendEmail(to, subject, htmlContent) {
   try {
-    const info = await transporter.sendMail({
-      from: `"JKT Hub" <${process.env.BREVO_FROM}>`, // must be verified sender
-      to,
+    const sendSmtpEmail = {
+      to: [{ email: to }],
+      sender: { email: process.env.BREVO_FROM, name: "JKT Hub" },
       subject,
-      html: message,
-    });
+      htmlContent,
+    };
 
-    console.log("✅ Email sent:", info.messageId);
-    return info;
-  } catch (err) {
-    console.error("❌ Email sending failed:", err.message);
-    throw err;
+    const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
+    console.log("✅ Email sent:", data.messageId || data);
+    return data;
+  } catch (error) {
+    console.error("❌ Email sending failed:", error.message);
+    throw error;
   }
 }
 
