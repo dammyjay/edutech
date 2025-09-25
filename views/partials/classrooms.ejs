@@ -108,90 +108,90 @@
 <div id="studentAlert" class="alert-overlay">Student added successfully ✅</div>
 
 <script>
-async function addStudent(event, classroomId) {
-  event.preventDefault();
+  async function addStudent(event, classroomId) {
+    event.preventDefault();
 
-  const select = document.getElementById("student-select-" + classroomId);
-  const studentId = select.value;
-  if (!studentId) return alert("Please select a student.");
+    const select = document.getElementById("student-select-" + classroomId);
+    const studentId = select.value;
+    if (!studentId) return alert("Please select a student.");
 
-  try {
-    const res = await fetch(`/school-admin/classrooms/${classroomId}/add-student`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ student_id: studentId })
-    });
+    try {
+      const res = await fetch(`/school-admin/classrooms/${classroomId}/add-student`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_id: studentId })
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    // if (data.success) {
-    //   // ✅ Add new row into the table dynamically
-    //   const tbody = document.querySelector(`#classroom-${classroomId} table tbody`);
-    //   const tr = document.createElement("tr");
-    //   tr.innerHTML = `
-    //     <td>${data.student.fullname}</td>
-    //     <td>${data.student.email}</td>
-    //     <td>${new Date(data.student.joined_at).toDateString()}</td>
-    //     <td>
-    //       <form method="POST" action="/school-admin/students/${data.student.id}/delete" style="display:inline;" onsubmit="return confirm('Remove this student?')">
-    //         <button class="btn-delete">🗑 Remove</button>
-    //       </form>
-    //     </td>
-    //   `;
-    //   tbody.appendChild(tr);
+      // if (data.success) {
+      //   // ✅ Add new row into the table dynamically
+      //   const tbody = document.querySelector(`#classroom-${classroomId} table tbody`);
+      //   const tr = document.createElement("tr");
+      //   tr.innerHTML = `
+      //     <td>${data.student.fullname}</td>
+      //     <td>${data.student.email}</td>
+      //     <td>${new Date(data.student.joined_at).toDateString()}</td>
+      //     <td>
+      //       <form method="POST" action="/school-admin/students/${data.student.id}/delete" style="display:inline;" onsubmit="return confirm('Remove this student?')">
+      //         <button class="btn-delete">🗑 Remove</button>
+      //       </form>
+      //     </td>
+      //   `;
+      //   tbody.appendChild(tr);
 
-    //   // Reset dropdown
-    //   select.value = "";
-    // } else {
-    //   alert(data.message || "Error adding student.");
-    // }
-    if (data.success) {
-  // Add row...
-  const tbody = document.querySelector(`#classroom-${classroomId} table tbody`);
-  const tr = document.createElement("tr");
-  tr.innerHTML = `
-    <td>${data.student.fullname}</td>
-    <td>${data.student.email}</td>
-    <td>${new Date(data.student.joined_at).toDateString()}</td>
-    <td>
-      <form method="POST" action="/school-admin/students/${data.student.id}/delete" 
-            style="display:inline;" 
-            onsubmit="return confirm('Remove this student?')">
-        <button class="btn-delete">🗑 Remove</button>
-      </form>
-    </td>
-  `;
-  tbody.appendChild(tr);
+      //   // Reset dropdown
+      //   select.value = "";
+      // } else {
+      //   alert(data.message || "Error adding student.");
+      // }
+      if (data.success) {
+    // Add row...
+    const tbody = document.querySelector(`#classroom-${classroomId} table tbody`);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${data.student.fullname}</td>
+      <td>${data.student.email}</td>
+      <td>${new Date(data.student.joined_at).toDateString()}</td>
+      <td>
+        <form method="POST" action="/school-admin/students/${data.student.id}/delete" 
+              style="display:inline;" 
+              onsubmit="return confirm('Remove this student?')">
+          <button class="btn-delete">🗑 Remove</button>
+        </form>
+      </td>
+    `;
+    tbody.appendChild(tr);
 
-  // Reset dropdown
-  select.value = "";
+    // Reset dropdown
+    select.value = "";
 
-  // ✅ Show overlay alert
-  const alertBox = document.getElementById("studentAlert");
-  alertBox.style.display = "block";
-  setTimeout(() => {
-    alertBox.style.display = "none";
-  }, 3000);
-}
-
-
-} catch (err) {
-    console.error(err);
-    alert("Server error while adding student.");
+    // ✅ Show overlay alert
+    const alertBox = document.getElementById("studentAlert");
+    alertBox.style.display = "block";
+    setTimeout(() => {
+      alertBox.style.display = "none";
+    }, 3000);
   }
-}
 
-function filterStudents(classroomId, searchText) {
-  const select = document.getElementById(`student-select-${classroomId}`);
-  const options = select.getElementsByTagName("option");
-  const filter = searchText.toLowerCase();
 
-  for (let i = 0; i < options.length; i++) {
-    const text = options[i].textContent.toLowerCase();
-    if (i === 0) continue; // skip placeholder "-- Select Student --"
-    options[i].style.display = text.includes(filter) ? "" : "none";
+  } catch (err) {
+      console.error(err);
+      alert("Server error while adding student.");
+    }
   }
-}
+
+  function filterStudents(classroomId, searchText) {
+    const select = document.getElementById(`student-select-${classroomId}`);
+    const options = select.getElementsByTagName("option");
+    const filter = searchText.toLowerCase();
+
+    for (let i = 0; i < options.length; i++) {
+      const text = options[i].textContent.toLowerCase();
+      if (i === 0) continue; // skip placeholder "-- Select Student --"
+      options[i].style.display = text.includes(filter) ? "" : "none";
+    }
+  }
 
 </script>
 

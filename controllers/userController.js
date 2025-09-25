@@ -4,6 +4,7 @@ const sendEmail = require("../utils/sendEmail");
 const PDFDocument = require("pdfkit");
 const puppeteer = require("puppeteer");
 const crypto = require("crypto");
+const { logActivityForUser } = require("../utils/activityLogger");
 
 
 exports.showSignup = (req, res) => {
@@ -452,39 +453,85 @@ exports.getParentDashboard = async (req, res) => {
 exports.addChild = async (req, res) => {
   const parent = req.session.user;
   if (!parent || parent.role !== "parent") {
-    return res.status(403).send("Only parents can add children");
+    return res.status(403).json({ error: "Only parents can add children" });
   }
 
   const { childEmail } = req.body;
 
   try {
+    // Look up the child (user or student)
     const childRes = await pool.query(
-      "SELECT id, fullname FROM users2 WHERE email = $1 AND role = 'user'",
+      `SELECT u.id, u.fullname, u.email
+       FROM users2 u
+       WHERE u.email = $1
+         AND (
+           u.role = 'user'
+           OR EXISTS (
+             SELECT 1 FROM user_school us
+             WHERE us.user_id = u.id AND us.role_in_school = 'student'
+           )
+         )`,
       [childEmail]
     );
 
-    if (childRes.rows.length === 0) {
-      return res.status(404).send("No student found with that email.");
+    if (childRes.rowCount === 0) {
+      return res.status(404).json({ error: "No child found with that email." });
     }
 
     const child = childRes.rows[0];
 
+    // 🔎 Check if request already exists
+    const existingRes = await pool.query(
+      `SELECT * FROM parent_child_requests 
+       WHERE parent_id = $1 AND child_id = $2`,
+      [parent.id, child.id]
+    );
+
+    if (existingRes.rowCount > 0) {
+      const existing = existingRes.rows[0];
+
+      if (existing.status === "pending") {
+        return res.status(409).json({ error: "Request already pending." });
+      }
+      if (existing.status === "accepted") {
+        return res.status(409).json({ error: "Child already linked." });
+      }
+      if (existing.status === "rejected") {
+        // 🔁 Re-request allowed: update to pending
+        await pool.query(
+          `UPDATE parent_child_requests
+           SET status = 'pending', created_at = NOW()
+           WHERE id = $1`,
+          [existing.id]
+        );
+
+        return res.status(200).json({
+          message: "🔁 Request re-sent! Waiting for the student’s approval.",
+          redirect: "/parent/dashboard",
+        });
+      }
+    }
+
+    // ✅ Insert new request
     await pool.query(
-      `INSERT INTO parent_child_requests (parent_id, child_id)
-       VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      `INSERT INTO parent_child_requests (parent_id, child_id, status)
+       VALUES ($1, $2, 'pending')`,
       [parent.id, child.id]
     );
 
     await logActivityForUser(
       req,
-      "Parent assigned child",
-      `Parent ID: ${parent.id}`
+      "Parent linked child",
+      `Parent ID: ${parent.id}, Child ID: ${child.id}`
     );
-    // res.send("✅ Request sent! Waiting for the student’s approval.");
-    res.redirect("/parent/dashboard");
+
+    return res.status(200).json({
+      message: "✅ Request sent! Waiting for the student’s approval.",
+      redirect: "/parent/dashboard",
+    });
   } catch (err) {
-    console.error("Error creating request:", err);
-    res.status(500).send("Failed to send request");
+    console.error("❌ Error linking child:", err);
+    return res.status(500).json({ error: "Failed to link child" });
   }
 };
 

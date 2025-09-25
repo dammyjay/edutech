@@ -18,6 +18,24 @@
     <link rel="stylesheet" href="/css/styles3.css">
     <link rel="icon" type="image/x-icon" href="/logo.png">
     </head>
+
+    <style>
+  .spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #1270b0;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
   <body class="signup-body">
     <!-- <img class="mask" src="logo.png" alt="" /> -->
     <img
@@ -189,7 +207,8 @@
             <a href="terms.html" style="color: #1270b0">Terms and Conditions</a>
           </label>
         </div> -->
-        <button style="width: 100%;" type="submit">Sign Up</button>
+        <button id="signupBtn" style="width: 100%;" type="submit">Sign Up</button>
+        <span id="spinner" style="display:none; margin-left:10px;">⏳ Sending...</span>
       </form>
       <p style="text-align: center;">Already have an account? <a href="/admin/login">Login</a></p>
 
@@ -211,7 +230,8 @@
             <i class="fa fa-envelope"></i>
           </span> -->
           <input id="otp-input" placeholder="Enter OTP" />
-          <button onclick="verifyOtp()">Verify OTP</button>
+          <button id="verifyBtn" onclick="verifyOtp()">Verify OTP</button>
+          <span id="spinner2" style="display:none; margin-left:10px;">⏳ Sending...</span>
         </div>
       </div>
     </div>
@@ -223,17 +243,17 @@
         e.preventDefault();
         const formData = new FormData(e.target); // Don't convert it to JSON
 
+        const signupBtn = document.getElementById("signupBtn");
+        const spinner = document.getElementById("spinner");
+
+        // Show spinner + disable button
+        signupBtn.disabled = true;
+        spinner.style.display = "inline-block";
+
         const res = await fetch("/signup", {
           method: "POST",
           body: formData, // ✅ Send raw FormData
         });
-
-        // if (res.ok) {
-        //   document.getElementById("otp-modal").style.display = "block";
-        //   document.getElementById("signup-form").style.display = "none"; // Hide the signup form
-        // } else {
-        //   alert("Signup failed: " + (await res.text()));
-        // }
 
         if (res.ok) {
           const data = await res.json();
@@ -247,6 +267,7 @@
         } else {
           alert("Signup failed: " + (await res.text()));
         }
+        
 
       };
 
@@ -272,29 +293,32 @@
       // }
 
       async function verifyOtp() {
-  const otp = document.getElementById("otp-input").value;
-  const email = document.querySelector("input[name='email']").value;
+        const otp = document.getElementById("otp-input").value;
+        const email = document.querySelector("input[name='email']").value;
+        const verifyBtn = document.getElementById("verifyBtn");
+        const spinner = document.getElementById("spinner2");
 
-  const res = await fetch("/verify-otp", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, otp }),
-  });
+        const res = await fetch("/verify-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, otp }),
+        });
+        spinner2.style.display = "inline-block";
+        verifyBtn.disabled = true;
 
-  const data = await res.json();
-  alert(data.message); // show school ID alert
+        const data = await res.json();
+        alert(data.message); // show school ID alert
 
-  if (data.success) {
-    // Hide OTP modal
-    document.getElementById("otp-modal").style.display = "none";
+        if (data.success) {
+          // Hide OTP modal
+          document.getElementById("otp-modal").style.display = "none";
 
-    // Redirect to login
-    setTimeout(() => {
-      window.location.href = "/admin/login";
-    }, 1000);
-  }
-}
-
+          // Redirect to login
+          setTimeout(() => {
+            window.location.href = "/admin/login";
+          }, 1000);
+        }
+      }
 
       const passwordInput = document.getElementById("password");
       const togglePassword = document.getElementById("togglePassword");
@@ -307,7 +331,8 @@
         // swap the icon
         icon.classList.toggle("fa-eye");
         icon.classList.toggle("fa-eye-slash");
-      });
+        }
+      );
 
       // Handle image preview
       const fileInput = document.getElementById("file-input");

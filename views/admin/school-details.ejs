@@ -23,6 +23,7 @@
 </section>
 
 <h3>Teachers</h3>
+<button onclick="openUserForm('teacher')">➕ Add Teacher</button>
 <div class="table-responsive">
   <table class="user-table">
     <thead>
@@ -51,6 +52,7 @@
 <hr>
 
 <h3>Students</h3>
+<button onclick="openUserForm('student')">➕ Add Student</button>
 <div class="table-responsive">
   <table class="user-table">
     <thead>
@@ -69,6 +71,9 @@
         <td><%= student.classroom_name || '—' %></td>
         <td>
           <button class="btn-view" onclick='openUserModal(<%- JSON.stringify(student) %>)'>👁️ View</button>
+          <button class="btn-delete" onclick="deleteUser('<%= student.id %>')">🗑️ Delete</button>
+
+
         </td>
       </tr>
       <% }) %>
@@ -94,23 +99,140 @@
   </div>
 </div>
 
-<script>
-  function openUserModal(user) {
-    document.getElementById("modalProfilePic").src = user.profile_picture || "/images/default-profile.png";
-    document.getElementById("modalFullName").innerText = user.full_name || "N/A";
-    document.getElementById("modalEmail").innerText = user.email || "N/A";
-    document.getElementById("modalPhone").innerText = user.phone || "N/A";
-    document.getElementById("modalDOB").innerText = user.dob || "N/A";
-    document.getElementById("modalGender").innerText = user.gender || "N/A";
-    document.getElementById("modalRole").innerText = user.role || "N/A";
-    document.getElementById("modalClassroom").innerText = user.classroom_name || "—";
-    document.getElementById("modalWalletBalance").innerText = user.wallet_balance || 0;
-    document.getElementById("modalDate").innerText = user.created_at || "N/A";
 
-    document.getElementById("userModal").style.display = "block";
+<!-- User Form Modal -->
+<div id="userFormModal" class="modal" style="display:none;">
+  <div class="modal-content" style="max-width: 600px; margin:auto; background:#fff; padding:20px; border-radius:8px;">
+    <span onclick="closeUserForm()" class="close" style="float:right;cursor:pointer;">&times;</span>
+    <h2 id="userFormTitle">Add User</h2>
+
+    <form id="user-form" enctype="multipart/form-data">
+      <input type="hidden" name="schoolId" value="<%= school.id %>">
+      <input type="hidden" name="role" id="userRole">
+
+      <div class="container">
+        <input type="text" name="username" id="userFullName" placeholder="Full name" required />
+      </div>
+
+      <!-- Email -->
+      <div class="container" id="emailContainer">
+        <input type="text" name="email" id="userEmail" placeholder="Email" />
+      </div>
+
+      <!-- Phone -->
+      <div class="container" id="phoneContainer">
+        <input type="number" name="phone" id="userPhone" placeholder="Phone" required />
+      </div>
+
+      <div class="container">
+        <input type="date" name="dob" placeholder="Date of birth" required />
+      </div>
+      <div class="container">
+        <select name="gender" required>
+          <option>Male</option>
+          <option>Female</option>
+          <option>Not Specified</option>
+        </select>
+      </div>
+      <div class="container">
+        <input type="password" name="password" placeholder="Password" required />
+      </div>
+      <div class="container">
+        <label>Profile Picture:</label>
+        <input type="file" name="profile_picture" accept="image/*" />
+      </div>
+
+      <button type="submit">Save</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.getElementById("user-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const schoolId = "<%= school.id %>";   // inject schoolId from EJS
+
+  const res = await fetch(`/admin/schools/${schoolId}/users`, {
+    method: "POST",
+    body: formData
+  });
+
+  if (res.ok) {
+    alert("Saved successfully!");
+    location.reload();
+  } else {
+    alert("Failed: " + (await res.text()));
+  }
+};
+
+  function openUserForm(role, user = null) {
+    document.getElementById("userRole").value = role;
+    document.getElementById("userFormTitle").innerText = user ? `Edit ${role}` : `Add ${role}`;
+    document.getElementById("user-form").reset();
+
+    const emailContainer = document.getElementById("emailContainer");
+    const phoneContainer = document.getElementById("phoneContainer");
+    const emailInput = document.getElementById("userEmail");
+    const phoneInput = document.getElementById("userPhone");
+    const fullNameInput = document.getElementById("userFullName");
+
+    // Reset defaults
+    emailContainer.style.display = "block";
+    phoneContainer.style.display = "block";
+    emailInput.readOnly = false;
+    emailInput.required = true;
+    phoneInput.required = true;
+
+    // If role is student, customize fields
+    if (role === "student") {
+      emailContainer.style.display = "block";
+      emailInput.readOnly = true;
+      emailInput.required = true;
+
+      phoneContainer.style.display = "none";
+      phoneInput.required = false;
+
+      // Auto-generate email from fullname + school
+      fullNameInput.addEventListener("blur", () => {
+        const fullName = fullNameInput.value.trim().replace(/\s+/g, "").toLowerCase();
+        const schoolFirstWord = "<%= school.name.split(' ')[0].toLowerCase() %>";
+        if (fullName) {
+          emailInput.value = `${fullName}@${schoolFirstWord}school.com`;
+        }
+      });
+    }
+
+    // Prefill if editing
+    if (user) {
+      document.querySelector("input[name='username']").value = user.full_name;
+      document.querySelector("input[name='email']").value = user.email;
+      document.querySelector("input[name='phone']").value = user.phone;
+      document.querySelector("input[name='dob']").value = user.dob;
+      document.querySelector("select[name='gender']").value = user.gender;
+    }
+
+    document.getElementById("userFormModal").style.display = "block";
   }
 
-  function closeUserModal() {
-    document.getElementById("userModal").style.display = "none";
+  function closeUserForm() {
+    document.getElementById("userFormModal").style.display = "none";
   }
 </script>
+
+
+<script>
+  async function deleteUser(userId) {
+    if (!confirm("Are you sure?")) return;
+    const schoolId = "<%= school.id %>";
+    const res = await fetch(`/admin/schools/${schoolId}/users/${userId}`, { method: "DELETE" });
+    if (res.ok) {
+      alert("Deleted successfully!");
+      location.reload();
+    } else {
+      alert("Delete failed");
+    }
+  }
+
+</script>
+

@@ -8,7 +8,7 @@ const fs = require("fs");
 const { Parser } = require("json2csv");
 const PDFDocument = require("pdfkit");
 const puppeteer = require("puppeteer");
-const { logActivityForUser } = require("../utils/activityLogger")
+const { logActivityForUser } = require("../utils/activityLogger");
 
 // Show forgot password form
 exports.showForgotPasswordForm = (req, res) => {
@@ -1982,6 +1982,151 @@ exports.assignSchoolCourses = async (req, res) => {
   } catch (err) {
     console.error("Error assigning courses:", err);
     res.status(500).send("Error assigning courses");
+  }
+};
+
+exports.addUserToSchool = async (req, res) => {
+  const { schoolId } = req.params;
+  const { username, email, phone, gender, dob, role, password } = req.body;
+  const file = req.file;
+
+  try {
+    // check school exists
+    const schoolCheck = await pool.query(
+      "SELECT * FROM schools WHERE id = $1",
+      [schoolId]
+    );
+    if (schoolCheck.rowCount === 0) {
+      return res.status(400).json({ message: "Invalid School ID" });
+    }
+    const school = schoolCheck.rows[0];
+
+    // Handle profile picture
+    const profile_picture = file ? file.path : "/profile.webp";
+    const hashed = await bcrypt.hash(password || "123456", 10); // default pw if missing
+    const created_at = new Date();
+
+    let finalEmail = email;
+
+    // auto-generate email if student & none provided
+    if (role === "student" && (!email || email.trim() === "")) {
+      const fullNameClean = username.replace(/\s+/g, "");
+      const schoolFirstWord = school.name.split(" ")[0].toLowerCase();
+      finalEmail = `${fullNameClean.toLowerCase()}@${schoolFirstWord}school.com`;
+    }
+
+    // Insert into users2
+    const newUser = await pool.query(
+      `INSERT INTO users2 (fullname, email, phone, gender, password, profile_picture, role, created_at, dob) 
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [
+        username,
+        finalEmail,
+        phone,
+        gender,
+        hashed,
+        profile_picture,
+        role,
+        created_at,
+        dob,
+      ]
+    );
+
+    // Link to school
+    await pool.query(
+      `INSERT INTO user_school (user_id, school_id, role_in_school, approved) VALUES ($1,$2,$3,$4)`,
+      [newUser.rows[0].id, school.id, role, true] // ✅ auto-approved since admin adds directly
+    );
+
+    return res
+      .status(200)
+      .json({ message: `${role} added successfully`, user: newUser.rows[0] });
+  } catch (err) {
+    console.error("❌ addUserToSchool error:", err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.updateUserInSchool = async (req, res) => {
+  const { userId } = req.params;
+  const { username, phone, gender, dob, password } = req.body;
+  const file = req.file;
+
+  try {
+    const updates = [];
+    const values = [];
+    let idx = 1;
+
+    if (username) {
+      updates.push(`fullname = $${idx++}`);
+      values.push(username);
+    }
+    if (phone) {
+      updates.push(`phone = $${idx++}`);
+      values.push(phone);
+    }
+    if (gender) {
+      updates.push(`gender = $${idx++}`);
+      values.push(gender);
+    }
+    if (dob) {
+      updates.push(`dob = $${idx++}`);
+      values.push(dob);
+    }
+    if (password) {
+      const hashed = await bcrypt.hash(password, 10);
+      updates.push(`password = $${idx++}`);
+      values.push(hashed);
+    }
+    if (file) {
+      updates.push(`profile_picture = $${idx++}`);
+      values.push(file.path);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ message: "No fields to update" });
+    }
+
+    values.push(userId);
+
+    const result = await pool.query(
+      `UPDATE users2 SET ${updates.join(", ")} WHERE id = $${idx} RETURNING *`,
+      values
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "User updated successfully", user: result.rows[0] });
+  } catch (err) {
+    console.error("❌ updateUserInSchool error:", err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.deleteUserFromSchool = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // delete from user_school first
+    await pool.query("DELETE FROM user_school WHERE user_id = $1", [userId]);
+    // delete from users2
+    const result = await pool.query(
+      "DELETE FROM users2 WHERE id = $1 RETURNING *",
+      [userId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({ message: "User deleted successfully" });
+  } catch (err) {
+    console.error("❌ deleteUserFromSchool error:", err.message);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 

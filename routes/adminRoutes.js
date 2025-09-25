@@ -332,4 +332,10 @@ router.post("/school-courses/assign", adminController.assignSchoolCourses);
 router.post("/quotes/:id/approve", adminController.approveQuote);
 router.post("/quotes/:id/reject", adminController.rejectQuote);
 
+
+// CRUD for users in a school
+router.post("/schools/:schoolId/users", upload.single("profile_picture"), adminController.addUserToSchool);
+router.put("/schools/:schoolId/users/:userId", upload.single("profile_picture"), adminController.updateUserInSchool);
+router.delete("/schools/:schoolId/users/:userId", adminController.deleteUserFromSchool);
+
 module.exports = router;
