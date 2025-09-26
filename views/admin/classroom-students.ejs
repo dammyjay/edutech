@@ -1,0 +1,36 @@
+<%- include('../partials/adminHeader', { title: 'Classroom Students' }) %>
+
+<h2>Classroom: <%= classroom.name %> (School: <%= classroom.school_name %>)</h2>
+
+<div class="table-responsive">
+  <table class="user-table" style="width:100%; margin-top:20px;">
+    <thead>
+      <tr>
+        <th>Full Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Gender</th>
+        <th>DOB</th>
+        <th>Joined</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (students.length > 0) { %>
+        <% students.forEach(stu => { %>
+          <tr>
+            <td><%= stu.fullname %></td>
+            <td><%= stu.email %></td>
+            <td><%= stu.phone %></td>
+            <td><%= stu.gender %></td>
+            <td><%= stu.dob ? stu.dob.toDateString() : '' %></td>
+            <td><%= stu.created_at.toDateString() %></td>
+          </tr>
+        <% }) %>
+      <% } else { %>
+        <tr>
+          <td colspan="6" style="text-align:center;">No students in this classroom</td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>

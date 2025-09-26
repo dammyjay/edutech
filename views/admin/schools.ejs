@@ -10,6 +10,7 @@
         <th>Phone</th>
         <th>No. of Students</th>
         <th>No. of Teachers</th>
+        <th>No of Classrooms</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -21,6 +22,7 @@
           <td><%= school.phone %></td>
           <td><%= school.student_count %></td>
           <td><%= school.teacher_count %></td>
+          <td><%= school.classroom_count %></td>
           <td>
             <a href="/admin/schools/<%= school.id %>" class="btn-edit">👁️ View</a>
           </td>

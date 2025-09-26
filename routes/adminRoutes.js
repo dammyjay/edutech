@@ -337,5 +337,7 @@ router.post("/quotes/:id/reject", adminController.rejectQuote);
 router.post("/schools/:schoolId/users", upload.single("profile_picture"), adminController.addUserToSchool);
 router.put("/schools/:schoolId/users/:userId", upload.single("profile_picture"), adminController.updateUserInSchool);
 router.delete("/schools/:schoolId/users/:userId", adminController.deleteUserFromSchool);
+router.get("/classrooms/:id/students", adminController.getClassroomStudents);
+
 
 module.exports = router;

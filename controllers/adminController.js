@@ -1608,12 +1608,23 @@ exports.downloadCourseSummary = async (req, res) => {
 // 📌 GET: All Schools
 // exports.getSchools = async (req, res) => {
 //   try {
-//     const result = await pool.query("SELECT * FROM schools");
-//     const schools = result.rows;
+//     const result = await pool.query(`
+//       SELECT
+//         s.id,
+//         s.name,
+//         s.email,
+//         s.phone,
+//         COUNT(*) FILTER (WHERE us.role_in_school = 'student') AS student_count,
+//         COUNT(*) FILTER (WHERE us.role_in_school = 'teacher') AS teacher_count
+//       FROM schools s
+//       LEFT JOIN user_school us ON s.id = us.school_id
+//       GROUP BY s.id
+//       ORDER BY s.created_at DESC
+//     `);
 
 //     res.render("admin/schools", {
 //       info: req.companyInfo || {},
-//       schools,
+//       schools: result.rows,
 //       currentPage: "schools",
 //     });
 //   } catch (err) {
@@ -1630,10 +1641,13 @@ exports.getSchools = async (req, res) => {
         s.name,
         s.email,
         s.phone,
-        COUNT(*) FILTER (WHERE us.role_in_school = 'student') AS student_count,
-        COUNT(*) FILTER (WHERE us.role_in_school = 'teacher') AS teacher_count
+        COUNT(DISTINCT CASE WHEN us.role_in_school = 'student' THEN u.id END) AS student_count,
+        COUNT(DISTINCT CASE WHEN us.role_in_school = 'teacher' THEN u.id END) AS teacher_count,
+        COUNT(DISTINCT c.id) AS classroom_count
       FROM schools s
       LEFT JOIN user_school us ON s.id = us.school_id
+      LEFT JOIN users2 u ON us.user_id = u.id   -- ✅ ensure actual users exist
+      LEFT JOIN classrooms c ON c.school_id = s.id
       GROUP BY s.id
       ORDER BY s.created_at DESC
     `);
@@ -1650,67 +1664,6 @@ exports.getSchools = async (req, res) => {
 };
 
 
-// 📌 GET: Single School Details
-// exports.getSchoolDetails = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-
-//     // Fetch school
-//     const schoolResult = await pool.query(
-//       "SELECT * FROM schools WHERE id = $1",
-//       [id]
-//     );
-//     const school = schoolResult.rows[0];
-//     if (!school) return res.status(404).send("School not found");
-
-//     // Fetch related students
-//     const studentsResult = await pool.query(
-//       `
-//       SELECT u.*
-//       FROM user_school us
-//       JOIN users2 u ON us.user_id = u.id
-//       WHERE us.school_id = $1 AND us.role_in_school = 'student'
-//     `,
-//       [id]
-//     );
-
-//     // Fetch related teachers
-//     const teachersResult = await pool.query(
-//       `
-//       SELECT u.*
-//       FROM user_school us
-//       JOIN users2 u ON us.user_id = u.id
-//       WHERE us.school_id = $1 AND us.role_in_school = 'teacher'
-//     `,
-//       [id]
-//     );
-
-//     // Fetch classrooms
-//     const classroomsResult = await pool.query(
-//       `
-//       SELECT *
-//       FROM classrooms
-//       WHERE school_id = $1
-//       ORDER BY created_at DESC
-//     `,
-//       [id]
-//     );
-
-//     // Attach to school object
-//     school.students = studentsResult.rows;
-//     school.teachers = teachersResult.rows;
-//     school.classrooms = classroomsResult.rows;
-
-//     res.render("admin/school-details", {
-//       info: req.companyInfo || {},
-//       school,
-//       currentPage: "schools",
-//     });
-//   } catch (err) {
-//     console.error("Error fetching school details:", err);
-//     res.status(500).send("Error loading school details");
-//   }
-// };
 
 // 📌 GET: Single School Details
 exports.getSchoolDetails = async (req, res) => {
@@ -1768,10 +1721,21 @@ exports.getSchoolDetails = async (req, res) => {
     );
 
     // Fetch classrooms
+    // Fetch classrooms + counts
     const classroomsResult = await pool.query(
       `
-      SELECT * FROM classrooms WHERE school_id = $1 ORDER BY created_at DESC
-    `,
+  SELECT 
+    c.id,
+    c.name,
+    COUNT(DISTINCT CASE WHEN us.role_in_school = 'student' THEN u.id END) AS student_count,
+    COUNT(DISTINCT CASE WHEN us.role_in_school = 'teacher' THEN u.id END) AS teacher_count
+  FROM classrooms c
+  LEFT JOIN user_school us ON c.id = us.classroom_id
+  LEFT JOIN users2 u ON us.user_id = u.id
+  WHERE c.school_id = $1
+  GROUP BY c.id, c.name
+  ORDER BY c.created_at DESC
+  `,
       [id]
     );
 
@@ -1800,6 +1764,28 @@ exports.getSchoolDetails = async (req, res) => {
   }
 };
 
+// 📌 GET: Students in a classroom (AJAX)
+exports.getClassroomStudents = async (req, res) => {
+  try {
+    const { id } = req.params; // classroom_id
+
+    const studentsResult = await pool.query(
+      `SELECT u.id, u.fullname, u.email, u.phone, u.gender, u.dob, u.created_at
+       FROM user_school us
+       JOIN users2 u ON us.user_id = u.id
+       WHERE us.classroom_id = $1 AND us.role_in_school = 'student'
+       ORDER BY u.fullname ASC`,
+      [id]
+    );
+
+    res.json(studentsResult.rows);
+  } catch (err) {
+    console.error("Error fetching classroom students:", err);
+    res.status(500).json({ error: "Error loading classroom students" });
+  }
+};
+
+
 
 // 📌 GET: Quotes
 exports.getQuotes = async (req, res) => {
@@ -1823,75 +1809,6 @@ exports.getQuotes = async (req, res) => {
 };
 
 // 📌 GET: School Courses (assignments)
-// exports.getSchoolCourses = async (req, res) => {
-//   try {
-//     // Fetch all schools
-//     const schoolsResult = await pool.query(`SELECT * FROM schools`);
-//     const schools = schoolsResult.rows;
-
-//     // Fetch all courses
-//     const coursesResult = await pool.query(`SELECT * FROM courses`);
-//     const courses = coursesResult.rows;
-
-//     // Fetch assigned courses for each school
-//     const schoolCoursesResult = await pool.query(`
-//       SELECT school_id, course_id
-//       FROM school_courses
-//     `);
-//     const schoolCoursesMap = {};
-//     schoolCoursesResult.rows.forEach(sc => {
-//       if (!schoolCoursesMap[sc.school_id]) schoolCoursesMap[sc.school_id] = [];
-//       schoolCoursesMap[sc.school_id].push(sc.course_id);
-//     });
-
-//     res.render("admin/schoolCourses", {
-//       info: req.companyInfo || {},
-//       schools,
-//       courses,
-//       schoolCoursesMap,
-//       currentPage: "school-courses",
-//     });
-//   } catch (err) {
-//     console.error("Error fetching school courses:", err);
-//     res.status(500).send("Error loading school courses");
-//   }
-// };
-
-// exports.getSchoolCourses = async (req, res) => {
-//   try {
-//     // Fetch all schools
-//     const schoolsResult = await pool.query(
-//       `SELECT * FROM schools ORDER BY name`
-//     );
-//     const schools = schoolsResult.rows;
-
-//     // Fetch all courses
-//     const coursesResult = await pool.query(
-//       `SELECT * FROM courses ORDER BY title`
-//     );
-//     const courses = coursesResult.rows;
-
-//     // Fetch already assigned courses for mapping
-//     const mappingResult = await pool.query(`SELECT * FROM school_courses`);
-//     const schoolCoursesMap = {};
-//     mappingResult.rows.forEach((sc) => {
-//       if (!schoolCoursesMap[sc.school_id]) schoolCoursesMap[sc.school_id] = [];
-//       schoolCoursesMap[sc.school_id].push(sc.course_id);
-//     });
-
-//     res.render("admin/schoolCourses", {
-//       info: req.companyInfo || {},
-//       schools,
-//       courses,
-//       schoolCoursesMap,
-//       currentPage: "school-courses",
-//     });
-//   } catch (err) {
-//     console.error("Error fetching school courses:", err);
-//     res.status(500).send("Error loading school courses");
-//   }
-// };
-
 exports.getSchoolCourses = async (req, res) => {
   try {
     // Fetch all schools
