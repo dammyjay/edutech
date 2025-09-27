@@ -53,7 +53,7 @@
           <div id="level-<%= pathway %>-<%= level %>" class="collapsible-content">
             <section class="course-scroll-container">
               <% groupedCourses[pathway][level].forEach(course => { %>
-                <div class="article-card scroll-card">
+                <div class="scroll-card">
                   <% if (course.thumbnail_url) { %>
                     <img src="<%= course.thumbnail_url %>" alt="Course Thumbnail"  />
                   <% } %>
