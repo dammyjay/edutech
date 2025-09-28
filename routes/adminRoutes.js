@@ -339,5 +339,4 @@ router.put("/schools/:schoolId/users/:userId", upload.single("profile_picture"),
 router.delete("/schools/:schoolId/users/:userId", adminController.deleteUserFromSchool);
 router.get("/classrooms/:id/students", adminController.getClassroomStudents);
 
-
 module.exports = router;
