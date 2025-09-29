@@ -48,7 +48,7 @@
         <div class="modal-content">
           <span class="close" onclick="closeEditModal('<%= module.id %>')">&times;</span>
           <h3>Edit Module</h3>
-          <form action="/admin/modules/edit/<%= module.id %>" method="POST">
+          <form action="/admin/modules/edit/<%= module.id %>" method="POST" enctype="multipart/form-data">
             <label for="">Title</label>
             <input type="text" name="title" value="<%= module.title %>" required />
             <label for="">Description</label>
@@ -72,7 +72,7 @@
 
 <!-- Modal to Add New Module -->
 <h3>Create Module</h3>
-    <form action="/admin/modules/create" method="POST">
+    <form action="/admin/modules/create" method="POST" enctype="multipart/form-data">
       <input type="hidden" name="course_id" value="<%= course.id %>" />
       <input type="text" name="title" placeholder="Module Title" required />
       <label for="">Description</label>

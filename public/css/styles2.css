@@ -630,6 +630,15 @@
     color: inherit;
 }
 
+.article-card2 {
+    background: rgb(255, 255, 255);
+    /* background: rgb(163, 131, 4); */
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 90%;
+}
+
 .article-card2-link {
     text-decoration: none;
     color: inherit;
@@ -645,6 +654,27 @@
     cursor: pointer;
     transform: scale(1.02);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.article-card2 img {
+    border-radius: 8px;
+    margin-bottom: 10px;
+    width: 100%;
+    height: 100px;
+    object-fit: contain;
+}
+
+/* Article content */
+.article-card2 p {
+    color: #555;
+    /* color: #000000; */
+    line-height: 1.6;
+}
+
+/* Article footer with date */
+.article-card2 small {
+    color: #999;
+    font-size: 0.85rem;
 }
 
 /* Style the tab content container */
@@ -1920,6 +1950,18 @@ canvas {
 
 /* Responsive adjustments */
 @media (max-width: 600px) {
+    .article-card2 {
+        padding: 15px;
+        width: 90%;
+    }
+
+    .article-card2 img {
+        border-radius: 8px;
+        margin-bottom: 10px;
+        width: 100%;
+        height: 20px;
+        object-fit: contain;
+    }
     .benefit-card:hover {
     transform: translateY(-4px);
      /* box-shadow: 0 4px 8px rgba((255, 210, 7, 0.38)) */

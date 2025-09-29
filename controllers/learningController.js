@@ -60,6 +60,47 @@ exports.createModule = async (req, res) => {
     res.status(500).send("Server error");
   }
 };
+// exports.editModule = async (req, res) => {
+//   const { title, description, objectives, learning_outcomes, order_number } =
+//     req.body;
+//   const { id } = req.params;
+
+//   let thumbnail = null;
+//   if (req.file) {
+//     const result = await cloudinary.uploader.upload(req.file.path, {
+//       folder: "modules",
+//     });
+//     thumbnail = result.secure_url;
+//     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+//   }
+
+//   // Fetch old thumbnail if no new one
+//   const oldModule = await pool.query(
+//     "SELECT thumbnail FROM modules WHERE id = $1",
+//     [id]
+//   );
+//   const updatedThumbnail = thumbnail || oldModule.rows[0].thumbnail;
+
+//   await pool.query(
+//     "UPDATE modules SET title=$1, description=$2, objectives=$3, learning_outcomes=$4, thumbnail=$5, order_number=$6 WHERE id=$7",
+//     [
+//       title,
+//       description,
+//       objectives,
+//       learning_outcomes,
+//       updatedThumbnail,
+//       order_number,
+//       id,
+//     ]
+//   );
+
+//   const result = await pool.query(
+//     "SELECT course_id FROM modules WHERE id = $1",
+//     [id]
+//   );
+//   res.redirect(`/admin/courses/${result.rows[0].course_id}?tab=modules`);
+// };
+
 
 exports.editModule = async (req, res) => {
   const { title, description, objectives, learning_outcomes, order_number } =
@@ -67,7 +108,6 @@ exports.editModule = async (req, res) => {
   const { id } = req.params;
 
   let thumbnail = null;
-
   if (req.file) {
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: "modules",
@@ -76,9 +116,15 @@ exports.editModule = async (req, res) => {
     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
   }
 
-  const updatedThumbnail = thumbnail || null;
+  // Fetch old thumbnail if no new one
+  const oldModule = await pool.query(
+    "SELECT thumbnail FROM modules WHERE id = $1",
+    [id]
+  );
+  const updatedThumbnail = thumbnail || oldModule.rows[0].thumbnail;
+
   await pool.query(
-    "UPDATE modules SET title = $1, description = $2, objectives = $3, learning_outcomes = $4, thumbnail = $5, order_number = $6 WHERE id = $7",
+    "UPDATE modules SET title=$1, description=$2, objectives=$3, learning_outcomes=$4, thumbnail=$5, order_number=$6 WHERE id=$7",
     [
       title,
       description,
@@ -90,14 +136,13 @@ exports.editModule = async (req, res) => {
     ]
   );
 
-  // Find course ID to redirect correctly
   const result = await pool.query(
     "SELECT course_id FROM modules WHERE id = $1",
     [id]
   );
-  const course_id = result.rows[0].course_id;
-  res.redirect(`/admin/courses/${course_id}?tab=modules`);
+  res.redirect(`/admin/courses/${result.rows[0].course_id}?tab=modules`);
 };
+
 
 exports.deleteModule = async (req, res) => {
   const { id } = req.params;
