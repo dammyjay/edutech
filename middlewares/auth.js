@@ -1,14 +1,16 @@
+
+
+
 // function ensureAuthenticated(req, res, next) {
 //   if (req.isAuthenticated && req.isAuthenticated()) {
 //     return next();
 //   }
 
-//   // OR: if you store user manually in req.user
 //   if (req.user) {
 //     return next();
 //   }
 
-//   res.redirect("/admin/login"); // or "/login" based on your login route
+//   res.redirect("/admin/login");
 // }
 
 // function ensureParent(req, res, next) {
@@ -18,22 +20,35 @@
 //   return res.status(403).send("Access denied");
 // }
 
-// module.exports = { ensureParent };
+// function ensureInstructorOrAdmin(req, res, next) {
+//   if (
+//     req.isAuthenticated() &&
+//     (req.user.role === "instructor" || req.user.role === "admin")
+//   ) {
+//     return next();
+//   }
+//   return res.redirect("/admin/login");
+// }
 
 
-// module.exports = { ensureAuthenticated };
+// module.exports = {
+//   ensureAuthenticated,
+//   ensureParent,
+//   ensureInstructorOrAdmin,
+// };
+
+
+// middlewares/auth.js
 
 
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated && req.isAuthenticated()) {
     return next();
   }
-
   if (req.user) {
     return next();
   }
-
-  res.redirect("/admin/login");
+  return res.redirect("/admin/login");
 }
 
 function ensureParent(req, res, next) {
@@ -43,7 +58,20 @@ function ensureParent(req, res, next) {
   return res.status(403).send("Access denied");
 }
 
+function ensureInstructorOrAdmin(req, res, next) {
+  if (
+    req.isAuthenticated &&
+    req.isAuthenticated() &&
+    (req.user.role === "instructor" || req.user.role === "admin")
+  ) {
+    return next();
+  }
+  return res.redirect("/admin/login");
+}
+
 module.exports = {
   ensureAuthenticated,
   ensureParent,
+  ensureInstructorOrAdmin,
 };
+

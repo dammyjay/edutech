@@ -6,22 +6,7 @@
     <link rel="icon" type="image/x-icon" href="/logo.png" />
   </head>
   <body>
-    <header class="header">
-      <div class="logo-title">
-        <% if (info.logo_url) { %>
-        <img src="<%= info.logo_url %>" alt="Logo" />
-        <% } %>
-        <p><%= info.name || 'C&S Church Online' %></p>
-      </div>
-      <button class="nav-toggle" onclick="toggleNav()">☰</button>
-      <nav id="main-nav">
-        <a href="/admin/dashboard">Dashboard</a>
-        <a href="/admin/faqs">FAQs</a>
-        <a class="active" href="/admin/testimonies">Testimonies</a>
-        <a href="/admin/devotionals">Devotionals</a>
-        <a href="/admin/newsletter">Newsletter</a>
-      </nav>
-    </header>
+    <%- include('../partials/adminHeader', { info: info, currentPage: 'dashboard' }) %>
 
     <h2>Manage Testimonies</h2>
 

@@ -7,44 +7,8 @@
     <script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
   </head>
   <body>
-    <header class="header">
-      <div class="logo-title">
-        <% info = info || {}; %> <% if (info.logo_url) { %>
-        <img src="<%= info.logo_url %>" alt="Logo" />
-        <% } %>
-        <p><%= info?.name || 'C&S Church Online' %></p>
-      </div>
-      <button class="nav-toggle" onclick="toggleNav()">☰</button>
-      <nav id="main-nav">
-        <a href="/admin/dashboard">Dashboard</a>
-        <a href="/admin/articles">Articles</a>
-        <a href="/admin/videos">Videos</a>
-      
-        <div class="dropdown">
-          <button class="dropbtn" onclick="toggleDropdown('galleryMenu')">Gallery ▾</button>
-          <div class="dropdown-content" id="galleryMenu">
-            <a href="/admin/gallery">Images</a>
-            <a href="/admin/gallery/categories">Categories</a>
-            <a href="/admin/demo-videos">Demo</a>
-          </div>
-        </div>
-        
-        <div class="dropdown">
-          <button class="dropbtn active" onclick="toggleDropdown('ministryMenu')">Ministry ▾</button>
-          <div class="dropdown-content" id="ministryMenu">
-            <a href="/admin/ministry">About Us</a>
-            <a href="/admin/faqs">FAQ</a>
-            <a href="/admin/testimonies">Testimonies</a>
-            <a href="/admin/devotionals">Devotionals</a>
-            <a href="/admin/announcements">Announcements</a>
-            <a href="/admin/newsletter">Newsletter</a>
-          </div>
-        </div>
-      
-        <a href="/profile">Profile</a>
-        <a href="/admin/logout" class="logout-button">Logout</a>
-      </nav>
-    </header>
+    <%- include('../partials/adminHeader', { info: info, currentPage: 'dashboard' }) %>
+    
     <h2>Manage Frequently Asked Questions</h2>
     <form method="GET" action="/admin/faqs" style="margin: 20px 0;"> <label for="status">Filter:</label> <select name="filter" onchange="this.form.submit()"> <option value="">All</option> <option value="published" <%= filter === 'published' ? 'selected' : '' %>>Published</option> <option value="answered" <%= filter === 'answered' ? 'selected' : '' %>>Answered</option> <option value="unanswered" <%= filter === 'unanswered' ? 'selected' : '' %>>Unanswered</option> </select> </form>
     <div class="article-card">

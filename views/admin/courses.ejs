@@ -10,90 +10,7 @@
   </head>
   <body>
     <!-- Header -->
-    <header class="header">
-      <div class="logo-title">
-        <% info = info || {}; %> <% if (info.logo_url) { %>
-        <img src="<%= info.logo_url %>" alt="Logo" />
-        <% } %>
-        <p><%= info?.company_name || 'Jaykirch Tech Hub' %></p>
-      </div>
-      <button class="nav-toggle" onclick="toggleNav()">☰</button>
-      <nav id="main-nav">
-        <a href="/admin/dashboard">Dashboard</a>
-        <a href="/admin/pathways">Pathways</a>
-        <a class="active" href="/admin/courses">Courses</a>
-
-        <div class="dropdown">
-          <button class="dropbtn" onclick="toggleDropdown('galleryMenu')">
-            Gallery ▾
-          </button>
-          <div class="dropdown-content" id="galleryMenu">
-            <a href="/admin/gallery">Gallery</a>
-            <!-- <a href="/admin/gallery/categories">Categories</a> -->
-            <!-- <a href="/admin/demo-videos">Demo</a> -->
-          </div>
-        </div>
-
-        <div class="dropdown">
-          <button
-            class="dropbtn"
-            onclick="toggleDropdown('ministryMenu')"
-          >
-            company ▾
-          </button>
-          <div class="dropdown-content" id="ministryMenu">
-            <a href="/admin/company">Company Details</a>
-            <a href="/admin/about">About Us</a>
-            <!-- <a href="/admin/devotionals">Devotionals</a> -->
-            <a href="/admin/benefits">Benefits</a>
-            <a href="/admin/events">Events</a>
-          </div>
-        </div>
-
-        <a href="/profile">Profile</a>
-        <a href="/admin/logout" class="logout-button">Logout</a>
-      </nav>
-    </header>
-    <!-- <h2>Create Course</h2> -->
-    <!-- <form action="/admin/courses" method="POST" enctype="multipart/form-data">
-      <div class="container">
-        <input
-          type="text"
-          name="title"
-          placeholder="Course Title"
-          required
-        /><br />
-      </div>
-      <textarea
-        name="description"
-        id="content"
-        placeholder="Description"
-      ></textarea
-      ><br />
-
-      <div class="container">
-        <select class="gender-details" name="level" required>
-          <option value="">Select Level</option>
-          <option value="Beginner">Beginner</option>
-          <option value="Intermediate">Intermediate</option>
-          <option value="Advanced">Advanced</option></select
-        ><br />
-      </div>
-
-      <div class="container">
-        <select class="gender-details" name="career_pathway_id">
-          <option value="">-- Career Pathway --</option>
-          <% careerPathways.forEach(path => { %>
-          <option value="<%= path.id %>"><%= path.title %></option>
-          <% }) %></select
-        ><br />
-      </div>
-
-      <input type="number" name="sort_order" placeholder="Sort Order" /><br />
-      <input type="file" name="thumbnail" /><br />
-      <button type="submit">Create Course</button>
-    </form> -->
-
+    <%- include('../partials/adminHeader', { info: info, currentPage: 'dashboard' }) %>
 
     <!-- Create Course Modal -->
     <div id="createModal" class="modal">
@@ -194,12 +111,14 @@
                 <% } %>
 
                 <h4><%= course.title %></h4>
+                <small style="color: rgb(143, 112, 9);"><strong> created by: </strong><%= course.created_by %></small>
                 <div class="article-body" id="desc-<%= course.id %>" data-full="<%- course.description.replace(/"/g, '&quot;') %>">
-                  <%- course.description.substring(0, 30) %>...
+                  <%- course.description.substring(0, 100) %>...
                 </div>
 
-                <a href="javascript:void(0);" class="toggle-article" onclick="togglePathway(<%= course.id %>)">Show More</a> <br>
-                <small><strong>Price: </strong> ₦ <%= course.amount %></small>
+                <!-- <a href="javascript:void(0);" class="toggle-article" onclick="togglePathway(<%= course.id %>)">Show More</a> <br> -->
+                <small><strong>Price: </strong> ₦ <%= course.amount %></small><br>
+                <small style="color: rgb(9, 31, 143);"><strong>Created on: </strong><%= course.created_at %></small>
                 <div class="article-buttons">
                   <button class="btn-edit" onclick="openEditModal(<%= course.id %>)">Edit</button>
                   <form action="/admin/courses/delete/<%= course.id %>" method="POST" onsubmit="return confirm('Delete this course?');">

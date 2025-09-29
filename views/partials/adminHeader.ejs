@@ -18,61 +18,67 @@
       </div>
       <button class="nav-toggle" onclick="toggleNav()">☰</button>
       <nav id="main-nav">
-        <a class="active" href="/admin/dashboard">Dashboard</a>
-        <div class="dropdown">
-          <button class="dropbtn" onclick="toggleDropdown('studentsMenu')">
-            Students ▾
-          </button>
-          <div class="dropdown-content" id="studentsMenu">
-            <a href="/admin/students">All Students</a>
-            <a href="/admin/students/progress">Progress & Performance</a>
-            <a href="/admin/students/enrollments">Enrollments</a>
+        <a class="active" href="<%= role === 'admin' ? '/admin/dashboard' : '/instructor/dashboard' %>">
+          Dashboard
+        </a>
+        <% if (role === 'admin') { %>
+          <div class="dropdown">
+            <button class="dropbtn" onclick="toggleDropdown('studentsMenu')">
+              Students ▾
+            </button>
+            <div class="dropdown-content" id="studentsMenu">
+              <a href="/admin/students">All Students</a>
+              <a href="/admin/students/progress">Progress & Performance</a>
+              <a href="/admin/students/enrollments">Enrollments</a>
+            </div>
           </div>
-        </div>
 
-        <div class="dropdown">
-          <button class="dropbtn" onclick="toggleDropdown('schoolsMenu')">
-            Schools ▾
-          </button>
-          <div class="dropdown-content" id="schoolsMenu">
-            <a href="/admin/schools">All Schools</a>
-            <a href="/admin/quotes">Quotes</a>
-            <a href="/admin/school-courses">Assign Courses</a>
+          <div class="dropdown">
+            <button class="dropbtn" onclick="toggleDropdown('schoolsMenu')">
+              Schools ▾
+            </button>
+            <div class="dropdown-content" id="schoolsMenu">
+              <a href="/admin/schools">All Schools</a>
+              <a href="/admin/quotes">Quotes</a>
+              <a href="/admin/school-courses">Assign Courses</a>
+            </div>
           </div>
-        </div>
+        <% } %>
 
 
         <a href="/admin/pathways">Pathways</a>
         <a href="/admin/courses">Courses</a>
 
-        <div class="dropdown">
-          <button class="dropbtn" onclick="toggleDropdown('galleryMenu')">
-            Gallery ▾
-          </button>
-          <div class="dropdown-content" id="galleryMenu">
-            <a href="/admin/gallery">Gallery</a>
-            <!-- <a href="/admin/gallery/categories">Categories</a> -->
-            <!-- <a href="/admin/demo-videos">Demo</a> -->
+        <% if (role === 'admin') { %>
+          <div class="dropdown">
+            <button class="dropbtn" onclick="toggleDropdown('galleryMenu')">
+              Gallery ▾
+            </button>
+            <div class="dropdown-content" id="galleryMenu">
+              <a href="/admin/gallery">Gallery</a>
+              <!-- <a href="/admin/gallery/categories">Categories</a> -->
+              <!-- <a href="/admin/demo-videos">Demo</a> -->
+            </div>
           </div>
-        </div>
 
-        <div class="dropdown">
-          <button
-            class="dropbtn"
-            onclick="toggleDropdown('ministryMenu')"
-          >
-            company ▾
-          </button>
-          <div class="dropdown-content" id="ministryMenu">
-            <a href="/admin/company">Company Details</a>
-            <a href="/admin/about">About Us</a>
-            <a href="/admin/faqs">FAQ</a>
-            <a href="/admin/testimonies">Testimonies</a>
-            <!-- <a href="/admin/devotionals">Devotionals</a> -->
-            <a href="/admin/benefits">Benefits</a>
-            <a href="/admin/events">Events</a>
+          <div class="dropdown">
+            <button
+              class="dropbtn"
+              onclick="toggleDropdown('ministryMenu')"
+            >
+              company ▾
+            </button>
+            <div class="dropdown-content" id="ministryMenu">
+              <a href="/admin/company">Company Details</a>
+              <a href="/admin/about">About Us</a>
+              <a href="/admin/faqs">FAQ</a>
+              <a href="/admin/testimonies">Testimonies</a>
+              <!-- <a href="/admin/devotionals">Devotionals</a> -->
+              <a href="/admin/benefits">Benefits</a>
+              <a href="/admin/events">Events</a>
+            </div>
           </div>
-        </div>
+        <% } %>
 
         <a href="/profile">Profile</a>
         <a href="/admin/logout" class="logout-button">Logout</a>

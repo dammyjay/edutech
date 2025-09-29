@@ -205,6 +205,8 @@ exports.login = async (req, res) => {
     } else if (user.role === "user" || user.role === "student") {
       return res.redirect("/student/dashboard");
       
+    } else if (user.role === "instructor") {
+      return res.redirect("/instructor/dashboard");
     }
 
 
@@ -289,12 +291,102 @@ exports.dashboard = async (req, res) => {
       gender,
       role,
       email,
+      role: "admin", // ✅ important
+      user: req.session.user,
     });
   } catch (error) {
     console.error(error);
     res.status(500).send("Server Error");
   }
 };
+
+exports.instructorDashboard = async (req, res) => {
+  try {
+    const instructorId = req.user.id; // assuming you're using passport/session middleware
+    // Step 1: Get Ministry Info
+    const infoResult = await pool.query(
+      "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
+    );
+    const info = infoResult.rows[0];
+
+    // 1. Total courses
+    const coursesCount = await pool.query(
+      `SELECT COUNT(*) FROM courses WHERE instructor_id = $1`,
+      [instructorId]
+    );
+
+    // 2. Total modules
+    const modulesCount = await pool.query(
+      `SELECT COUNT(*) 
+       FROM modules m
+       JOIN courses c ON m.course_id = c.id
+       WHERE c.instructor_id = $1`,
+      [instructorId]
+    );
+
+    // 3. Total lessons
+    const lessonsCount = await pool.query(
+      `SELECT COUNT(*) 
+       FROM lessons l
+       JOIN modules m ON l.module_id = m.id
+       JOIN courses c ON m.course_id = c.id
+       WHERE c.instructor_id = $1`,
+      [instructorId]
+    );
+
+    // 4. Total students enrolled
+    const studentsCount = await pool.query(
+      `SELECT COUNT(DISTINCT e.user_id) 
+       FROM course_enrollments e
+       JOIN courses c ON e.course_id = c.id
+       WHERE c.instructor_id = $1`,
+      [instructorId]
+    );
+
+    // 5. Assignment submissions across instructor’s courses
+    const submissionsCount = await pool.query(
+      `SELECT COUNT(*) 
+       FROM assignment_submissions s
+       JOIN lessons l ON s.assignment_id = l.id
+       JOIN modules m ON l.module_id = m.id
+       JOIN courses c ON m.course_id = c.id
+       WHERE c.instructor_id = $1`,
+      [instructorId]
+    );
+
+    // Optionally, fetch instructor’s courses list with enrollments
+    const coursesList = await pool.query(
+      `SELECT c.id, c.title, COUNT(e.id) AS student_count
+       FROM courses c
+       LEFT JOIN course_enrollments e ON e.course_id = c.id
+       WHERE c.instructor_id = $1
+       GROUP BY c.id
+       ORDER BY c.created_at DESC`,
+      [instructorId]
+    );
+
+    const profilePic = req.session.user
+      ? req.session.user.profile_picture
+      : null;
+
+    res.render("instructor/dashboard", {
+      total_courses: parseInt(coursesCount.rows[0].count, 10),
+      total_modules: parseInt(modulesCount.rows[0].count, 10),
+      total_lessons: parseInt(lessonsCount.rows[0].count, 10),
+      total_students: parseInt(studentsCount.rows[0].count, 10),
+      total_submissions: parseInt(submissionsCount.rows[0].count, 10),
+      courses: coursesList.rows,
+      info,
+      profilePic,
+      role: "instructor", // ✅ pass role
+      user: req.session.user,
+    });
+  } catch (err) {
+    console.error("Instructor Dashboard Error:", err.message);
+    res.status(500).send("Error loading dashboard");
+  }
+};
+
 
 exports.editUserForm = async (req, res) => {
   const userId = req.params.id;
@@ -413,7 +505,7 @@ exports.showPathways = async (req, res) => {
   const result = await pool.query(
     "SELECT * FROM career_pathways ORDER BY id DESC"
   );
-  res.render("admin/pathways", { info, search, pathways: result.rows });
+  res.render("admin/pathways", { info, search, pathways: result.rows, role: req.session.user?.role || "admin", });
 };
 
 exports.createPathway = async (req, res) => {
@@ -540,18 +632,27 @@ exports.showCourses = async (req, res) => {
   );
   const info = infoResult.rows[0] || {};
 
-  const coursesResult = await pool.query(`
+  let coursesQuery = `
     SELECT courses.*, cp.title AS pathway_name
     FROM courses
     LEFT JOIN career_pathways cp ON cp.id = courses.career_pathway_id
-    ORDER BY cp.title ASC, courses.level ASC, sort_order ASC 
-  `);
+  `;
+  let params = [];
+
+  // ✅ If instructor → only fetch their courses
+  if (req.user.role === "instructor") {
+    coursesQuery += ` WHERE courses.instructor_id = $1 `;
+    params.push(req.user.id);
+  }
+
+  coursesQuery += ` ORDER BY cp.title ASC, courses.level ASC, sort_order ASC`;
+
+  const coursesResult = await pool.query(coursesQuery, params);
 
   const pathwaysResult = await pool.query("SELECT * FROM career_pathways");
 
   // Group courses by pathway and level
   const groupedCourses = {};
-
   coursesResult.rows.forEach((course) => {
     const pathway = course.pathway_name || "Unassigned";
     const level = course.level || "Unspecified";
@@ -567,9 +668,9 @@ exports.showCourses = async (req, res) => {
     search: req.query.search || "",
     careerPathways: pathwaysResult.rows,
     groupedCourses,
+    role: req.session.user?.role || "admin",
   });
 };
-
 
 exports.createCourse = async (req, res) => {
     console.log("Creating course with:", req.body);
@@ -587,10 +688,23 @@ exports.createCourse = async (req, res) => {
 
 
   await pool.query(
-    `INSERT INTO courses (title, description, level, career_pathway_id, thumbnail_url, sort_order)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
-    [title, description, level, career_pathway_id || null, thumbnail_url, sort_order]
+    `INSERT INTO courses (
+      title, description, level, career_pathway_id, thumbnail_url, sort_order, amount, created_by, instructor_id
+   )
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [
+      title,
+      description,
+      level,
+      career_pathway_id || null,
+      thumbnail_url,
+      sort_order || 0,
+      amount || 0,
+      req.user.role === "instructor" ? "instructor" : "admin",
+      req.user.role === "instructor" ? req.user.id : null,
+    ]
   );
+
 
   await logActivityForUser(
     req,
@@ -600,78 +714,175 @@ exports.createCourse = async (req, res) => {
   res.redirect("/admin/courses");
 };
 
+// exports.editCourse = async (req, res) => {
+//   const { id } = req.params;
+//   const { title, description, level, career_pathway_id, sort_order, amount } = req.body;
+
+//   try {
+//     let thumbnail_url = null;
+
+//     if (req.file) {
+//       const result = await cloudinary.uploader.upload(req.file.path, {
+//         folder: "courses",
+//       });
+//       thumbnail_url = result.secure_url;
+//       if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+//     }
+
+//     // Update course
+//     const existing = await pool.query("SELECT * FROM courses WHERE id = $1", [
+//       id,
+//     ]);
+
+//     const updatedThumbnail = thumbnail_url || existing.rows[0]?.thumbnail_url;
+
+//     await pool.query(
+//       `UPDATE courses
+//        SET title = $1,
+//            description = $2,
+//            level = $3,
+//            career_pathway_id = $4,
+//            thumbnail_url = $5,
+//            sort_order = $6,
+//            amount = $7
+//        WHERE id = $8`,
+//       [
+//         title,
+//         description,
+//         level,
+//         career_pathway_id || null,
+//         updatedThumbnail,
+//         sort_order || null,
+//         amount || null,
+//         id,
+//       ]
+//     );
+
+//     await logActivityForUser(
+//       req,
+//       "Course edited",
+//       `Course title: ${title}`
+//     );
+//     res.redirect("/admin/courses");
+//   } catch (err) {
+//     console.error("❌ Error editing course:", err.message);
+//     res.status(500).send("Server Error");
+//   }
+// };
 exports.editCourse = async (req, res) => {
   const { id } = req.params;
-  const { title, description, level, career_pathway_id, sort_order, amount } = req.body;
+  const {
+    title,
+    description,
+    level,
+    career_pathway_id,
+    sort_order,
+    amount,
+  } = req.body;
+
+  let thumbnail_url = null;
+
+  if (req.file) {
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: "courses",
+    });
+    thumbnail_url = result.secure_url;
+    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+  }
 
   try {
-    let thumbnail_url = null;
+    // 🔒 Check if instructor owns the course
+    let checkQuery = `SELECT * FROM courses WHERE id = $1`;
+    let checkParams = [id];
 
-    if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "courses",
-      });
-      thumbnail_url = result.secure_url;
-      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    const courseResult = await pool.query(checkQuery, checkParams);
+    const course = courseResult.rows[0];
+
+    if (!course) {
+      return res.status(404).send("Course not found.");
     }
 
-    // Update course
-    const existing = await pool.query("SELECT * FROM courses WHERE id = $1", [
-      id,
-    ]);
+    if (
+      req.user.role === "instructor" &&
+      course.instructor_id !== req.user.id
+    ) {
+      return res.status(403).send("You are not allowed to edit this course.");
+    }
 
-    const updatedThumbnail = thumbnail_url || existing.rows[0]?.thumbnail_url;
-
+    // ✅ Update course
     await pool.query(
-      `UPDATE courses
-       SET title = $1,
-           description = $2,
-           level = $3,
-           career_pathway_id = $4,
-           thumbnail_url = $5,
-           sort_order = $6,
-           amount = $7
+      `UPDATE courses 
+       SET title = $1, description = $2, level = $3, career_pathway_id = $4,
+           thumbnail_url = $5, sort_order = $6, amount = $7
        WHERE id = $8`,
       [
         title,
         description,
         level,
-        career_pathway_id || null,
-        updatedThumbnail,
-        sort_order || null,
-        amount || null,
+        career_pathway_id,
+        thumbnail_url,
+        sort_order,
+        amount,
         id,
       ]
     );
 
-    await logActivityForUser(
-      req,
-      "Course edited",
-      `Course title: ${title}`
-    );
     res.redirect("/admin/courses");
   } catch (err) {
-    console.error("❌ Error editing course:", err.message);
-    res.status(500).send("Server Error");
+    console.error(err);
+    res.status(500).send("Server error.");
   }
 };
 
+
+// exports.deleteCourse = async (req, res) => {
+//   const { id } = req.params;
+
+//   try {
+//     await pool.query("DELETE FROM courses WHERE id = $1", [id]);
+//     await logActivityForUser(
+//       req,
+//       "Course deleted",
+//       `Course ID: ${id}`
+//     );
+//     res.redirect("/admin/courses");
+//   } catch (err) {
+//     console.error("❌ Error deleting course:", err.message);
+//     res.status(500).send("Server Error");
+//   }
+// };
 exports.deleteCourse = async (req, res) => {
   const { id } = req.params;
 
   try {
+    // 🔒 Check ownership
+    let checkQuery = `SELECT * FROM courses WHERE id = $1`;
+    let checkParams = [id];
+
+    const courseResult = await pool.query(checkQuery, checkParams);
+    const course = courseResult.rows[0];
+
+    if (!course) {
+      return res.status(404).send("Course not found.");
+    }
+
+    if (
+      req.user.role === "instructor" &&
+      course.instructor_id !== req.user.id
+    ) {
+      return res.status(403).send("You are not allowed to delete this course.");
+    }
+
+    // ✅ Delete course
     await pool.query("DELETE FROM courses WHERE id = $1", [id]);
-    await logActivityForUser(
-      req,
-      "Course deleted",
-      `Course ID: ${id}`
-    );
+
     res.redirect("/admin/courses");
   } catch (err) {
-    console.error("❌ Error deleting course:", err.message);
-    res.status(500).send("Server Error");
+    console.error(err);
+    res.status(500).send("Server error.");
   }
 };
+
 
 exports.showCoursesByPathway = async (req, res) => {
   const { id } = req.params;
@@ -691,18 +902,32 @@ exports.showCoursesByPathway = async (req, res) => {
     "SELECT id, title FROM career_pathways"
   );
 
-  const coursesResult = await pool.query(
-    `SELECT * FROM courses WHERE career_pathway_id = $1 ORDER BY level ASC, sort_order ASC`,
-    [id]
-  );
+  let coursesQuery = `
+    SELECT * FROM courses 
+    WHERE career_pathway_id = $1
+  `;
+  let params = [id];
+
+  // ✅ Restrict instructors to their own courses
+  if (req.user.role === "instructor") {
+    coursesQuery += " AND instructor_id = $2";
+    params.push(req.user.id);
+  }
+
+  coursesQuery += " ORDER BY level ASC, sort_order ASC";
+
+  const coursesResult = await pool.query(coursesQuery, params);
 
   res.render("admin/pathwayCourses", {
     info,
     pathway,
     careerPathways: careerPathways.rows,
     courses: coursesResult.rows,
+    role: req.session.user?.role || "admin",
   });
 };
+
+
 
 exports.createCourseUnderPathway = async (req, res) => {
   const { id } = req.params;
@@ -719,10 +944,23 @@ exports.createCourseUnderPathway = async (req, res) => {
   }
 
   await pool.query(
-    `INSERT INTO courses (title, description, level, career_pathway_id, thumbnail_url, sort_order)
-      VALUES ($1, $2, $3, $4, $5, $6)`,
-    [title, description, level, id, thumbnail_url, sort_order]
+    `INSERT INTO courses (
+      title, description, level, career_pathway_id, thumbnail_url, sort_order, amount, created_by, instructor_id
+   )
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [
+      title,
+      description,
+      level,
+      career_pathway_id || null,
+      thumbnail_url,
+      sort_order || 0,
+      amount || 0,
+      req.user.role === "instructor" ? "instructor" : "admin",
+      req.user.role === "instructor" ? req.user.id : null,
+    ]
   );
+
 
   res.redirect(`/admin/pathways/${id}/courses`);
 };

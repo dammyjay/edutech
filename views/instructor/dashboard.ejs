@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Instructor Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="icon" type="image/x-icon" href="/logo.png" />
+  </head>
+  <body>
+    <%- include('../partials/adminHeader', { info: info, currentPage: 'dashboard' }) %>
+
+    <h1>Welcome <%= info.fullname %></h1>
+    <p>You are logged in as an Instructor.</p>
+
+    <!-- Stats Section -->
+    <h2>Your Teaching Stats</h2>
+    <div class="dashboard-stats">
+      <div class="stat-box">
+        <h3>Total Courses</h3>
+        <p><%= total_courses %></p>
+      </div>
+      <div class="stat-box">
+        <h3>Total Modules</h3>
+        <p><%= total_modules %></p>
+      </div>
+      <div class="stat-box">
+        <h3>Total Lessons</h3>
+        <p><%= total_lessons %></p>
+      </div>
+      <div class="stat-box">
+        <h3>Total Students</h3>
+        <p><%= total_students %></p>
+      </div>
+    </div>
+
+    <!-- Assignment Submissions -->
+    <h2>Assignment Submissions</h2>
+    <div class="dashboard-stats">
+      <div class="stat-box">
+        <h3>Submissions Received</h3>
+        <p><%= total_submissions %></p>
+      </div>
+    </div>
+
+    <!-- Courses Table -->
+    <h2>Your Courses</h2>
+    <div class="table-responsive">
+      <table
+        class="user-table"
+        style="width: 80%; border-collapse: collapse; margin-top: 20px"
+      >
+        <thead>
+          <tr>
+            <th>Course Title</th>
+            <th>Students Enrolled</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (courses.length > 0) { %>
+            <% courses.forEach(course => { %>
+              <tr>
+                <td><%= course.title %></td>
+                <td><%= course.student_count %></td>
+                <td
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    justify-content: center;
+                    align-items: center;
+                  "
+                >
+                  <button
+                    class="btn-edit"
+                    onclick="window.location.href='/instructor/courses/<%= course.id %>'"
+                  >
+                    View
+                  </button>
+
+                  <button
+                    class="btn-edit"
+                    style="background-color: orange;"
+                    onclick="window.location.href='/instructor/courses/<%= course.id %>/edit'"
+                  >
+                    Edit
+                  </button>
+                </td>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr>
+              <td colspan="3" style="text-align: center;">No courses created yet.</td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- script for navbar hamburger -->
+    <script>
+      function toggleNav() {
+        var nav = document.getElementById("main-nav");
+        nav.classList.toggle("open");
+      }
+    </script>
+  </body>
+</html>

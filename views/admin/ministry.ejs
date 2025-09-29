@@ -9,43 +9,8 @@
   </head>
   <body>
     <!-- Header -->
-    <header class="header">
-      <div class="logo-title">
-        <% info = info || {}; %> <% if (info.logo_url) { %>
-        <img src="<%= info.logo_url %>" alt="Logo" />
-        <% } %>
-        <p><%= info?.name || 'C&S Church Online' %></p>
-      </div>
-      <button class="nav-toggle" onclick="toggleNav()">☰</button>
-      <nav id="main-nav">
-        <a href="/admin/dashboard">Dashboard</a>
-        <a href="/admin/articles">Articles</a>
-        <a href="/admin/videos">Videos</a>
-      
-        <div class="dropdown">
-          <button class="dropbtn" onclick="toggleDropdown('galleryMenu')">Gallery ▾</button>
-          <div class="dropdown-content" id="galleryMenu">
-            <a href="/admin/gallery">Images</a>
-            <a href="/admin/gallery/categories">Categories</a>
-            <a href="/admin/demo-videos">Demo</a>
-          </div>
-        </div>
-        
-        <div class="dropdown">
-          <button class="dropbtn active" onclick="toggleDropdown('ministryMenu')">Ministry ▾</button>
-          <div class="dropdown-content" id="ministryMenu">
-            <a href="/admin/ministry">About Us</a>
-            <a href="/admin/faqs">FAQ</a>
-            <a href="/admin/devotionals">Devotionals</a>
-            <a href="/admin/announcements">Announcements</a>
-            <a href="/admin/newsletter">Newsletter</a>
-          </div>
-        </div>
-      
-        <a href="/profile">Profile</a>
-        <a href="/admin/logout" class="logout-button">Logout</a>
-      </nav>
-    </header>
+    <%- include('../partials/adminHeader', { info: info, currentPage: 'dashboard' }) %>
+    
     <h2>Ministry Info</h2>
     <form method="POST" action="/admin/ministry" enctype="multipart/form-data">
       <label>Logo URL:</label><br />

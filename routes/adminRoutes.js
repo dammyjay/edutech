@@ -26,11 +26,6 @@ const {
   deleteCourseProject,
 } = require("../controllers/learningController");
 
-// const galleryController = require("../controllers/galleryController");
-// const devotionalController = require("../controllers/devotionalController");
-
-// const demoVideoController = require("../controllers/demoVideoController");
-
 const multer = require("multer");
 // const upload = multer({ dest: 'uploads/' }); // temp local storage
 const upload = require("../middlewares/upload");
@@ -56,38 +51,6 @@ router.post(
   ]),
   companyController.saveInfo
 );
-
-// const galleryController = require('../controllers/galleryController');
-
-// router.get("/gallery", galleryController.showGalleryUpload); // show the form
-// router.post(
-//   "/gallery/upload",
-//   upload.single("image"),
-//   galleryController.uploadImage
-// ); // handle upload
-
-// // Show edit form
-// router.get("/gallery/edit/:id", galleryController.showEditImage);
-// // Handle edit form submission
-// router.post(
-//   "/gallery/edit/:id",
-//   upload.single("image"),
-//   galleryController.editImage
-// );
-// // Handle delete
-// router.post("/gallery/delete/:id", galleryController.deleteImage);
-
-// // Show category management page
-// router.get("/gallery/categories", galleryController.showCategories);
-
-// // Handle new category creation
-// router.post("/gallery/categories", galleryController.createCategory);
-
-// // (Optional) Handle category deletion
-// router.post("/gallery/categories/delete/:id", galleryController.deleteCategory);
-
-// // Handle category edit form submission
-// router.post("/gallery/categories/edit/:id", galleryController.editCategory);
 
 router.get("/articles", articleController.showArticles);
 router.get("/articles", articleController.showSearchArticles);
@@ -138,57 +101,8 @@ router.post(
   upload.single("thumbnail"),
   adminController.createCourseUnderPathway
 );
-
-// router.get("/courses/:courseId", async (req, res) => {
-//   const courseId = req.params.courseId;
-//   const tab = req.query.tab || "details";
-
-//   const course = await getCourseById(courseId);
-//   const modules = await getModulesByCourse(courseId);
-//   const lessons = await getLessonsByModules(modules.map((m) => m.id));
-//   const assignment = await getCourseAssignment(courseId);
-//   const project = await getCourseProject(courseId);
-
-//   res.render("admin/singleCourse", {
-//     course,
-//     modules,
-//     lessons,
-//     assignment,
-//     project,
-//     activeTab: tab,
-//   });
-// });
-
-//benefits
-// router.get("/admin/courses/:id", async (req, res) => {
-//   const courseId = req.params.id;
-//   const course = await getCourseById(courseId);
-//   const modules = await getModulesByCourse(courseId);
-//   const lessons = await getLessonsByCourse(courseId);
-//   const assignment = null;
-//   const project = null;
-
-//   res.render("admin/singleCourse", {
-//     course,
-//     modules,
-//     lessons,
-//     assignment,
-//     project,
-//     activeTab: req.query.tab || "details",
-//   });
-// });
-
-// router.get("/admin/courses/:id", learningController.getSingleCourse);
-
-// router.get("/courses/:id", learningController.viewSingleCourse);
 router.get("/courses/:id", learningController.viewSingleCourse);
 router.post("/admin/courses/:id/edit", learningController.updateCourse);
-// router.post("/admin/courses/:id/delete", learningController.deleteCourse);
-
-// Modules
-// router.post("/admin/courses/:id/modules", learningController.createModule);
-// router.post("/admin/modules/:id/edit", learningController.editModule);
-// router.post("/admin/modules/:id/delete", learningController.deleteModule);
 
 router.post(
   "/modules/create",
@@ -232,7 +146,6 @@ router.post(
 );
 
 // Create question
-// router.post('/quiz-question/create', learningController.createQuizQuestion);
 router.post(
   "/quiz-question/create",
   upload.none(),
@@ -268,6 +181,7 @@ router.post("/admin/courses/:id/project", learningController.createProject);
 router.get("/benefits", adminController.showBenefits);
 router.post("/benefits", upload.single("icon"), adminController.createBenefit);
 router.get("/benefits/edit/:id", adminController.editBenefitForm);
+
 router.post(
   "/benefits/edit/:id",
   upload.single("icon"),
@@ -275,8 +189,6 @@ router.post(
 );
 router.post("/benefits/delete/:id", adminController.deleteBenefit);
 
-// router.get("/admin/events", adminController.listEvents);
-// router.post("/events", upload.single("image"), adminController.createEvent);
 router.post(
   "/events/create",
   upload.single("image"),
@@ -305,11 +217,6 @@ router.get("/students/:id/enrollments", adminController.viewStudentEnrollments);
 // Admin
 router.post("/admin/assign-child", adminController.assignChildToParent);
 
-// router.post(
-//   "/remove-child",
-//   ensureAdmin,
-//   adminController.removeChildFromParent
-// );
 
 // Download student course summary
 router.get(

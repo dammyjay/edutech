@@ -138,6 +138,7 @@ exports.getLessonsPage = async (req, res) => {
       modules: modulesRes.rows,
       lessons,
       selectedModuleId,
+      role: req.session.user?.role || "admin",
     });
   } catch (err) {
     console.error("Get Lessons Error:", err.message);
@@ -741,7 +742,8 @@ exports.viewCourseWithAssignments = async (req, res) => {
       modules,
       assignments,
       selectedModuleId,
-      activeTab
+      activeTab,
+      role: req.session.user?.role || "admin",
     });
   } catch (err) {
     console.error("Error loading assignments:", err);
@@ -1006,6 +1008,7 @@ exports.getSingleCourse = async (req, res) => {
     assignment: assignment.rows,
     project: project.rows,
     activeTab: req.query.tab || "details",
+    role: req.session.user?.role || "admin", // ✅ ensure role is passed
   });
 };
 
@@ -1211,6 +1214,7 @@ exports.viewSingleCourse = async (req, res) => {
       projects: projects.rows,
       quizzes: quizzes.rows,
       activeTab: req.query.tab || "details",
+      role: req.session.user?.role || "admin", // ✅ ensure role is passed
     });
   } catch (err) {
     console.error("Error loading course:", err);
@@ -1452,5 +1456,32 @@ exports.saveAIQuizForLesson = async (req, res) => {
 };
 
 
+exports.searchContent = async (req, res) => {
+  const { q } = req.query;
+  try {
+    const courses = await pool.query(
+      "SELECT * FROM courses WHERE title ILIKE $1 OR description ILIKE $1",
+      [`%${q}%`]
+    );
+    const modules = await pool.query(
+      "SELECT * FROM modules WHERE title ILIKE $1 OR description ILIKE $1",
+      [`%${q}%`]
+    );
+    const lessons = await pool.query(
+      "SELECT * FROM lessons WHERE title ILIKE $1 OR content ILIKE $1",
+      [`%${q}%`]
+    );
+
+    res.render("admin/searchResults", {
+      q,
+      courses: courses.rows,
+      modules: modules.rows,
+      lessons: lessons.rows,
+    });
+  } catch (err) {
+    console.error("Search Error:", err);
+    res.status(500).send("Server Error");
+  }
+};
 
 

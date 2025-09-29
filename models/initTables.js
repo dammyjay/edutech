@@ -103,7 +103,9 @@ async function createTables() {
         career_pathway_id INTEGER REFERENCES career_pathways(id) ON DELETE SET NULL,
         thumbnail_url TEXT,
         sort_order INTEGER DEFAULT 0,
-        amount INTEGER DEFAULT 0, 
+        amount INTEGER DEFAULT 0,
+        created_by TEXT DEFAULT 'admin',
+        instructor_id INT REFERENCES users(id), 
         created_at TIMESTAMP DEFAULT NOW()
       );`
     );

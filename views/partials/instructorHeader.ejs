@@ -1,0 +1,18 @@
+<header class="header">
+  <div class="logo-title">
+    <% if (info && info.logo_url) { %>
+      <img src="<%= info.logo_url %>" alt="Logo" />
+    <% } %>
+    <p><%= info?.company_name || 'Jaykirch Tech Hub' %></p>
+  </div>
+  <button class="nav-toggle" onclick="toggleNav()">☰</button>
+  <nav id="main-nav">
+    <a href="/instructor/dashboard">Dashboard</a>
+    <a href="/admin/courses">Courses</a>
+    <a href="/admin/pathways">Pathways</a>
+    <a href="/admin/modules">Modules</a>
+    <a href="/admin/lessons">Lessons</a>
+    <a href="/profile">Profile</a>
+    <a href="/admin/logout" class="logout-button">Logout</a>
+  </nav>
+</header>
