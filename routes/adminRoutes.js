@@ -35,6 +35,11 @@ router.post("/login", adminController.login);
 router.get("/dashboard", adminController.dashboard);
 router.get("/logout", adminController.logout);
 
+router.get("/forgot-password", adminController.showForgotPasswordForm);
+router.post("/forgot-password", adminController.handleForgotPassword);
+router.get("/reset-password/:token", adminController.showResetPasswordForm);
+router.post("/reset-password/:token", adminController.handleResetPassword);
+
 router.get("/users/edit/:id", adminController.editUserForm);
 router.post("/users/delete/:id", adminController.deleteUser);
 router.post("/users/edit/:id", adminController.updateUser);

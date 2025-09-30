@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <h2>Your Profile</h2>
+    <form action="/profile" method="POST" enctype="multipart/form-data">
+      <img src="<%= user.profile_picture || '/default.jpg' %>" width="100" />
+      <input type="file" name="profile_picture" value="<%= user.profile_picture || '/default.jpg' %>"/>
+      
+      <label for="">Email</label>
+      <input type="text" value="<%= user.email %>" disabled />
+
+      <label for="">Fullname</label>
+      <input
+        type="text"
+        name="fullname"
+        value="<%= user.fullname %>"
+        required
+      />
+      <label for="">Phone Number</label>
+      <input type="text" name="phone" value="<%= user.phone %>" />
+
+      <label for="">Date of Birth</label>
+      <!-- Display the date of birth as text and as a date input -->
+      <input type="text" value="<%= user.dob %>" disabled />
+      <input type="date" name="dob" value="<%= user.dob %>" />>
+      
+      <button type="submit">Update Profile</button>
+    </form>
+    <p><a href="/admin/dashboard">← Back</a></p>
+  </body>
+</html>
