@@ -39,6 +39,10 @@ router.get("/users/edit/:id", adminController.editUserForm);
 router.post("/users/delete/:id", adminController.deleteUser);
 router.post("/users/edit/:id", adminController.updateUser);
 
+router.post(
+  "/schools/:schoolId/users/:userId/reset-password",
+  adminController.resetPassword
+);
 // company Info routes
 router.get("/company", companyController.showForm);
 
@@ -245,5 +249,10 @@ router.post("/schools/:schoolId/users", upload.single("profile_picture"), adminC
 router.put("/schools/:schoolId/users/:userId", upload.single("profile_picture"), adminController.updateUserInSchool);
 router.delete("/schools/:schoolId/users/:userId", adminController.deleteUserFromSchool);
 router.get("/classrooms/:id/students", adminController.getClassroomStudents);
+// Assign multiple students to a classroom
+router.post(
+  "/classrooms/:id/add-students",
+  adminController.addStudentsToClassroom
+);
 
 module.exports = router;

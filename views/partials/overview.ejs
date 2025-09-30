@@ -329,6 +329,42 @@ function openEditModal(classroomId, classroomName, teacherIds) {
   });
 </script>
 
+<div style="margin: 1rem 0; text-align:right;">
+  <button class="btn-edit" id="approveAllBtn" style="background:green;color:white;">
+    ✔ Approve All
+  </button>
+</div>
+
+<script>
+document.getElementById("approveAllBtn").addEventListener("click", async () => {
+  if (!confirm("Approve all pending users?")) return;
+  const res = await fetch("/school-admin/approve-all", {
+    method: "POST",
+    headers: { "X-Requested-With": "XMLHttpRequest" }
+  });
+  const data = await res.json();
+  if (data.success) {
+    alert("All users approved!");
+    location.reload(); // or dynamically remove rows if you want no reload
+  } else {
+    alert("Error: " + data.error);
+  }
+});
+
+// Approve single user without reload
+async function approveUser(userId) {
+  const res = await fetch(`/school-admin/approve/${userId}`, {
+    method: "POST",
+    headers: { "X-Requested-With": "XMLHttpRequest" }
+  });
+  const data = await res.json();
+  if (data.success) {
+    document.querySelector(`#user-row-${userId}`).remove();
+  } else {
+    alert("Error: " + data.error);
+  }
+}
+</script>
 
 
 
@@ -352,7 +388,7 @@ function openEditModal(classroomId, classroomName, teacherIds) {
         <tbody>
             <% if (pendingUsers.length) { %>
             <% pendingUsers.forEach(user => { %>
-                <tr>
+                <!-- <tr>
                 <td>
                     <img src="<%= user.profile_picture || '/profile.webp' %>" 
                         alt="Profile"
@@ -380,7 +416,24 @@ function openEditModal(classroomId, classroomName, teacherIds) {
 
                     </div>
                 </td>
+                </tr> -->
+
+                <tr id="user-row-<%= user.id %>">
+                  <td>
+                    <img src="<%= user.profile_picture || '/profile.webp' %>" ...>
+                  </td>
+                  <td><%= user.fullname %></td>
+                  <td><%= user.email %></td>
+                  <td><%= user.role_in_school %></td>
+                  <td><%= new Date(user.joined_at).toDateString() %></td>
+                  <td>
+                    <button onclick="approveUser(<%= user.id %>)" class="btn-edit" style="background:green;color:white;">✔ Approve</button>
+                    <form method="POST" action="/school-admin/reject/<%= user.id %>">
+                      <button class="btn-delete" style="background:red;color:white;">✖ Reject</button>
+                    </form>
+                  </td>
                 </tr>
+
             <% }) %>
             <% } else { %>
             <tr>

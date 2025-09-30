@@ -530,20 +530,68 @@ ORDER BY engagement_rate DESC;
 };
 
 // Approve user (set approved = true)
+// exports.approveUser = async (req, res) => {
+//   const { id } = req.params;
+//   await pool.query(
+//     `UPDATE user_school
+//      SET approved = true
+//      WHERE user_id = $1 AND school_id = $2`,
+//     [id, req.session.user.school_id]
+//   );
+
+//   // 📝 Log activity
+//   await logActivityForUser(req, "User approved", `Approved user ID: ${id}`);
+
+//   res.redirect("/school-admin/dashboard");
+// };
+// controllers/schoolAdminController.js
 exports.approveUser = async (req, res) => {
-  const { id } = req.params;
-  await pool.query(
-    `UPDATE user_school 
-     SET approved = true 
-     WHERE user_id = $1 AND school_id = $2`,
-    [id, req.session.user.school_id]
-  );
+  try {
+    const { id } = req.params;
+    await pool.query(
+      `UPDATE user_school 
+       SET approved = true 
+       WHERE user_id = $1 AND school_id = $2`,
+      [id, req.session.user.school_id]
+    );
 
-  // 📝 Log activity
-  await logActivityForUser(req, "User approved", `Approved user ID: ${id}`);
+    await logActivityForUser(req, "User approved", `Approved user ID: ${id}`);
 
-  res.redirect("/school-admin/dashboard");
+    if (req.xhr || req.headers.accept.indexOf("json") > -1) {
+      return res.json({ success: true, id });
+    }
+
+    res.redirect("/school-admin/dashboard");
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
 };
+
+// Bulk approval
+exports.approveAllUsers = async (req, res) => {
+  try {
+    await pool.query(
+      `UPDATE user_school
+       SET approved = true
+       WHERE school_id = $1 AND approved = false`,
+      [req.session.user.school_id]
+    );
+
+    await logActivityForUser(req, "Bulk approval", "Approved all pending users");
+
+    if (req.xhr || req.headers.accept.indexOf("json") > -1) {
+      return res.json({ success: true });
+    }
+
+    res.redirect("/school-admin/dashboard");
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+
 
 // Reject user (remove link)
 exports.rejectUser = async (req, res) => {
@@ -601,8 +649,6 @@ exports.createClassroom = async (req, res) => {
     res.status(500).send("Server error while creating classroom");
   }
 };
-
-
 
 // Assign student/teacher to a classroom
 exports.assignToClassroom = async (req, res) => {

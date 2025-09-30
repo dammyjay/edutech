@@ -95,6 +95,31 @@ exports.handleResetPassword = async (req, res) => {
   });
 };
 
+// Admin reset for student or teacher password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).send("Password must be at least 6 characters");
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await pool.query("UPDATE users2 SET password = $1 WHERE id = $2", [
+      hashedPassword,
+      userId,
+    ]);
+
+    res.status(200).send("Password reset successfully");
+  } catch (err) {
+    console.error("Reset password error:", err);
+    res.status(500).send("Server error");
+  }
+};
+
+
 exports.showLogin = (req, res) => {
   res.render("admin/login", {
     error: null,
@@ -1475,6 +1500,7 @@ exports.viewStudentProgress = async (req, res) => {
           quizAvg,
           assignmentAvg,
           assignments: moduleAssignments,
+          role: "admin", // ✅ important
         };
       });
 
@@ -1550,7 +1576,7 @@ exports.viewStudentEnrollments = async (req, res) => {
       [id]
     );
 
-    res.render("admin/studentEnrollments", { courses: courses.rows, info });
+    res.render("admin/studentEnrollments", { courses: courses.rows, info,  role: "admin",});
   } catch (err) {
     console.error("View student enrollments error:", err.message);
     res.status(500).send("Failed to fetch enrollments");
@@ -1894,6 +1920,7 @@ exports.getSchools = async (req, res) => {
       info: req.companyInfo || {},
       schools: result.rows,
       currentPage: "schools",
+      role: "admin", // ✅ important
     });
   } catch (err) {
     console.error("Error fetching schools:", err);
@@ -1995,6 +2022,7 @@ exports.getSchoolDetails = async (req, res) => {
       school,
       quotes: quotesResult.rows, // ✅ Pass quotes here
       currentPage: "schools",
+      role: "admin", // ✅ important
     });
   } catch (err) {
     console.error("Error fetching school details:", err);
@@ -2039,6 +2067,7 @@ exports.getQuotes = async (req, res) => {
       info: req.companyInfo || {},
       quotes,
       currentPage: "quotes",
+      role: "admin", // ✅ important
     });
   } catch (err) {
     console.error("Error fetching quotes:", err);
@@ -2076,6 +2105,7 @@ exports.getSchoolCourses = async (req, res) => {
       courses,
       schoolCoursesMap,
       currentPage: "school-courses",
+      role: "admin", // ✅ important
     });
   } catch (err) {
     console.error("Error fetching school courses:", err);
@@ -2284,4 +2314,134 @@ exports.deleteUserFromSchool = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// controllers/adminController.js
+
+// exports.addStudentsToClassroom = async (req, res) => {
+//   const classroomId = req.params.id;
+//   const { student_ids } = req.body;
+//   const schoolId = req.session.user.school_id;
+
+//   try {
+//     if (
+//       !student_ids ||
+//       !Array.isArray(student_ids) ||
+//       student_ids.length === 0
+//     ) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "No students selected." });
+//     }
+
+//     // Verify all students exist in this school (no approval check)
+//     const studentResult = await pool.query(
+//       `SELECT u.id, u.fullname, u.email
+//        FROM users2 u
+//        JOIN user_school us ON u.id = us.user_id
+//        WHERE u.id = ANY($1) AND us.school_id = $2
+//          AND us.role_in_school = 'student'`,
+//       [student_ids, schoolId]
+//     );
+
+//     if (studentResult.rows.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "No valid students found in this school.",
+//       });
+//     }
+
+//     // Assign each student to classroom
+//     await pool.query(
+//       `UPDATE user_school
+//        SET classroom_id = $1
+//        WHERE user_id = ANY($2) AND school_id = $3
+//          AND role_in_school = 'student'`,
+//       [classroomId, student_ids, schoolId]
+//     );
+
+//     res.json({
+//       success: true,
+//       message: "Students assigned successfully",
+//       students: studentResult.rows,
+//     });
+//   } catch (err) {
+//     console.error("Error assigning students to classroom:", err);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error while assigning students",
+//     });
+//   }
+// };
+
+exports.addStudentsToClassroom = async (req, res) => {
+  const classroomId = parseInt(req.params.id, 10); // force to int
+  let { student_ids } = req.body;
+  const schoolId = req.session.user.school_id;
+
+  try {
+    // Normalize and sanitize
+    if (!student_ids) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No students selected." });
+    }
+
+    if (!Array.isArray(student_ids)) {
+      student_ids = [student_ids]; // handle single selection
+    }
+
+    // Remove blanks and convert to integers
+    student_ids = student_ids
+      .filter((id) => id && id.toString().trim() !== "")
+      .map((id) => parseInt(id, 10))
+      .filter((id) => !isNaN(id));
+
+    if (student_ids.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No valid students selected." });
+    }
+
+    // Verify all students exist in this school
+    const studentResult = await pool.query(
+      `SELECT u.id, u.fullname, u.email
+       FROM users2 u
+       JOIN user_school us ON u.id = us.user_id
+       WHERE u.id = ANY($1) AND us.school_id = $2
+         AND us.role_in_school = 'student'`,
+      [student_ids, schoolId]
+    );
+
+    if (studentResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No valid students found in this school.",
+      });
+    }
+
+    // Assign each student to classroom
+    await pool.query(
+      `UPDATE user_school
+       SET classroom_id = $1
+       WHERE user_id = ANY($2) AND school_id = $3 
+         AND role_in_school = 'student'`,
+      [classroomId, student_ids, schoolId]
+    );
+
+    res.json({
+      success: true,
+      message: "Students assigned successfully",
+      students: studentResult.rows,
+    });
+  } catch (err) {
+    console.error("Error assigning students to classroom:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error while assigning students",
+    });
+  }
+};
+
+
+
 

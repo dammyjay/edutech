@@ -15,6 +15,16 @@ router.post(
   ),
   schoolAdminController.approveUser
 );
+
+router.post(
+  "/approve-all",
+  activityLoggerMiddleware(
+    "School user approved",
+    (req) => `User ID: ${req.params.id}`
+  ),
+  schoolAdminController.approveAllUsers
+);
+
 router.post(
   "/reject/:id",
   activityLoggerMiddleware(

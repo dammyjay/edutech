@@ -134,7 +134,7 @@
 <hr>
 
 
-<h3>Classrooms</h3>
+<!-- <h3>Classrooms</h3>
 <div class="table-responsive">
   <table class="user-table" style="width:95%; margin-top:20px;">
     <thead>
@@ -158,7 +158,7 @@
               </button>
             </td>
           </tr>
-          <!-- Hidden row for student list -->
+
           <tr id="students-row-<%= c.id %>" style="display:none;">
             <td colspan="4">
               <div id="students-container-<%= c.id %>">
@@ -174,8 +174,75 @@
       <% } %>
     </tbody>
   </table>
-</div>
+</div> -->
 
+<h3>Classrooms</h3>
+<div class="table-responsive">
+  <table class="user-table" style="width:95%; margin-top:20px;">
+    <thead>
+      <tr>
+        <th>Classroom Name</th>
+        <th>No. of Students</th>
+        <th>No. of Teachers</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (school.classrooms.length > 0) { %>
+        <% school.classrooms.forEach(c => { %>
+          <tr>
+            <td><%= c.name %></td>
+            <!-- <td><%= c.student_count %></td> -->
+             <td id="student-count-<%= c.id %>"><%= c.student_count %></td>
+            <td><%= c.teacher_count %></td>
+            <td>
+              <button class="btn-edit" onclick="toggleStudents('<%= c.id %>')">
+                👁 View Students
+              </button>
+            </td>
+          </tr>
+
+          <!-- Hidden row for student list + assignment form -->
+          <tr id="students-row-<%= c.id %>" style="display:none;">
+            <td colspan="4">
+              <div id="students-container-<%= c.id %>">
+                <em>Loading...</em>
+              </div>
+
+              <!-- 🔽 Inline Assign Students Form -->
+              <div style="margin-top:15px; padding:10px; background:#f1f1f1; border-radius:6px;">
+                <h4>Assign Students to <%= c.name %></h4>
+                <form onsubmit="assignStudents(event, '<%= c.id %>')">
+                  <select 
+                    id="studentMultiSelect-<%= c.id %>" 
+                    name="student_ids" 
+                    multiple
+                    style="width:100%; height:120px;">
+                    <% school.students.forEach(stu => { %>
+                      <% if (!stu.classroom_id) { %>
+                        <option value="<%= stu.user_id %>">
+                          <%= stu.full_name %> (<%= stu.email %>)
+                        </option>
+                      <% } %>
+                    <% }) %>
+                  </select>
+
+
+                  <button type="submit" style="margin-top:10px;">Assign Selected</button>
+                </form>
+              </div>
+
+            </td>
+          </tr>
+        <% }) %>
+      <% } else { %>
+        <tr>
+          <td colspan="4" style="text-align:center;">No classrooms yet</td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
 
 
 <!-- User Modal -->
@@ -184,6 +251,7 @@
     <span onclick="closeUserModal()" class="close" style="float:right;cursor:pointer;">&times;</span>
     <h2>User Details</h2>
     <img id="modalProfilePic" src="" alt="Profile" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;"><br><br>
+    
     <p><strong>Full Name:</strong> <span id="modalFullName"></span></p>
     <p><strong>Email:</strong> <span id="modalEmail"></span></p>
     <p><strong>Phone:</strong> <span id="modalPhone"></span></p>
@@ -193,8 +261,20 @@
     <p><strong>Classroom:</strong> <span id="modalClassroom"></span></p>
     <p><strong>walletBalance:</strong> ₦<span id="modalWalletBalance"></span></p>
     <p><strong>Date Registered:</strong> <span id="modalDate"></span></p>
+
+    <hr>
+    <!-- 🔑 Reset Password Form -->
+    <h3>Reset Password</h3>
+    <form id="resetPasswordForm">
+      <input type="hidden" id="resetUserId">
+      <div class="container">
+        <input type="password" id="newPassword" placeholder="Enter new password" required />
+      </div>
+      <button type="submit" style="margin-top:10px; background:#f39c12; color:white; padding:8px 15px; border:none; border-radius:5px;">Reset Password</button>
+    </form>
   </div>
 </div>
+
 
 
 <!-- User Form Modal -->
@@ -480,6 +560,239 @@ function filterUsers(tableId, selectId, searchId) {
   }
 }
 </script>
+
+<!-- script for user modal -->
+<script>
+  function openUserModal(user) {
+    document.getElementById("modalProfilePic").src = user.profile_picture || "/profile.webp";
+    document.getElementById("modalFullName").textContent = user.full_name || "—";
+    document.getElementById("modalEmail").textContent = user.email || "—";
+    document.getElementById("modalPhone").textContent = user.phone || "—";
+    document.getElementById("modalDOB").textContent = user.dob ? new Date(user.dob).toLocaleDateString() : "—";
+    document.getElementById("modalGender").textContent = user.gender || "—";
+    document.getElementById("modalRole").textContent = user.role_in_school || user.role || "—";
+    document.getElementById("modalClassroom").textContent = user.classroom_name || "—";
+    document.getElementById("modalWalletBalance").textContent = user.wallet_balance || 0;
+    document.getElementById("modalDate").textContent = user.created_at ? new Date(user.created_at).toDateString() : "—";
+
+    // 🔑 set userId for reset password
+    document.getElementById("resetUserId").value = user.id;
+
+    document.getElementById("userModal").style.display = "block";
+  }
+
+  // Handle reset password submit
+  document.getElementById("resetPasswordForm").onsubmit = async (e) => {
+    e.preventDefault();
+    const userId = document.getElementById("resetUserId").value;
+    const newPassword = document.getElementById("newPassword").value.trim();
+    const schoolId = "<%= school.id %>";
+
+    if (!newPassword) {
+      return alert("Password cannot be empty");
+    }
+
+    const res = await fetch(`/admin/schools/${schoolId}/users/${userId}/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ newPassword })
+    });
+
+    if (res.ok) {
+      alert("Password reset successfully ✅");
+      document.getElementById("newPassword").value = "";
+      closeUserModal();
+    } else {
+      alert("Failed: " + (await res.text()));
+    }
+  };
+</script>
+
+<!-- close user modal when clicking outside -->
+<script>
+  window.onclick = function (event) {
+    const userModal = document.getElementById("userModal");
+    const formModal = document.getElementById("userFormModal");
+    const resetModal = document.getElementById("resetPasswordModal"); // new reset modal
+
+    // Close User Modal
+    if (userModal && event.target === userModal) {
+      closeUserModal();
+    }
+
+    // Close User Form Modal
+    if (formModal && event.target === formModal) {
+      closeUserForm();
+    }
+
+    // Close Reset Password Modal
+    if (resetModal && event.target === resetModal) {
+      closeResetPasswordModal();
+    }
+  };
+</script>
+
+<!-- script for assigning students to classroom -->
+<!-- <script>
+  // Assign selected students to a classroom
+  async function assignStudents(e, classroomId) {
+    e.preventDefault();
+    const select = document.getElementById(`studentMultiSelect-${classroomId}`);
+    const selected = Array.from(select.selectedOptions).map(o => o.value);
+
+    if (selected.length === 0) {
+      return alert("Please select at least one student.");
+    }
+
+    const res = await fetch(`/admin/classrooms/${classroomId}/add-students`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ student_ids: selected })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      alert("✅ Students assigned successfully!");
+
+      // 🔄 Refresh student list in this classroom inline
+      await refreshStudents(classroomId);
+
+      // 🔄 Remove assigned students from dropdown
+      selected.forEach(id => {
+        const option = select.querySelector(`option[value="${id}"]`);
+        if (option) option.remove();
+      });
+    } else {
+      alert("❌ Failed: " + data.message);
+    }
+  }
+
+  // Refresh only this classroom's student list
+  async function refreshStudents(classroomId) {
+    const container = document.getElementById(`students-container-${classroomId}`);
+    try {
+      const res = await fetch(`/admin/classrooms/${classroomId}/students`);
+      const students = await res.json();
+
+      if (students.length === 0) {
+        container.innerHTML = "<p>No students in this classroom.</p>";
+      } else {
+        let html = `
+          <div class="table-responsive">
+            <table class="user-table" style="width:100%; margin-top:10px; background:#f9f9f9;">
+              <thead>
+                <tr>
+                  <th>Full Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Gender</th>
+                  <th>DOB</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+        students.forEach(stu => {
+          html += `
+            <tr>
+              <td>${stu.fullname}</td>
+              <td>${stu.email || "—"}</td>
+              <td>${stu.phone || "—"}</td>
+              <td>${stu.gender || "—"}</td>
+              <td>${stu.dob ? new Date(stu.dob).toLocaleDateString() : "—"}</td>
+            </tr>
+          `;
+        });
+        html += "</tbody></table></div>";
+        container.innerHTML = html;
+      }
+    } catch (err) {
+      container.innerHTML = "<p style='color:red;'>Failed to refresh students.</p>";
+    }
+  }
+</script> -->
+
+<script>
+  // Assign selected students to a classroom
+  async function assignStudents(e, classroomId) {
+    e.preventDefault();
+
+    const select = document.getElementById(`studentMultiSelect-${classroomId}`);
+    // Convert values to integers & filter out invalid ones
+    const selected = Array.from(select.selectedOptions)
+      .map(o => parseInt(o.value, 10))
+      .filter(id => !isNaN(id));
+
+    if (selected.length === 0) {
+      return alert("Please select at least one student.");
+    }
+
+    const res = await fetch(`/admin/classrooms/${classroomId}/add-students`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ student_ids: selected })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      alert("✅ Students assigned successfully!");
+
+      // 🔄 Refresh student list in this classroom inline
+      await refreshStudents(classroomId);
+
+      // 🔄 Remove assigned students from dropdown
+      selected.forEach(id => {
+        const option = select.querySelector(`option[value="${id}"]`);
+        if (option) option.remove();
+      });
+    } else {
+      alert("❌ Failed: " + data.message);
+    }
+  }
+
+  // Refresh only this classroom's student list
+  async function refreshStudents(classroomId) {
+    const container = document.getElementById(`students-container-${classroomId}`);
+    try {
+      const res = await fetch(`/admin/classrooms/${classroomId}/students`);
+      const students = await res.json();
+
+      if (students.length === 0) {
+        container.innerHTML = "<p>No students in this classroom.</p>";
+      } else {
+        let html = `
+          <div class="table-responsive">
+            <table class="user-table" style="width:100%; margin-top:10px; background:#f9f9f9;">
+              <thead>
+                <tr>
+                  <th>Full Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Gender</th>
+                  <th>DOB</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+        students.forEach(stu => {
+          html += `
+            <tr>
+              <td>${stu.fullname}</td>
+              <td>${stu.email || "—"}</td>
+              <td>${stu.phone || "—"}</td>
+              <td>${stu.gender || "—"}</td>
+              <td>${stu.dob ? new Date(stu.dob).toLocaleDateString() : "—"}</td>
+            </tr>
+          `;
+        });
+        html += "</tbody></table></div>";
+        container.innerHTML = html;
+      }
+    } catch (err) {
+      container.innerHTML = "<p style='color:red;'>Failed to refresh students.</p>";
+    }
+  }
+</script>
+
 
 
 
