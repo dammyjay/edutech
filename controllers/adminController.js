@@ -412,7 +412,6 @@ exports.instructorDashboard = async (req, res) => {
   }
 };
 
-
 exports.editUserForm = async (req, res) => {
   const userId = req.params.id;
   const infoResult = await pool.query(
@@ -574,7 +573,6 @@ exports.createPathway = async (req, res) => {
   );
   res.redirect("/admin/pathways");
 };
-
 
 exports.deletePathway = async (req, res) => {
   const { id } = req.params;
@@ -2315,33 +2313,63 @@ exports.deleteUserFromSchool = async (req, res) => {
   }
 };
 
-// controllers/adminController.js
-
 // exports.addStudentsToClassroom = async (req, res) => {
-//   const classroomId = req.params.id;
-//   const { student_ids } = req.body;
-//   const schoolId = req.session.user.school_id;
-
+//   const classroomId = parseInt(req.params.id, 10);
+//   console.log("DEBUG classroomId:", classroomId);
+//   let { student_ids } = req.body;
+//    console.log("DEBUG raw student_ids:", student_ids);
 //   try {
-//     if (
-//       !student_ids ||
-//       !Array.isArray(student_ids) ||
-//       student_ids.length === 0
-//     ) {
+//     if (!student_ids) {
 //       return res
 //         .status(400)
 //         .json({ success: false, message: "No students selected." });
 //     }
 
-//     // Verify all students exist in this school (no approval check)
+//     if (!Array.isArray(student_ids)) {
+//       student_ids = [student_ids];
+//     }
+
+//     // Convert to integers properly
+//     student_ids = student_ids
+//       .map((id) => parseInt(id, 10))
+//       .filter((id) => !isNaN(id));
+
+//     if (student_ids.length === 0) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "No valid students selected." });
+//     }
+
+//     // ✅ Always fetch schoolId from classroom (not session)
+//     const schoolResult = await pool.query(
+//       `SELECT school_id FROM classrooms WHERE id = $1`,
+//       [classroomId]
+//     );
+//     const schoolId = schoolResult.rows[0]?.school_id; // 👈 not whole row
+
+//     console.log("DEBUG schoolId:", schoolId);
+
+//     if (!schoolId) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Classroom not found in any school.",
+//       });
+//     }
+
+//     // ✅ Only query students AFTER validation
 //     const studentResult = await pool.query(
 //       `SELECT u.id, u.fullname, u.email
 //        FROM users2 u
 //        JOIN user_school us ON u.id = us.user_id
-//        WHERE u.id = ANY($1) AND us.school_id = $2
+//        WHERE u.id = ANY($1::int[])
+//          AND us.school_id = $2
 //          AND us.role_in_school = 'student'`,
 //       [student_ids, schoolId]
 //     );
+
+//     console.log("DEBUG student_ids:", student_ids);
+
+//     console.log("DEBUG found students:", studentResult.rows);
 
 //     if (studentResult.rows.length === 0) {
 //       return res.status(404).json({
@@ -2350,97 +2378,124 @@ exports.deleteUserFromSchool = async (req, res) => {
 //       });
 //     }
 
-//     // Assign each student to classroom
+//     // ✅ Assign students
 //     await pool.query(
 //       `UPDATE user_school
 //        SET classroom_id = $1
-//        WHERE user_id = ANY($2) AND school_id = $3
+//        WHERE user_id = ANY($2::int[])
+//          AND school_id = $3
 //          AND role_in_school = 'student'`,
 //       [classroomId, student_ids, schoolId]
 //     );
 
-//     res.json({
+//     return res.json({
 //       success: true,
 //       message: "Students assigned successfully",
 //       students: studentResult.rows,
 //     });
 //   } catch (err) {
 //     console.error("Error assigning students to classroom:", err);
-//     res.status(500).json({
+//     return res.status(500).json({
 //       success: false,
 //       message: "Server error while assigning students",
 //     });
 //   }
 // };
 
+
 exports.addStudentsToClassroom = async (req, res) => {
-  const classroomId = parseInt(req.params.id, 10); // force to int
+  const classroomId = parseInt(req.params.id, 10);
   let { student_ids } = req.body;
-  const schoolId = req.session.user.school_id;
+
+  if (!student_ids) {
+    return res
+      .status(400)
+      .json({ success: false, message: "No students selected." });
+  }
+
+  if (!Array.isArray(student_ids)) {
+    student_ids = [student_ids];
+  }
+
+  student_ids = student_ids
+    .map((id) => parseInt(id, 10))
+    .filter((id) => !isNaN(id));
+
+  if (student_ids.length === 0) {
+    return res
+      .status(400)
+      .json({ success: false, message: "No valid students selected." });
+  }
 
   try {
-    // Normalize and sanitize
-    if (!student_ids) {
+    // get school id from classroom
+    const schoolResult = await pool.query(
+      `SELECT school_id FROM classrooms WHERE id = $1`,
+      [classroomId]
+    );
+    const schoolId = schoolResult.rows[0]?.school_id;
+
+    if (!schoolId) {
       return res
-        .status(400)
-        .json({ success: false, message: "No students selected." });
+        .status(404)
+        .json({ success: false, message: "Classroom not found" });
     }
 
-    if (!Array.isArray(student_ids)) {
-      student_ids = [student_ids]; // handle single selection
-    }
-
-    // Remove blanks and convert to integers
-    student_ids = student_ids
-      .filter((id) => id && id.toString().trim() !== "")
-      .map((id) => parseInt(id, 10))
-      .filter((id) => !isNaN(id));
-
-    if (student_ids.length === 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: "No valid students selected." });
-    }
-
-    // Verify all students exist in this school
+    // verify students belong to this school
     const studentResult = await pool.query(
       `SELECT u.id, u.fullname, u.email
        FROM users2 u
        JOIN user_school us ON u.id = us.user_id
-       WHERE u.id = ANY($1) AND us.school_id = $2
+       WHERE u.id = ANY($1::int[])
+         AND us.school_id = $2
          AND us.role_in_school = 'student'`,
       [student_ids, schoolId]
     );
 
     if (studentResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No valid students found in this school.",
-      });
+      return res
+        .status(404)
+        .json({
+          success: false,
+          message: "No valid students found in this school.",
+        });
     }
 
-    // Assign each student to classroom
+    // assign
     await pool.query(
       `UPDATE user_school
        SET classroom_id = $1
-       WHERE user_id = ANY($2) AND school_id = $3 
+       WHERE user_id = ANY($2::int[])
+         AND school_id = $3
          AND role_in_school = 'student'`,
       [classroomId, student_ids, schoolId]
     );
 
-    res.json({
+    // ✅ fetch unassigned students after update
+    const unassignedResult = await pool.query(
+      `SELECT u.id, u.fullname, u.email
+       FROM users2 u
+       JOIN user_school us ON u.id = us.user_id
+       WHERE us.school_id = $1
+         AND us.role_in_school = 'student'
+         AND us.classroom_id IS NULL
+       ORDER BY u.fullname`,
+      [schoolId]
+    );
+
+    return res.json({
       success: true,
       message: "Students assigned successfully",
-      students: studentResult.rows,
+      assigned: studentResult.rows,
+      unassigned: unassignedResult.rows, // 👈 send back fresh dropdown list
     });
   } catch (err) {
     console.error("Error assigning students to classroom:", err);
-    res.status(500).json({
-      success: false,
-      message: "Server error while assigning students",
-    });
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
 
 
 
