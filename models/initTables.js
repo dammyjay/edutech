@@ -633,6 +633,15 @@ async function createTables() {
         );
 
       `);
+    
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS classroom_instructors (
+        id SERIAL PRIMARY KEY,
+        classroom_id INT NOT NULL REFERENCES classrooms(id) ON DELETE CASCADE,
+        instructor_id INT NOT NULL REFERENCES users2(id) ON DELETE CASCADE,
+        UNIQUE(classroom_id, instructor_id) -- prevent duplicates
+      );
+    `);
 
     console.log("✅ All tables are updated and ready.");
   } catch (err) {

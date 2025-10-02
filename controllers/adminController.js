@@ -1929,6 +1929,74 @@ exports.getSchools = async (req, res) => {
 
 
 // 📌 GET: Single School Details
+
+// exports.getSchoolDetails = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const schoolResult = await pool.query(
+//       "SELECT * FROM schools WHERE id = $1",
+//       [id]
+//     );
+//     const school = schoolResult.rows[0];
+//     if (!school) return res.status(404).send("School not found");
+
+//     const studentsResult = await pool.query(
+//       `SELECT u.id, u.fullname AS full_name, u.email, u.phone, u.dob, u.gender,
+//               u.role, u.wallet_balance, u.created_at, us.classroom_id, c.name AS classroom_name
+//        FROM user_school us
+//        JOIN users2 u ON us.user_id = u.id
+//        LEFT JOIN classrooms c ON us.classroom_id = c.id
+//        WHERE us.school_id = $1 AND us.role_in_school = 'student'
+//        ORDER BY u.fullname`,
+//       [id]
+//     );
+
+//     const teachersResult = await pool.query(
+//       `SELECT u.id, u.fullname AS full_name, u.email, u.phone, u.dob, u.gender,
+//               u.role, u.wallet_balance, u.created_at, us.classroom_id, c.name AS classroom_name
+//        FROM user_school us
+//        JOIN users2 u ON us.user_id = u.id
+//        LEFT JOIN classrooms c ON us.classroom_id = c.id
+//        WHERE us.school_id = $1 AND us.role_in_school = 'teacher'
+//        ORDER BY u.fullname`,
+//       [id]
+//     );
+
+//     const classroomsResult = await pool.query(
+//       `SELECT c.id, c.name,
+//               COUNT(DISTINCT CASE WHEN us.role_in_school = 'student' THEN us.user_id END) AS student_count,
+//               COUNT(DISTINCT CASE WHEN us.role_in_school = 'teacher' THEN us.user_id END) AS teacher_count
+//        FROM classrooms c
+//        LEFT JOIN user_school us ON c.id = us.classroom_id
+//        WHERE c.school_id = $1
+//        GROUP BY c.id, c.name
+//        ORDER BY c.created_at DESC`,
+//       [id]
+//     );
+
+//     const quotesResult = await pool.query(
+//       `SELECT * FROM quotes WHERE school_id = $1 ORDER BY created_at DESC`,
+//       [id]
+//     );
+
+//     school.students = studentsResult.rows;
+//     school.teachers = teachersResult.rows;
+//     school.classrooms = classroomsResult.rows;
+
+//     res.render("admin/school-details", {
+//       info: req.companyInfo || {},
+//       school,
+//       quotes: quotesResult.rows,
+//       currentPage: "schools",
+//       role: "admin",
+//     });
+//   } catch (err) {
+//     console.error("Error fetching school details:", err);
+//     res.status(500).send("Error loading school details");
+//   }
+// };
+
 exports.getSchoolDetails = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1941,49 +2009,51 @@ exports.getSchoolDetails = async (req, res) => {
     const school = schoolResult.rows[0];
     if (!school) return res.status(404).send("School not found");
 
-    // Fetch students with classroom names
+    // Fetch students
     const studentsResult = await pool.query(
       `
-  SELECT u.id, 
-         u.fullname AS full_name,
-         u.email,
-         u.phone,
-         u.dob,
-         u.gender,
-         u.role,
-         u.wallet_balance,
-         u.created_at,
-         c.name AS classroom_name
-  FROM user_school us
-  JOIN users2 u ON us.user_id = u.id
-  LEFT JOIN classrooms c ON us.classroom_id = c.id
-  WHERE us.school_id = $1 AND us.role_in_school = 'student'
-  `,
+      SELECT u.id, u.fullname AS full_name, u.email, u.phone, u.dob, u.gender,
+             u.role, u.wallet_balance, u.created_at,
+             c.name AS classroom_name
+      FROM user_school us
+      JOIN users2 u ON us.user_id = u.id
+      LEFT JOIN classrooms c ON us.classroom_id = c.id
+      WHERE us.school_id = $1 AND us.role_in_school = 'student'
+      `,
       [id]
     );
 
-    // Fetch teachers with classroom names
+    // Fetch teachers
     const teachersResult = await pool.query(
       `
-  SELECT u.id, 
-         u.fullname AS full_name,
-         u.email,
-         u.phone,
-         u.dob,
-         u.gender,
-         u.role,
-         u.wallet_balance,
-         u.created_at,
-         c.name AS classroom_name
-  FROM user_school us
-  JOIN users2 u ON us.user_id = u.id
-  LEFT JOIN classrooms c ON us.classroom_id = c.id
-  WHERE us.school_id = $1 AND us.role_in_school = 'teacher'
-  `,
+      SELECT u.id, u.fullname AS full_name, u.email, u.phone, u.dob, u.gender,
+             u.role, u.wallet_balance, u.created_at,
+             c.name AS classroom_name
+      FROM user_school us
+      JOIN users2 u ON us.user_id = u.id
+      LEFT JOIN classrooms c ON us.classroom_id = c.id
+      WHERE us.school_id = $1 AND us.role_in_school = 'teacher'
+      `,
       [id]
     );
 
-    // Fetch classrooms
+    // ✅ Fetch ALL instructors globally
+    const instructorsResult = await pool.query(
+      `
+  SELECT 
+    u.id,
+    u.fullname AS full_name,
+    u.email,
+    COALESCE(string_agg(DISTINCT c.name, ', '), 'Not yet assigned') AS classrooms
+  FROM users2 u
+  LEFT JOIN classroom_instructors ci ON ci.instructor_id = u.id
+  LEFT JOIN classrooms c ON ci.classroom_id = c.id
+  WHERE u.role = 'instructor'
+  GROUP BY u.id, u.fullname, u.email
+  ORDER BY u.fullname
+  `
+    );
+
     // Fetch classrooms + counts
     const classroomsResult = await pool.query(
       `
@@ -1991,10 +2061,12 @@ exports.getSchoolDetails = async (req, res) => {
     c.id,
     c.name,
     COUNT(DISTINCT CASE WHEN us.role_in_school = 'student' THEN u.id END) AS student_count,
-    COUNT(DISTINCT CASE WHEN us.role_in_school = 'teacher' THEN u.id END) AS teacher_count
+    COUNT(DISTINCT CASE WHEN us.role_in_school = 'teacher' THEN u.id END) AS teacher_count,
+    COUNT(DISTINCT ci.instructor_id) AS instructor_count
   FROM classrooms c
   LEFT JOIN user_school us ON c.id = us.classroom_id
   LEFT JOIN users2 u ON us.user_id = u.id
+  LEFT JOIN classroom_instructors ci ON ci.classroom_id = c.id
   WHERE c.school_id = $1
   GROUP BY c.id, c.name
   ORDER BY c.created_at DESC
@@ -2002,25 +2074,44 @@ exports.getSchoolDetails = async (req, res) => {
       [id]
     );
 
-    // Fetch quotes for this school
+    // Fetch quotes
     const quotesResult = await pool.query(
-      `
-      SELECT * FROM quotes WHERE school_id = $1 ORDER BY created_at DESC
-    `,
+      `SELECT * FROM quotes WHERE school_id = $1 ORDER BY created_at DESC`,
       [id]
     );
 
-    // Attach to school object
+    const totalsResult = await pool.query(
+      `
+  SELECT
+    COUNT(DISTINCT CASE WHEN us.role_in_school = 'student' THEN u.id END) AS total_students,
+    COUNT(DISTINCT CASE WHEN us.role_in_school = 'teacher' THEN u.id END) AS total_teachers,
+    (
+      SELECT COUNT(*) 
+      FROM users2 u2
+      WHERE u2.role = 'instructor'
+    ) AS total_instructors
+  FROM user_school us
+  JOIN users2 u ON us.user_id = u.id
+  WHERE us.school_id = $1
+  `,
+      [id]
+    );
+
+
+
+    // Attach
     school.students = studentsResult.rows;
     school.teachers = teachersResult.rows;
+    school.instructors = instructorsResult.rows;
     school.classrooms = classroomsResult.rows;
+    school.totals = totalsResult.rows[0];
 
     res.render("admin/school-details", {
       info: req.companyInfo || {},
       school,
-      quotes: quotesResult.rows, // ✅ Pass quotes here
+      quotes: quotesResult.rows,
       currentPage: "schools",
-      role: "admin", // ✅ important
+      role: "admin",
     });
   } catch (err) {
     console.error("Error fetching school details:", err);
@@ -2494,6 +2585,230 @@ exports.addStudentsToClassroom = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+// exports.assignUsersToClassroom = async (req, res) => {
+//   const classroomId = parseInt(req.params.id, 10);
+//   let { user_ids, role } = req.body;
+
+//   if (!user_ids) {
+//     return res
+//       .status(400)
+//       .json({ success: false, message: "No users selected." });
+//   }
+
+//   if (!Array.isArray(user_ids)) user_ids = [user_ids];
+//   user_ids = user_ids.map((id) => parseInt(id, 10)).filter((id) => !isNaN(id));
+
+//   if (user_ids.length === 0) {
+//     return res
+//       .status(400)
+//       .json({ success: false, message: "No valid users selected." });
+//   }
+
+//   try {
+//     // Get school id
+//     const schoolResult = await pool.query(
+//       `SELECT school_id FROM classrooms WHERE id = $1`,
+//       [classroomId]
+//     );
+//     const schoolId = schoolResult.rows[0]?.school_id;
+//     if (!schoolId) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Classroom not found" });
+//     }
+
+//     // Verify users belong to school & role
+//     const userResult = await pool.query(
+//       `SELECT u.id, u.fullname, u.email
+//        FROM users2 u
+//        JOIN user_school us ON u.id = us.user_id
+//        WHERE u.id = ANY($1::int[])
+//          AND us.school_id = $2
+//          AND us.role_in_school = $3`,
+//       [user_ids, schoolId, role]
+//     );
+
+//     if (userResult.rows.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         message: `No valid ${role}s found in this school.`,
+//       });
+//     }
+
+//     // Assign to classroom
+//     await pool.query(
+//       `UPDATE user_school
+//        SET classroom_id = $1
+//        WHERE user_id = ANY($2::int[])
+//          AND school_id = $3
+//          AND role_in_school = $4`,
+//       [classroomId, user_ids, schoolId, role]
+//     );
+
+//     // Return updated classroom counts
+//     const classCounts = await pool.query(
+//       `SELECT
+//          COUNT(DISTINCT CASE WHEN us.role_in_school = 'student' THEN us.user_id END) AS student_count,
+//          COUNT(DISTINCT CASE WHEN us.role_in_school = 'teacher' THEN us.user_id END) AS teacher_count
+//        FROM user_school us
+//        WHERE us.classroom_id = $1 AND us.school_id = $2`,
+//       [classroomId, schoolId]
+//     );
+
+//     // Fetch unassigned users of this role
+//     const unassignedResult = await pool.query(
+//       `SELECT u.id, u.fullname, u.email
+//        FROM users2 u
+//        JOIN user_school us ON u.id = us.user_id
+//        WHERE us.school_id = $1
+//          AND us.role_in_school = $2
+//          AND us.classroom_id IS NULL
+//        ORDER BY u.fullname`,
+//       [schoolId, role]
+//     );
+
+//     return res.json({
+//       success: true,
+//       message: `${role}s assigned successfully`,
+//       assigned: userResult.rows.map((r) => ({
+//         ...r,
+//         classroom_id: classroomId,
+//       })),
+//       unassigned: unassignedResult.rows,
+//       counts: classCounts.rows[0], // ✅ student_count + teacher_count
+//     });
+//   } catch (err) {
+//     console.error(`Error assigning ${role}s to classroom:`, err);
+//     return res.status(500).json({ success: false, message: "Server error" });
+//   }
+// };
+
+exports.assignUsersToClassroom = async (req, res) => {
+  const classroomId = parseInt(req.params.id, 10);
+  let { user_ids, role } = req.body;
+
+  if (!user_ids) {
+    return res
+      .status(400)
+      .json({ success: false, message: "No users selected." });
+  }
+
+  if (!Array.isArray(user_ids)) user_ids = [user_ids];
+  user_ids = user_ids.map((id) => parseInt(id, 10)).filter((id) => !isNaN(id));
+
+  if (user_ids.length === 0) {
+    return res
+      .status(400)
+      .json({ success: false, message: "No valid users selected." });
+  }
+
+  try {
+    // ✅ 1. Get school id from classroom
+    const schoolResult = await pool.query(
+      `SELECT school_id FROM classrooms WHERE id = $1`,
+      [classroomId]
+    );
+    const schoolId = schoolResult.rows[0]?.school_id;
+    if (!schoolId) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Classroom not found" });
+    }
+
+    if (role === "instructor") {
+      // Only assign instructors to classroom_instructors (no user_school insert)
+      await pool.query(
+        `
+    INSERT INTO classroom_instructors (classroom_id, instructor_id)
+    SELECT $1, u.id
+    FROM users2 u
+    WHERE u.id = ANY($2::int[])
+    ON CONFLICT (classroom_id, instructor_id) DO NOTHING
+    `,
+        [classroomId, user_ids]
+      );
+
+      // Fetch all instructor users & their assigned classrooms (if any)
+      const instructorsResult = await pool.query(
+        `
+    SELECT 
+      u.id,
+      u.fullname AS full_name,
+      u.email,
+      COALESCE(string_agg(DISTINCT c.name, ', '), 'Not yet assigned') AS classrooms
+    FROM users2 u
+    LEFT JOIN classroom_instructors ci ON ci.instructor_id = u.id
+    LEFT JOIN classrooms c ON ci.classroom_id = c.id
+    WHERE u.role = 'instructor'
+    GROUP BY u.id, u.fullname, u.email
+    ORDER BY u.fullname
+    `
+      );
+
+      return res.json({
+        success: true,
+        message: "Instructors assigned successfully",
+        instructors: instructorsResult.rows,
+      });
+    } else {
+      // ✅ Students / Teachers (single classroom only)
+      const userResult = await pool.query(
+        `SELECT u.id, u.fullname, u.email
+         FROM users2 u
+         JOIN user_school us ON u.id = us.user_id
+         WHERE u.id = ANY($1::int[])
+           AND us.school_id = $2
+           AND us.role_in_school = $3`,
+        [user_ids, schoolId, role]
+      );
+
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: `No valid ${role}s found in this school.`,
+        });
+      }
+
+      // Update their classroom_id (one per user)
+      await pool.query(
+        `UPDATE user_school
+         SET classroom_id = $1
+         WHERE user_id = ANY($2::int[])
+           AND school_id = $3
+           AND role_in_school = $4`,
+        [classroomId, user_ids, schoolId, role]
+      );
+
+      // Fetch unassigned users of this role
+      const unassignedResult = await pool.query(
+        `SELECT u.id, u.fullname, u.email
+         FROM users2 u
+         JOIN user_school us ON u.id = us.user_id
+         WHERE us.school_id = $1
+           AND us.role_in_school = $2
+           AND us.classroom_id IS NULL
+         ORDER BY u.fullname`,
+        [schoolId, role]
+      );
+
+      return res.json({
+        success: true,
+        message: `${role}s assigned successfully`,
+        assigned: userResult.rows.map((r) => ({
+          ...r,
+          classroom_id: classroomId,
+        })),
+        unassigned: unassignedResult.rows,
+      });
+    }
+  } catch (err) {
+    console.error(`Error assigning ${role}s to classroom:`, err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
 
 
 

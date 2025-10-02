@@ -255,9 +255,11 @@ router.put("/schools/:schoolId/users/:userId", upload.single("profile_picture"),
 router.delete("/schools/:schoolId/users/:userId", adminController.deleteUserFromSchool);
 router.get("/classrooms/:id/students", adminController.getClassroomStudents);
 // Assign multiple students to a classroom
-router.post(
-  "/classrooms/:id/add-students",
-  adminController.addStudentsToClassroom
-);
+// router.post(
+//   "/classrooms/:id/add-students",
+//   adminController.addStudentsToClassroom
+// );
+
+router.post("/classrooms/:id/assign", adminController.assignUsersToClassroom);
 
 module.exports = router;
