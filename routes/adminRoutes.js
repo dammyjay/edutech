@@ -262,4 +262,13 @@ router.get("/classrooms/:id/students", adminController.getClassroomStudents);
 
 router.post("/classrooms/:id/assign", adminController.assignUsersToClassroom);
 
+router.post(
+  "/classrooms/new",
+  activityLoggerMiddleware(
+    "Classroom created",
+    (req) => `Classroom: ${req.body.name}`
+  ),
+  adminController.createClassroom
+);
+
 module.exports = router;

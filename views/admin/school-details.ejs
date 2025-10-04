@@ -186,7 +186,14 @@
 <hr>
 
 
-<h3>Classrooms</h3>
+<!-- <h3>Classrooms</h3> -->
+<h3>
+  Classrooms
+  <button class="btn-edit" onclick="openModal('createClassroomModal')" style="margin-left:10px;">
+    ➕ Create Classroom
+  </button>
+</h3>
+
 <div class="table-responsive">
   <table class="user-table" style="width:95%; margin-top:20px;">
     <thead>
@@ -281,6 +288,58 @@
     </tbody>
   </table>
 </div>
+
+<!-- Create Classroom Modal -->
+<div id="createClassroomModal" class="modal-overlay" style="display:none;">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeModal('createClassroomModal')">&times;</span>
+    <h2>➕ Create Classroom</h2>
+
+    <form id="createClassroomForm">
+      <input type="hidden" name="school_id" value="<%= school.id %>">
+
+      <label for="name">Classroom Name</label>
+      <input type="text" name="name" id="name" required>
+
+      <label for="teacher_id">Assign Teachers (optional)</label>
+      <select name="teacher_id" id="teacher_id" multiple size="5">
+        <% school.teachers.forEach(t => { %>
+          <option value="<%= t.id %>"><%= t.full_name %> (<%= t.email %>)</option>
+        <% }) %>
+      </select>
+      <button type="submit">Create</button>
+    </form>
+
+
+  </div>
+</div>
+
+<!-- Edit Classroom Modal -->
+<div id="editClassroomModal" class="modal-overlay" style="display:none;">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeModal('editClassroomModal')">&times;</span>
+    <h2>✏ Edit Classroom</h2>
+    
+    <form id="editClassroomForm" method="POST">
+      <input type="text" name="id" id="edit_classroom_id">
+
+      <label for="edit_name">Classroom Name</label>
+      <input type="text" name="name" id="edit_name" required>
+
+      <label for="edit_teacher_ids">Assign Teachers</label>
+      <select name="teacher_ids" id="edit_teacher_ids" multiple size="5">
+        <% school.teachers.forEach(t => { %>
+          <option value="<%= t.id %>"><%= t.full_name %> (<%= t.email %>)</option>
+        <% }) %>
+      </select>
+
+      <small>Hold <b>Ctrl</b> (Windows) or <b>Cmd</b> (Mac) to select multiple</small>
+
+      <button type="submit" class="btn-edit">Update</button>
+    </form>
+  </div>
+</div>
+
 
 
 <!-- User Modal -->
@@ -868,7 +927,165 @@ function filterUsers(tableId, selectId, searchId) {
   
   </script>
 
+<!-- script for creating classroom -->
+<!-- <script>
+  function openModal(id) {
+    document.getElementById(id).style.display = "block";
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).style.display = "none";
+  }
+
+  function openEditClassroom(id, name, teacherIds) {
+    document.getElementById("edit_classroom_id").value = id;
+    document.getElementById("edit_name").value = name;
+
+    const teacherSelect = document.getElementById("edit_teacher_ids");
+    Array.from(teacherSelect.options).forEach(opt => {
+      opt.selected = teacherIds.includes(parseInt(opt.value));
+    });
+
+    document.getElementById("editClassroomForm").action = `/admin/classrooms/${id}/edit`;
+    openModal('editClassroomModal');
+  }
+
+    document.getElementById("createClassroomForm").onsubmit = async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+
+    const res = await fetch("/admin/classrooms/new", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      alert("✅ Classroom created!");
+
+      // 🔄 Dynamically add new row to the classrooms table
+      const tbody = document.querySelector("table.user-table tbody");
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${data.classroom.name}</td>
+        <td id="student-count-${data.classroom.id}">${data.classroom.student_count}</td>
+        <td id="teacher-count-${data.classroom.id}">${data.classroom.teacher_count}</td>
+        <td id="instructor-count-${data.classroom.id}">${data.classroom.instructor_count}</td>
+        <td>
+          <button class="btn-edit" onclick="toggleStudents('${data.classroom.id}')">👁 View Students</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+
+      closeModal("createClassroomModal"); // close modal
+      e.target.reset(); // reset form
+    } else {
+      alert("❌ " + data.message);
+    }
+  };
+
+</script> -->
+
+<script>
+  function openModal(id) {
+    document.getElementById(id).style.display = "block";
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).style.display = "none";
+  }
+
+  function openEditClassroom(id, name, teacherIds) {
+    document.getElementById("edit_classroom_id").value = id;
+    document.getElementById("edit_name").value = name;
+
+    const teacherSelect = document.getElementById("edit_teacher_ids");
+    Array.from(teacherSelect.options).forEach(opt => {
+      opt.selected = teacherIds.includes(parseInt(opt.value));
+    });
+
+    document.getElementById("editClassroomForm").action = `/admin/classrooms/${id}/edit`;
+    openModal('editClassroomModal');
+  }
+
+  // ✅ Fixed create classroom submission
+  document.getElementById("createClassroomForm").onsubmit = async (e) => {
+    e.preventDefault();
+
+    // Convert form into plain object
+    const formData = new FormData(e.target);
+    const payload = Object.fromEntries(formData.entries());
+
+    // Handle multiple teacher_ids properly
+    if (formData.getAll("teacher_id").length > 0) {
+      payload.teacher_id = formData.getAll("teacher_id");
+    }
+
+    const res = await fetch("/admin/classrooms/new", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      alert("✅ Classroom created!");
+
+      // 🔄 Add new row to the table dynamically
+      const tbody = document.querySelector("table.user-table tbody");
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${data.classroom.name}</td>
+        <td id="student-count-${data.classroom.id}">${data.classroom.student_count}</td>
+        <td id="teacher-count-${data.classroom.id}">${data.classroom.teacher_count}</td>
+        <td id="instructor-count-${data.classroom.id}">${data.classroom.instructor_count}</td>
+        <td>
+          <button class="btn-edit" onclick="toggleStudents('${data.classroom.id}')">👁 View Students</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+
+      closeModal("createClassroomModal");
+      e.target.reset();
+    } else {
+      alert("❌ " + data.message);
+    }
+  };
+</script>
 
 
+<script>
+  // Handle Edit Classroom form
+  document.getElementById("editClassroomForm").onsubmit = async (e) => {
+    e.preventDefault();
+
+    const classroomId = document.getElementById("edit_classroom_id").value;
+    const formData = new FormData(e.target);
+
+    const res = await fetch(`/admin/classrooms/${classroomId}/edit`, {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert("✅ Classroom updated!");
+
+      // 🔄 Update classroom row in the table dynamically
+      document.querySelector(`#student-count-${classroomId}`).textContent =
+        data.classroom.student_count;
+      document.querySelector(`#teacher-count-${classroomId}`).textContent =
+        data.classroom.teacher_count;
+      document.querySelector(`#instructor-count-${classroomId}`).textContent =
+        data.classroom.instructor_count;
+
+      closeModal("editClassroomModal");
+    } else {
+      alert("❌ " + data.message);
+    }
+  };
+</script>
 
 

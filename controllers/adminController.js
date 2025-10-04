@@ -2119,6 +2119,119 @@ exports.getSchoolDetails = async (req, res) => {
   }
 };
 
+// exports.createClassroom = async (req, res) => {
+//   let schoolId;
+
+//   // If main admin, schoolId comes from form input
+//   if (req.session.user.role === "admin") {
+//     schoolId = req.body.school_id;
+//   } else {
+//     // If school admin, take their own school_id
+//     schoolId = req.session.user.school_id;
+//   }
+
+//   const { name, teacher_id } = req.body;
+
+//   try {
+//     // Step 1: create classroom
+//     const result = await pool.query(
+//       "INSERT INTO classrooms (school_id, name) VALUES ($1, $2) RETURNING id, school_id",
+//       [schoolId, name]
+//     );
+
+//     const classroomId = result.rows[0].id;
+//     schoolId = result.rows[0].school_id; // ✅ guaranteed defined
+//     await logActivityForUser(req, "Classroom created", `Classroom: ${name}`);
+
+//     // Step 2: assign teachers (into classroom_teachers)
+//     if (teacher_id) {
+//       const teacherIds = Array.isArray(teacher_id) ? teacher_id : [teacher_id];
+//       for (const tid of teacherIds) {
+//         await pool.query(
+//           `INSERT INTO classroom_teachers (classroom_id, teacher_id)
+//            VALUES ($1, $2)
+//            ON CONFLICT (classroom_id, teacher_id) DO NOTHING`,
+//           [classroomId, tid]
+//         );
+//       }
+//     }
+
+//     // ✅ Always redirect to school details page
+//     res.redirect(`/admin/schools/${schoolId}`);
+//   } catch (err) {
+//     console.error("Error creating classroom:", err);
+//     res.status(500).send("Server error while creating classroom");
+//   }
+// };
+
+exports.createClassroom = async (req, res) => {
+  try {
+    const { school_id, name, teacher_id } = req.body; // destructure first
+
+    let schoolId;
+    if (req.session.user.role === "admin") {
+      schoolId = school_id; // from hidden input
+    } else {
+      schoolId = req.session.user.school_id; // from session
+    }
+
+    if (!schoolId || !name) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: school_id or name",
+      });
+    }
+
+    // Insert classroom
+    const result = await pool.query(
+      `INSERT INTO classrooms (school_id, name) 
+       VALUES ($1, $2) 
+       RETURNING id, school_id`,
+      [schoolId, name]
+    );
+
+    const classroomId = result.rows[0].id;
+
+    // Assign teachers if provided
+    let teacherCount = 0;
+    if (teacher_id) {
+      const teacherIds = Array.isArray(teacher_id) ? teacher_id : [teacher_id];
+      teacherCount = teacherIds.length;
+
+      for (const tid of teacherIds) {
+        await pool.query(
+          `INSERT INTO classroom_teachers (classroom_id, teacher_id)
+           VALUES ($1, $2)
+           ON CONFLICT (classroom_id, teacher_id) DO NOTHING`,
+          [classroomId, tid]
+        );
+      }
+    }
+
+    // ✅ Return JSON
+    return res.json({
+      success: true,
+      classroom: {
+        id: classroomId,
+        name,
+        school_id: schoolId,
+        teacher_count: teacherCount,
+        student_count: 0,
+        instructor_count: 0,
+      },
+    });
+  } catch (err) {
+    console.error("Error creating classroom:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while creating classroom",
+    });
+  }
+};
+
+
+
+
 // 📌 GET: Students in a classroom (AJAX)
 exports.getClassroomStudents = async (req, res) => {
   try {
