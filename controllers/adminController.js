@@ -2037,21 +2037,28 @@ exports.getSchoolDetails = async (req, res) => {
       [id]
     );
 
-    // ✅ Fetch ALL instructors globally
+    // Fetch instructors (restricted to this school’s classrooms)
     const instructorsResult = await pool.query(
       `
-  SELECT 
-    u.id,
-    u.fullname AS full_name,
-    u.email,
-    COALESCE(string_agg(DISTINCT c.name, ', '), 'Not yet assigned') AS classrooms
-  FROM users2 u
-  LEFT JOIN classroom_instructors ci ON ci.instructor_id = u.id
-  LEFT JOIN classrooms c ON ci.classroom_id = c.id
-  WHERE u.role = 'instructor'
-  GROUP BY u.id, u.fullname, u.email
-  ORDER BY u.fullname
-  `
+      SELECT 
+        u.id,
+        u.fullname AS full_name,
+        u.email,
+        COALESCE(
+          string_agg(DISTINCT c.name, ', ' ORDER BY c.name), 
+          'Not yet assigned'
+        ) AS classrooms
+      FROM users2 u
+      LEFT JOIN classroom_instructors ci 
+        ON ci.instructor_id = u.id
+      LEFT JOIN classrooms c 
+        ON ci.classroom_id = c.id AND c.school_id = $1   -- ✅ only restrict classrooms, not instructors
+      WHERE u.role = 'instructor'
+      GROUP BY u.id, u.fullname, u.email
+      ORDER BY u.fullname;
+
+      `,
+      [id]
     );
 
     // Fetch classrooms + counts
@@ -2096,8 +2103,6 @@ exports.getSchoolDetails = async (req, res) => {
   `,
       [id]
     );
-
-
 
     // Attach
     school.students = studentsResult.rows;
@@ -2229,7 +2234,76 @@ exports.createClassroom = async (req, res) => {
   }
 };
 
+// ✅ UPDATE CLASSROOM
+exports.updateClassroom = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, teacher_ids } = req.body;
 
+    if (!id || !name) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing classroom ID or name" });
+    }
+
+    // Update classroom name
+    await pool.query(`UPDATE classrooms SET name = $1 WHERE id = $2`, [
+      name,
+      id,
+    ]);
+
+    // Reassign teachers if provided
+    if (teacher_ids) {
+      const teacherIds = Array.isArray(teacher_ids)
+        ? teacher_ids
+        : [teacher_ids];
+
+      // Remove old assignments
+      await pool.query(
+        `DELETE FROM classroom_teachers WHERE classroom_id = $1`,
+        [id]
+      );
+
+      // Add new ones
+      for (const tid of teacherIds) {
+        await pool.query(
+          `INSERT INTO classroom_teachers (classroom_id, teacher_id) VALUES ($1, $2)`,
+          [id, parseInt(tid)]
+        );
+      }
+    }
+
+    return res.json({ success: true, message: "Classroom updated successfully" });
+  } catch (err) {
+    console.error("Error updating classroom:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Server error while updating classroom" });
+  }
+};
+
+
+// 🗑️ DELETE CLASSROOM
+exports.deleteClassroom = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Clear related records
+    await pool.query(`DELETE FROM classroom_teachers WHERE classroom_id = $1`, [id]);
+    await pool.query(`DELETE FROM classroom_instructors WHERE classroom_id = $1`, [id]);
+    // await pool.query(`DELETE FROM classroom_students WHERE classroom_id = $1`, [id]);
+
+    // Delete classroom
+    await pool.query(`DELETE FROM classrooms WHERE id = $1`, [id]);
+
+    return res.json({ success: true, message: "Classroom deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting classroom:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Server error while deleting classroom" });
+  }
+};
 
 
 // 📌 GET: Students in a classroom (AJAX)

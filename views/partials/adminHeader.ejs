@@ -16,7 +16,8 @@
         <% } %>
         <p><%= info?.company_name || 'Jaykirch Tech Hub' %></p>
       </div>
-      <button class="nav-toggle" onclick="toggleNav()">☰</button>
+      <!-- <button class="nav-toggle" onclick="toggleNav()">☰</button> -->
+       <button id="nav-toggle-btn" class="nav-toggle" onclick="toggleNav()" aria-expanded="false" aria-controls="main-nav">☰</button>
       <nav id="main-nav">
         <a class="active" href="<%= role === 'admin' ? '/admin/dashboard' : '/instructor/dashboard' %>">
           Dashboard
@@ -84,5 +85,53 @@
         <a href="/admin/logout" class="logout-button">Logout</a>
       </nav>
     </header>
+
+    <script>
+      function toggleNav() {
+        var nav = document.getElementById("main-nav");
+        nav.classList.toggle("open");
+      }
+
+    </script>
+
+    <script>
+  // Keep toggleNav globally so existing inline onclicks still work
+  window.toggleNav = function toggleNav() {
+    const nav = document.getElementById('main-nav');
+    const btn = document.getElementById('nav-toggle-btn');
+    if (!nav || !btn) return;
+    nav.classList.toggle('open');
+    btn.setAttribute('aria-expanded', nav.classList.contains('open'));
+  };
+
+  // Close nav when clicking outside (robust)
+  document.addEventListener('click', function (event) {
+    const nav = document.getElementById('main-nav');
+    const btn = document.getElementById('nav-toggle-btn');
+    if (!nav || !btn) return;
+
+    // if nav is closed, nothing to do
+    if (!nav.classList.contains('open')) return;
+
+    // if click occurred inside nav or on the toggle button — ignore
+    if (nav.contains(event.target) || btn.contains(event.target)) return;
+
+    // otherwise close nav
+    nav.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
+  }, true); // use capture to make this more robust
+
+  // Optional: close nav with Escape key
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      const nav = document.getElementById('main-nav');
+      const btn = document.getElementById('nav-toggle-btn');
+      if (nav && nav.classList.contains('open')) {
+        nav.classList.remove('open');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      }
+    }
+  });
+</script>
 </body>
 </html>
