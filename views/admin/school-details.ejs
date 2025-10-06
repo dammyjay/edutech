@@ -186,6 +186,8 @@
     style="margin-left:10px; padding:5px;"
   />
 
+  
+
   <!-- tabe for students -->
   <div class="table-responsive">
     <table id="studentsTable" class="user-table">
@@ -255,6 +257,26 @@
                 <button onclick="deleteClassroom('<%= c.id %>')">🗑 Delete</button>
               </td>
             </tr>
+
+            <!-- Add under each classroom row -->
+            <tr id="assign-multi-row-<%= c.id %>">
+              <td colspan="5">
+                <form onsubmit="assignUsers(event, '<%= c.id %>', 'student')">
+                  <label><strong>Assign Multiple Students to <%= c.name %>:</strong></label>
+                  <select id="studentMultiSelect-<%= c.id %>" multiple size="5" style="width:100%; margin-top:8px;">
+                    <% school.students
+                      .filter(s => !s.classroom_id) // only unassigned students
+                      .forEach(s => { %>
+                        <option value="<%= s.id %>"><%= s.full_name %> (<%= s.email %>)</option>
+                    <% }) %>
+                  </select>
+                  <button type="submit" style="margin-top:10px; background:#3498db; color:#fff; border:none; padding:8px 12px; border-radius:5px;">
+                    Assign Selected Students
+                  </button>
+                </form>
+              </td>
+            </tr>
+
 
             <!-- Hidden expandable row -->
             <tr id="students-row-<%= c.id %>" style="display:none;">
