@@ -155,8 +155,6 @@ async function createTables() {
     `);
 
     // table for event registrations
- 
-
     await pool.query(
       `CREATE TABLE IF NOT EXISTS event_registrations (
     id SERIAL PRIMARY KEY,

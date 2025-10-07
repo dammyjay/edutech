@@ -1929,7 +1929,6 @@ exports.getSchools = async (req, res) => {
 
 
 // 📌 GET: Single School Details
-
 exports.getSchoolDetails = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1955,6 +1954,21 @@ exports.getSchoolDetails = async (req, res) => {
       `,
       [id]
     );
+
+    // fetch courses offered by the school
+    const schoolCoursesResult = await pool.query(
+      `
+      SELECT c.id, c.title, c.level
+      FROM school_courses sc
+      JOIN courses c ON sc.course_id = c.id
+      WHERE sc.school_id = $1
+      ORDER BY c.title ASC
+      `,
+      [id]
+    );
+
+
+    school.courses = schoolCoursesResult.rows; // attach school courses
 
     // Fetch teachers
     const teachersResult = await pool.query(
@@ -2056,51 +2070,6 @@ exports.getSchoolDetails = async (req, res) => {
     res.status(500).send("Error loading school details");
   }
 };
-
-// exports.createClassroom = async (req, res) => {
-//   let schoolId;
-
-//   // If main admin, schoolId comes from form input
-//   if (req.session.user.role === "admin") {
-//     schoolId = req.body.school_id;
-//   } else {
-//     // If school admin, take their own school_id
-//     schoolId = req.session.user.school_id;
-//   }
-
-//   const { name, teacher_id } = req.body;
-
-//   try {
-//     // Step 1: create classroom
-//     const result = await pool.query(
-//       "INSERT INTO classrooms (school_id, name) VALUES ($1, $2) RETURNING id, school_id",
-//       [schoolId, name]
-//     );
-
-//     const classroomId = result.rows[0].id;
-//     schoolId = result.rows[0].school_id; // ✅ guaranteed defined
-//     await logActivityForUser(req, "Classroom created", `Classroom: ${name}`);
-
-//     // Step 2: assign teachers (into classroom_teachers)
-//     if (teacher_id) {
-//       const teacherIds = Array.isArray(teacher_id) ? teacher_id : [teacher_id];
-//       for (const tid of teacherIds) {
-//         await pool.query(
-//           `INSERT INTO classroom_teachers (classroom_id, teacher_id)
-//            VALUES ($1, $2)
-//            ON CONFLICT (classroom_id, teacher_id) DO NOTHING`,
-//           [classroomId, tid]
-//         );
-//       }
-//     }
-
-//     // ✅ Always redirect to school details page
-//     res.redirect(`/admin/schools/${schoolId}`);
-//   } catch (err) {
-//     console.error("Error creating classroom:", err);
-//     res.status(500).send("Server error while creating classroom");
-//   }
-// };
 
 exports.createClassroom = async (req, res) => {
   try {
@@ -2238,7 +2207,6 @@ exports.deleteClassroom = async (req, res) => {
   }
 };
 
-
 // 📌 GET: Students in a classroom (AJAX)
 exports.getClassroomStudents = async (req, res) => {
   try {
@@ -2260,6 +2228,64 @@ exports.getClassroomStudents = async (req, res) => {
   }
 };
 
+exports.assignCoursesToClassroom = async (req, res) => {
+  try {
+    const { id } = req.params; // classroom_id
+    const { course_ids } = req.body; // array of selected course IDs
+
+    if (!course_ids || course_ids.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No courses selected" });
+    }
+
+    // Clear old assignments
+    await pool.query("DELETE FROM classroom_courses WHERE classroom_id = $1", [
+      id,
+    ]);
+
+    // Insert new ones
+    const values = course_ids.map((cid) => `(${id}, ${cid})`).join(",");
+    await pool.query(
+      `INSERT INTO classroom_courses (classroom_id, course_id) VALUES ${values}`
+    );
+
+    res.json({
+      success: true,
+      message: "Courses assigned to classroom successfully",
+    });
+  } catch (err) {
+    console.error("Error assigning courses to classroom:", err);
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Server error while assigning courses",
+      });
+  }
+};
+
+exports.getClassroomCourses = async (req, res) => {
+  try {
+    const { id } = req.params; // classroom_id
+
+    const result = await pool.query(
+      `
+      SELECT c.id, c.title, c.level
+      FROM classroom_courses cc
+      JOIN courses c ON cc.course_id = c.id
+      WHERE cc.classroom_id = $1
+      ORDER BY c.title ASC
+      `,
+      [id]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching classroom courses:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
 
 
 // 📌 GET: Quotes

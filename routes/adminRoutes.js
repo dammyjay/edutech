@@ -278,5 +278,11 @@ router.put("/classrooms/:id", adminController.updateClassroom);
 
 // DELETE classroom
 router.delete("/classrooms/:id", adminController.deleteClassroom);
+router.post(
+  "/classrooms/:id/assign-courses",
+  adminController.assignCoursesToClassroom
+);
+
+router.get("/classrooms/:id/courses", adminController.getClassroomCourses);
 
 module.exports = router;

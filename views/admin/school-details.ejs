@@ -63,12 +63,40 @@
     
 </section>
 
+<section class="section">
+  <h3>🎓 Courses Assigned to This School</h3>
+
+  <% if (school.courses.length > 0) { %>
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Level</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% school.courses.forEach(course => { %>
+          <tr>
+            <td><%= course.title %></td>
+            <td><%= course.level || '-' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>No courses assigned yet.</p>
+  <% } %>
+</section>
+
+
 <!-- Navigation Tabs -->
 <div class="nav-tabs">
   <button class="tab-btn active" onclick="openTab('teachers-section', this)">👩‍🏫 Teachers</button>
   <button class="tab-btn" onclick="openTab('instructors-section', this)">🧑‍🏫 Instructors</button>
   <button class="tab-btn" onclick="openTab('students-section', this)">🎓 Students</button>
   <button class="tab-btn" onclick="openTab('classrooms-section', this)">🏫 Classrooms</button>
+  <button class="tab-btn" onclick="openTab('course-assignment-section', this)">📘 Assign Courses</button>
+
 </div>
 
 
@@ -226,7 +254,7 @@
 </div>
 <hr>
 
-
+<!-- classrooms section  -->
 <div id="classrooms-section" style="display:none;">
   <button class="btn-edit" onclick="openModal('createClassroomModal')" style="margin-bottom:15px;">
     ➕ Create Classroom
@@ -240,6 +268,7 @@
           <th>No. of Students</th>
           <th>No. of Teachers</th>
           <th>No. of Instructors</th>
+          <th>Course</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -252,11 +281,17 @@
               <td id="teacher-count-<%= c.id %>"><%= c.teacher_count %></td>
               <td id="instructor-count-<%= c.id %>"><%= c.instructor_count %></td>
               <td>
+                <div id="classroom-courses-<%= c.id %>" data-classroom-id="<%= c.id %>">
+                  <em>Loading courses...</em>
+                </div>
+              </td>
+              <td>
                 <button onclick="toggleStudents('<%= c.id %>')">👁 View / Manage</button>
                 <button onclick="updateClassroom('<%= c.id %>', { name: prompt('New name?') })">✏ Edit</button>
                 <button onclick="deleteClassroom('<%= c.id %>')">🗑 Delete</button>
               </td>
             </tr>
+
 
             <!-- Add under each classroom row -->
             <tr id="assign-multi-row-<%= c.id %>">
@@ -294,6 +329,40 @@
     </table>
   </div>
 </div>
+
+<!-- assigning course section -->
+<div id="course-assignment-section" style="display:none;">
+  <h3>📘 Assign Courses to Classrooms</h3>
+
+  <form id="assignCourseForm" onsubmit="assignCourseToClassroom(event)">
+    <label><strong>Select Classroom:</strong></label>
+    <select id="classroomSelect" required style="width:100%; padding:8px; margin:10px 0;">
+      <option value="">-- Choose Classroom --</option>
+      <% school.classrooms.forEach(c => { %>
+        <option value="<%= c.id %>"><%= c.name %></option>
+      <% }) %>
+    </select>
+
+    <label><strong>Select Course(s):</strong></label>
+    <select id="courseSelect" multiple required size="6" style="width:100%; padding:8px; margin:10px 0;">
+      <% school.courses.forEach(course => { %>
+        <option value="<%= course.id %>"><%= course.title %> - Level <%= course.level || '—' %></option>
+      <% }) %>
+    </select>
+
+    <button type="submit" style="background:#3498db; color:#fff; border:none; padding:10px 15px; border-radius:5px;">
+      Assign Selected Courses
+    </button>
+  </form>
+
+  <hr>
+
+  <h4>📋 Classroom Course Assignments</h4>
+  <div id="classroomCourseList">
+    <p><em>Select a classroom to view assigned courses.</em></p>
+  </div>
+</div>
+
 
 
 <!-- Create Classroom Modal -->
@@ -454,7 +523,7 @@
 <script>
 function openTab(sectionId, btn) {
   // Hide all sections
-  const sections = ['teachers-section', 'instructors-section', 'students-section', 'classrooms-section'];
+  const sections = ['teachers-section', 'instructors-section', 'students-section', 'classrooms-section', 'course-assignment-section'];
   sections.forEach(id => {
     document.getElementById(id).style.display = 'none';
   });
@@ -1161,6 +1230,82 @@ async function deleteClassroom(id) {
 
 </script>
 
+
+<!-- script for assigning courses to classroom -->
+<script>
+async function assignCourseToClassroom(e) {
+  e.preventDefault();
+
+  const classroomId = document.getElementById("classroomSelect").value;
+  const selectedCourses = Array.from(document.getElementById("courseSelect").selectedOptions)
+    .map(opt => opt.value);
+
+  if (!classroomId || selectedCourses.length === 0) {
+    return alert("⚠️ Please select a classroom and at least one course.");
+  }
+
+  try {
+    const res = await fetch(`/admin/classrooms/${classroomId}/assign-courses`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ course_ids: selectedCourses })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to assign courses.");
+
+    alert("✅ Courses assigned successfully!");
+    await refreshAllClassroomCourses(); // refresh table courses
+
+  } catch (err) {
+    console.error("Assignment error:", err);
+    alert("❌ " + (err.message || "Request failed. Try again."));
+  }
+}
+
+
+// 🧩 Load courses for a single classroom
+async function loadClassroomCoursesById(classroomId) {
+  const container = document.getElementById(`classroom-courses-${classroomId}`);
+  if (!container) return;
+
+  container.innerHTML = "<em>Loading...</em>";
+
+  try {
+    const res = await fetch(`/admin/classrooms/${classroomId}/courses`);
+    const data = await res.json();
+
+    if (!res.ok) throw new Error("Failed to load courses.");
+
+    if (!data || data.length === 0) {
+      container.innerHTML = "<em>No courses assigned yet.</em>";
+      return;
+    }
+
+    container.innerHTML = data.map(c => `<span class="course-tag">${c.title}</span>`).join(", ");
+
+  } catch (err) {
+    console.error("Error loading courses:", err);
+    container.innerHTML = "<span style='color:red;'>❌ Error loading</span>";
+  }
+}
+
+
+// 🔁 Refresh all classrooms at once (used on page load or after assigning)
+async function refreshAllClassroomCourses() {
+  const all = document.querySelectorAll("[id^='classroom-courses-']");
+  for (const el of all) {
+    const id = el.dataset.classroomId;
+    if (id) await loadClassroomCoursesById(id);
+  }
+}
+
+
+// 🎯 When page loads, populate all classroom course cells
+document.addEventListener("DOMContentLoaded", () => {
+  refreshAllClassroomCourses();
+});
+</script>
 
 
 
