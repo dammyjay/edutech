@@ -96,6 +96,206 @@
       </table>
     </div>
 
+
+<hr>
+
+  <% const messages = receivedMessages || []; %>
+  <h2>📨 Recent Messages Received (<%= messages.length %>)</h2>
+
+  <% if (messages.length > 0) { %>
+    <div class="table-responsive">
+      <table class="user-table" style="width: 80%; border-collapse: collapse; margin-top: 20px">
+        <thead>
+          <tr>
+            <th>Sender Name</th>
+            <th>Email</th>
+            <th>Message</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% receivedMessages.forEach(msg => { %>
+            <tr>
+              <td><%= msg.sender_name %></td>
+              <td><%= msg.sender_email %></td>
+              <td>
+                <%= msg.message %>
+                <br>
+                <button 
+                  onclick="openReplyBox(<%= msg.sender_id %>, '<%= msg.sender_name %>')" 
+                  style="background:#3498db; color:white; border:none; padding:4px 8px; border-radius:5px; margin-top:4px;">
+                  💬 Reply
+                </button>
+              </td>
+              <td><%= new Date(msg.created_at).toLocaleString() %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <p style="color:gray;">No messages received yet.</p>
+  <% } %>
+
+
+<!-- Reply Box -->
+<div id="replyBox" style="display:none; margin-top:20px; background:#f9f9f9; padding:10px; border-radius:8px; width:60%;">
+  <h4>Replying to <span id="replyToName"></span></h4>
+  <input type="hidden" id="replyReceiverId">
+  <textarea id="replyMessage" rows="3" style="width:100%; padding:8px;"></textarea>
+  <br>
+  <button onclick="sendReply()" style="background:#2ecc71; color:white; border:none; padding:8px 12px; border-radius:5px; margin-top:5px;">Send Reply</button>
+  <button onclick="closeReplyBox()" style="background:#ccc; padding:8px 12px; border:none; border-radius:5px; margin-top:5px;">Cancel</button>
+</div>
+
+
+    <hr>
+<h2>💬 Messages from Students</h2>
+
+<div style="margin-top: 20px;">
+  <label for="studentSelect"><strong>Select Student:</strong></label>
+  <select id="studentSelect" onchange="loadMessages()" style="padding: 5px;">
+    <option value="">-- Select Student --</option>
+    <% students.forEach(s => { %>
+      <option value="<%= s.id %>"><%= s.full_name %> (<%= s.email %>)</option>
+    <% }) %>
+  </select>
+</div>
+
+<!-- Chat box -->
+<div id="chatBox" style="display:none; border:1px solid #ccc; border-radius:8px; margin-top:20px; padding:10px; max-width:600px; height:400px; overflow-y:auto; background:#fafafa;">
+  <div id="messages"></div>
+</div>
+
+<!-- Message input -->
+<div id="messageInputArea" style="display:none; margin-top:10px;">
+  <input type="text" id="chatMessage" placeholder="Type your message..." style="width:80%; padding:8px;" />
+  <button onclick="sendMessage()" style="padding:8px 12px; background:#3498db; color:#fff; border:none; border-radius:5px;">Send</button>
+</div>
+
+<script>
+const instructorId = "<%= info.id %>"; // logged-in instructor id
+
+async function loadMessages() {
+  const studentId = document.getElementById("studentSelect").value;
+  const chatBox = document.getElementById("chatBox");
+  const msgDiv = document.getElementById("messages");
+  const inputArea = document.getElementById("messageInputArea");
+
+  if (!studentId) {
+    chatBox.style.display = "none";
+    inputArea.style.display = "none";
+    return;
+  }
+
+  chatBox.style.display = "block";
+  inputArea.style.display = "block";
+
+  try {
+    const res = await fetch(`/student/chat/messages/${studentId}`);
+    const data = await res.json();
+
+    msgDiv.innerHTML = "";
+    if (data.length === 0) {
+      msgDiv.innerHTML = "<p style='text-align:center; color:gray;'>No messages yet.</p>";
+    } else {
+      data.forEach(msg => {
+        const msgEl = document.createElement("div");
+        msgEl.style.margin = "8px 0";
+        msgEl.style.textAlign = msg.sender === "self" ? "right" : "left";
+        msgEl.innerHTML = `
+          <div style="display:inline-block; padding:8px 12px; border-radius:10px;
+                      background:${msg.sender === "self" ? "#d1f1ff" : "#f1f1f1"};">
+            ${msg.message}
+            <br>
+            <small style="font-size:10px; color:gray;">${new Date(msg.created_at).toLocaleTimeString()}</small>
+          </div>
+        `;
+        msgDiv.appendChild(msgEl);
+      });
+      msgDiv.scrollTop = msgDiv.scrollHeight;
+    }
+  } catch (err) {
+    console.error("Load messages error:", err);
+    msgDiv.innerHTML = "<p style='color:red;'>Failed to load messages.</p>";
+  }
+}
+
+async function sendMessage() {
+  const studentId = document.getElementById("studentSelect").value;
+  const message = document.getElementById("chatMessage").value.trim();
+
+  if (!studentId || !message) return alert("Please select a student and type a message.");
+
+  try {
+    const res = await fetch("/student/chat/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ receiverId: studentId, message })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById("chatMessage").value = "";
+      await loadMessages(); // Refresh chat
+    } else {
+      alert("❌ " + data.message);
+    }
+  } catch (err) {
+    console.error("Send message error:", err);
+    alert("Server error sending message.");
+  }
+}
+
+// Auto-refresh chat every 5 seconds
+setInterval(() => {
+  const studentId = document.getElementById("studentSelect").value;
+  if (studentId) loadMessages();
+}, 5000);
+</script>
+
+<script>
+function openReplyBox(receiverId, name) {
+  document.getElementById('replyBox').style.display = 'block';
+  document.getElementById('replyToName').textContent = name;
+  document.getElementById('replyReceiverId').value = receiverId;
+}
+
+function closeReplyBox() {
+  document.getElementById('replyBox').style.display = 'none';
+  document.getElementById('replyMessage').value = '';
+}
+
+async function sendReply() {
+  const receiverId = document.getElementById('replyReceiverId').value;
+  const message = document.getElementById('replyMessage').value.trim();
+
+  if (!message) return alert("Please type a message.");
+
+  try {
+    const res = await fetch("/student/chat/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ receiverId, message })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      alert("✅ Reply sent successfully!");
+      closeReplyBox();
+      location.reload();
+    } else {
+      alert("❌ " + data.message);
+    }
+  } catch (err) {
+    console.error("Reply error:", err);
+    alert("Server error sending reply.");
+  }
+}
+</script>
+
+
+
     <!-- script for navbar hamburger -->
     <script>
       function toggleNav() {

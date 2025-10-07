@@ -648,7 +648,8 @@ async function createTables() {
         receiver_id INT REFERENCES users2(id) ON DELETE CASCADE,
         message TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT NOW(),
-        is_read BOOLEAN DEFAULT FALSE
+        is_read BOOLEAN DEFAULT FALSE,
+        is_delivered BOOLEAN DEFAULT FALSE
       );
 
       `);

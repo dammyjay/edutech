@@ -1,0 +1,120 @@
+<%- include('../partials/adminHeader', { info: info, role: role, profilePic: profilePic, user: user }) %>
+
+<h2 style="margin-top:20px;">💬 Chat with <%= student.fullname %></h2>
+<p><%= student.email %></p>
+
+<div id="chatContainer"
+     style="border:1px solid #ccc; border-radius:10px; padding:15px; width:90%; max-width:700px; height:400px; overflow-y:auto; background:#fafafa;">
+  <% if (messages.length > 0) { %>
+    <% messages.forEach(msg => { %>
+      <div style="text-align:<%= msg.sender === 'self' ? 'right' : 'left' %>; margin:8px 0;">
+        <div style="display:inline-block; padding:8px 12px; border-radius:10px;
+                    background:<%= msg.sender === 'self' ? '#d1f1ff' : '#f1f1f1' %>;">
+          <%= msg.message %>
+          <br>
+          <small style="color:gray; font-size:10px;">
+            <%= new Date(msg.created_at).toLocaleTimeString() %>
+            <% if (msg.sender === 'self') { %>
+              <% if (msg.is_read) { %> ✅✅
+              <% } else if (msg.is_delivered) { %> ✅
+              <% } else { %> ⏳
+              <% } %>
+            <% } %>
+          </small>
+        </div>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <p style="text-align:center; color:gray;">No messages yet.</p>
+  <% } %>
+</div>
+
+<div style="margin-top:10px; width:90%; max-width:700px;">
+  <textarea id="chatMessage" rows="2" placeholder="Type your message..."
+            style="width:80%; padding:8px;"></textarea>
+  <button onclick="sendMessage()"
+          style="padding:8px 12px; background:#3498db; color:white; border:none; border-radius:5px;">
+    Send
+  </button>
+</div>
+
+<script>
+const studentId = "<%= student.id %>";
+const chatContainer = document.getElementById('chatContainer');
+
+// Scroll to bottom on load
+chatContainer.scrollTop = chatContainer.scrollHeight;
+
+// ✅ Send message
+async function sendMessage() {
+  const message = document.getElementById('chatMessage').value.trim();
+  if (!message) return alert('Please type a message.');
+
+  try {
+    const res = await fetch('/student/chat/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ receiverId: studentId, message })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('chatMessage').value = '';
+      await loadNewMessages();
+    } else {
+      alert('❌ ' + data.message);
+    }
+  } catch (err) {
+    console.error('Send message error:', err);
+    alert('Server error sending message.');
+  }
+}
+
+// ✅ Auto-refresh chat every 5s
+async function loadNewMessages() {
+  try {
+    const res = await fetch(`/student/chat/messages/${studentId}`);
+    const messages = await res.json();
+
+    chatContainer.innerHTML = '';
+    messages.forEach(msg => {
+      const msgDiv = document.createElement('div');
+      msgDiv.style.textAlign = msg.sender === 'self' ? 'right' : 'left';
+      msgDiv.style.margin = '8px 0';
+
+      let statusIcon = '';
+      if (msg.sender === 'self') {
+        if (msg.is_read) statusIcon = '✅✅';
+        else if (msg.is_delivered) statusIcon = '✅';
+        else statusIcon = '⏳';
+      }
+
+      msgDiv.innerHTML = `
+        <div style="display:inline-block; padding:8px 12px; border-radius:10px;
+                    background:${msg.sender === 'self' ? '#d1f1ff' : '#f1f1f1'};">
+          ${msg.message}
+          <br>
+          <small style="color:gray; font-size:10px;">
+            ${new Date(msg.created_at).toLocaleTimeString()} ${statusIcon}
+          </small>
+        </div>`;
+      chatContainer.appendChild(msgDiv);
+    });
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  } catch (err) {
+    console.error('Error loading messages:', err);
+  }
+}
+
+// 🔄 Auto refresh
+setInterval(loadNewMessages, 5000);
+
+// ✅ Mark messages as read when chat opens
+(async () => {
+  try {
+    await fetch(`/student/chat/markRead/${studentId}`, { method: 'POST' });
+  } catch (err) {
+    console.warn('Failed to mark messages as read:', err);
+  }
+})();
+</script>

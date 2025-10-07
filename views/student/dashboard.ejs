@@ -298,11 +298,33 @@
                  class="card-avatar" style=" object-fit:contain;">
             <h3><%= t.fullname %></h3>
           </div>
+          <!-- <div class="card-body">
+            <p><strong>Email:</strong> <%= t.email %></p>
+            <p><strong>Role:</strong> Teacher</p>
+          </div> -->
           <div class="card-body">
             <p><strong>Email:</strong> <%= t.email %></p>
             <p><strong>Role:</strong> Teacher</p>
+
+            <!-- 💬 Chat Button -->
+            <button class="btn-chat" onclick="openChat('<%= t.id %>', '<%= t.fullname %>')">💬 Chat</button>
+
+           
           </div>
+
         </div>
+         <!-- Chat Modal -->
+            <div id="chatModal-<%= t.id %>" class="chat-modal">
+              <div class="chat-content">
+                <span class="close-chat" onclick="closeChat('<%= t.id %>')">&times;</span>
+                <h3>Chat with <%= t.fullname %></h3>
+                <div class="chat-messages" id="chatMessages-<%= t.id %>"></div>
+                <div class="chat-input">
+                  <input type="text" id="chatInput-<%= t.id %>" placeholder="Type a message..." />
+                  <button onclick="sendChat('<%= t.id %>')">Send</button>
+                </div>
+              </div>
+            </div>
       <% }) %>
     </div>
   <% } else { %>
@@ -321,11 +343,33 @@
                  class="card-avatar" style="object-fit:contain;">
             <h3><%= i.fullname %></h3>
           </div>
-          <div class="card-body">
+          <!-- <div class="card-body">
             <p><strong>Email:</strong> <%= i.email %></p>
             <p><strong>Role:</strong> Instructor</p>
-          </div>
+          </div> -->
+        
+           <div class="card-body">
+              <p><strong>Email:</strong> <%= i.email %></p>
+              <p><strong>Role:</strong> Instructor</p>
+
+              <!-- 💬 Chat Button -->
+              <button class="btn-chat" onclick="openChat('<%= i.id %>', '<%= i.fullname %>')">💬 Chat</button>
+
+             
+            </div>
         </div>
+         <!-- Chat Modal -->
+              <div id="chatModal-<%= i.id %>" class="chat-modal">
+                <div class="chat-content">
+                  <span class="close-chat" onclick="closeChat('<%= i.id %>')">&times;</span>
+                  <h3>Chat with <%= i.fullname %></h3>
+                  <div class="chat-messages" id="chatMessages-<%= i.id %>"></div>
+                  <div class="chat-input">
+                    <input type="text" id="chatInput-<%= i.id %>" placeholder="Type a message..." />
+                    <button onclick="sendChat('<%= i.id %>')">Send</button>
+                  </div>
+                </div>
+              </div>
       <% }) %>
     </div>
   <% } else { %>
@@ -448,8 +492,6 @@
     <% }) %>
   <% }) %>
 </aside>
-
-
 
 
     <!-- Lesson Content Area -->
@@ -647,6 +689,62 @@
 <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- script to send and receive chat messages -->
+<script>
+function openChat(teacherId, teacherName) {
+  document.getElementById(`chatModal-${teacherId}`).style.display = 'block';
+  loadChatMessages(teacherId);
+}
+
+function closeChat(teacherId) {
+  document.getElementById(`chatModal-${teacherId}`).style.display = 'none';
+}
+
+async function sendChat(teacherId) {
+  const input = document.getElementById(`chatInput-${teacherId}`);
+  const message = input.value.trim();
+  if (!message) return;
+  input.value = '';
+
+  await fetch(`/student/chat/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ receiverId: teacherId, message })
+  });
+
+  loadChatMessages(teacherId);
+}
+async function loadChatMessages(teacherId) {
+  const res = await fetch(`/student/chat/messages/${teacherId}`);
+  const data = await res.json();
+  const container = document.getElementById(`chatMessages-${teacherId}`);
+
+  container.innerHTML = data
+    .map(msg => `
+      <div class="chat-bubble ${msg.sender === 'self' ? 'self' : 'other'}">
+        ${msg.message}
+        <small>${new Date(msg.created_at).toLocaleTimeString()}</small>
+      </div>
+    `)
+    .join('');
+}
+
+
+</script>
+
+<style>
+.chat-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.5); z-index:1000; }
+.chat-content { background:#fff; border-radius:8px; width:400px; max-width:90%; margin:80px auto; padding:15px; position:relative; }
+.chat-messages { max-height:300px; overflow-y:auto; border:1px solid #ddd; padding:10px; margin-bottom:10px; }
+.chat-bubble { margin:6px 0; padding:8px 10px; border-radius:10px; max-width:70%; }
+.chat-bubble.self { background:#e5f0ff; align-self:flex-end; margin-left:auto; }
+.chat-bubble.other { background:#f1f1f1; align-self:flex-start; }
+.chat-input { display:flex; gap:6px; }
+.chat-input input { flex:1; padding:6px 10px; }
+.close-chat { position:absolute; top:8px; right:10px; cursor:pointer; font-size:20px; }
+</style>
+
 
 <!-- Script for engagement char -->
 <script>

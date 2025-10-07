@@ -325,22 +325,109 @@ exports.dashboard = async (req, res) => {
   }
 };
 
+// exports.instructorDashboard = async (req, res) => {
+//   try {
+//     const instructorId = req.user.id; // assuming you're using passport/session middleware
+//     // Step 1: Get Ministry Info
+//     const infoResult = await pool.query(
+//       "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
+//     );
+//     const info = infoResult.rows[0];
+
+//     // 1. Total courses
+//     const coursesCount = await pool.query(
+//       `SELECT COUNT(*) FROM courses WHERE instructor_id = $1`,
+//       [instructorId]
+//     );
+
+//     // 2. Total modules
+//     const modulesCount = await pool.query(
+//       `SELECT COUNT(*)
+//        FROM modules m
+//        JOIN courses c ON m.course_id = c.id
+//        WHERE c.instructor_id = $1`,
+//       [instructorId]
+//     );
+
+//     // 3. Total lessons
+//     const lessonsCount = await pool.query(
+//       `SELECT COUNT(*)
+//        FROM lessons l
+//        JOIN modules m ON l.module_id = m.id
+//        JOIN courses c ON m.course_id = c.id
+//        WHERE c.instructor_id = $1`,
+//       [instructorId]
+//     );
+
+//     // 4. Total students enrolled
+//     const studentsCount = await pool.query(
+//       `SELECT COUNT(DISTINCT e.user_id)
+//        FROM course_enrollments e
+//        JOIN courses c ON e.course_id = c.id
+//        WHERE c.instructor_id = $1`,
+//       [instructorId]
+//     );
+
+//     // 5. Assignment submissions across instructor’s courses
+//     const submissionsCount = await pool.query(
+//       `SELECT COUNT(*)
+//        FROM assignment_submissions s
+//        JOIN lessons l ON s.assignment_id = l.id
+//        JOIN modules m ON l.module_id = m.id
+//        JOIN courses c ON m.course_id = c.id
+//        WHERE c.instructor_id = $1`,
+//       [instructorId]
+//     );
+
+//     // Optionally, fetch instructor’s courses list with enrollments
+//     const coursesList = await pool.query(
+//       `SELECT c.id, c.title, COUNT(e.id) AS student_count
+//        FROM courses c
+//        LEFT JOIN course_enrollments e ON e.course_id = c.id
+//        WHERE c.instructor_id = $1
+//        GROUP BY c.id
+//        ORDER BY c.created_at DESC`,
+//       [instructorId]
+//     );
+
+//     const profilePic = req.session.user
+//       ? req.session.user.profile_picture
+//       : null;
+
+//     res.render("instructor/dashboard", {
+//       total_courses: parseInt(coursesCount.rows[0].count, 10),
+//       total_modules: parseInt(modulesCount.rows[0].count, 10),
+//       total_lessons: parseInt(lessonsCount.rows[0].count, 10),
+//       total_students: parseInt(studentsCount.rows[0].count, 10),
+//       total_submissions: parseInt(submissionsCount.rows[0].count, 10),
+//       courses: coursesList.rows,
+//       info,
+//       profilePic,
+//       role: "instructor", // ✅ pass role
+//       user: req.session.user,
+//     });
+//   } catch (err) {
+//     console.error("Instructor Dashboard Error:", err.message);
+//     res.status(500).send("Error loading dashboard");
+//   }
+// };
+
 exports.instructorDashboard = async (req, res) => {
   try {
-    const instructorId = req.user.id; // assuming you're using passport/session middleware
-    // Step 1: Get Ministry Info
+    const instructorId = req.user.id;
+
+    // ✅ Company Info
     const infoResult = await pool.query(
       "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
     );
     const info = infoResult.rows[0];
 
-    // 1. Total courses
+    // ✅ Teaching Stats
     const coursesCount = await pool.query(
       `SELECT COUNT(*) FROM courses WHERE instructor_id = $1`,
       [instructorId]
     );
 
-    // 2. Total modules
     const modulesCount = await pool.query(
       `SELECT COUNT(*) 
        FROM modules m
@@ -349,7 +436,6 @@ exports.instructorDashboard = async (req, res) => {
       [instructorId]
     );
 
-    // 3. Total lessons
     const lessonsCount = await pool.query(
       `SELECT COUNT(*) 
        FROM lessons l
@@ -359,7 +445,6 @@ exports.instructorDashboard = async (req, res) => {
       [instructorId]
     );
 
-    // 4. Total students enrolled
     const studentsCount = await pool.query(
       `SELECT COUNT(DISTINCT e.user_id) 
        FROM course_enrollments e
@@ -368,7 +453,6 @@ exports.instructorDashboard = async (req, res) => {
       [instructorId]
     );
 
-    // 5. Assignment submissions across instructor’s courses
     const submissionsCount = await pool.query(
       `SELECT COUNT(*) 
        FROM assignment_submissions s
@@ -379,7 +463,6 @@ exports.instructorDashboard = async (req, res) => {
       [instructorId]
     );
 
-    // Optionally, fetch instructor’s courses list with enrollments
     const coursesList = await pool.query(
       `SELECT c.id, c.title, COUNT(e.id) AS student_count
        FROM courses c
@@ -389,6 +472,41 @@ exports.instructorDashboard = async (req, res) => {
        ORDER BY c.created_at DESC`,
       [instructorId]
     );
+
+    // ✅ Students list (for dropdown)
+    const studentsResult = await pool.query(
+      `
+      SELECT u.id, u.fullname AS full_name, u.email
+      FROM users2 u
+      JOIN user_school us ON us.user_id = u.id
+      WHERE us.school_id = (
+        SELECT school_id FROM user_school WHERE user_id = $1 LIMIT 1
+      )
+      AND us.role_in_school = 'student'
+      ORDER BY u.fullname
+      `,
+      [instructorId]
+    );
+
+    // ✅ Recent messages sent *to* this instructor
+    const receivedMessagesResult = await pool.query(
+      `
+      SELECT 
+        m.id,
+        m.sender_id,
+        m.message,
+        m.created_at,
+        u.fullname AS sender_name,
+        u.email AS sender_email
+      FROM messages m
+      JOIN users2 u ON u.id = m.sender_id
+      WHERE m.receiver_id = $1
+      ORDER BY m.created_at DESC
+      LIMIT 10
+      `,
+      [instructorId]
+    );
+
 
     const profilePic = req.session.user
       ? req.session.user.profile_picture
@@ -401,16 +519,19 @@ exports.instructorDashboard = async (req, res) => {
       total_students: parseInt(studentsCount.rows[0].count, 10),
       total_submissions: parseInt(submissionsCount.rows[0].count, 10),
       courses: coursesList.rows,
+      students: studentsResult.rows,
+      receivedMessages: receivedMessagesResult.rows, // ✅ new
       info,
       profilePic,
-      role: "instructor", // ✅ pass role
+      role: "instructor",
       user: req.session.user,
     });
   } catch (err) {
-    console.error("Instructor Dashboard Error:", err.message);
+    console.error("Instructor Dashboard Error:", err);
     res.status(500).send("Error loading dashboard");
   }
 };
+
 
 exports.editUserForm = async (req, res) => {
   const userId = req.params.id;
@@ -1867,34 +1988,6 @@ exports.downloadCourseSummary = async (req, res) => {
   }
 };
 
-// 📌 GET: All Schools
-// exports.getSchools = async (req, res) => {
-//   try {
-//     const result = await pool.query(`
-//       SELECT
-//         s.id,
-//         s.name,
-//         s.email,
-//         s.phone,
-//         COUNT(*) FILTER (WHERE us.role_in_school = 'student') AS student_count,
-//         COUNT(*) FILTER (WHERE us.role_in_school = 'teacher') AS teacher_count
-//       FROM schools s
-//       LEFT JOIN user_school us ON s.id = us.school_id
-//       GROUP BY s.id
-//       ORDER BY s.created_at DESC
-//     `);
-
-//     res.render("admin/schools", {
-//       info: req.companyInfo || {},
-//       schools: result.rows,
-//       currentPage: "schools",
-//     });
-//   } catch (err) {
-//     console.error("Error fetching schools:", err);
-//     res.status(500).send("Error loading schools");
-//   }
-// };
-
 exports.getSchools = async (req, res) => {
   try {
     const result = await pool.query(`
@@ -1925,8 +2018,6 @@ exports.getSchools = async (req, res) => {
     res.status(500).send("Error loading schools");
   }
 };
-
-
 
 // 📌 GET: Single School Details
 exports.getSchoolDetails = async (req, res) => {
@@ -2954,8 +3045,157 @@ exports.assignUsersToClassroom = async (req, res) => {
   }
 };
 
+exports.sendChatMessage = async (req, res) => {
+  try {
+    const { receiverId, message } = req.body;
+    const senderId = req.session.user?.id; // Use logged-in user's ID
 
+    if (!senderId) {
+      return res.status(401).json({ success: false, message: "Not logged in" });
+    }
 
+    if (!receiverId || !message.trim()) {
+      return res.status(400).json({ success: false, message: "Invalid input" });
+    }
+
+    await pool.query(
+      `INSERT INTO messages (sender_id, receiver_id, message)
+       VALUES ($1, $2, $3)`,
+      [senderId, receiverId, message]
+    );
+
+    res.json({ success: true, message: "Message sent successfully" });
+  } catch (err) {
+    console.error("Send chat message error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// ✅ Get chat messages (conversation)
+exports.getChatMessages = async (req, res) => {
+  try {
+    const receiverId = req.params.receiverId;
+    const senderId = req.session.user?.id;
+
+    if (!senderId) {
+      return res.status(401).json({ success: false, message: "Not logged in" });
+    }
+
+    const { rows } = await pool.query(
+      `
+      SELECT 
+        id, sender_id, receiver_id, message, created_at,
+        CASE WHEN sender_id = $1 THEN 'self' ELSE 'other' END AS sender
+      FROM messages
+      WHERE (sender_id = $1 AND receiver_id = $2)
+         OR (sender_id = $2 AND receiver_id = $1)
+      ORDER BY created_at ASC
+      `,
+      [senderId, receiverId]
+    );
+
+    // Optionally mark messages as read
+    await pool.query(
+      `UPDATE messages SET is_read = TRUE WHERE receiver_id = $1 AND sender_id = $2`,
+      [senderId, receiverId]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Get chat messages error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// ✅ Get all chat conversations (students who have messaged instructor)
+exports.getInstructorChats = async (req, res) => {
+  try {
+    const infoResult = await pool.query(
+      "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
+    );
+    const info = infoResult.rows[0] || {};
+    const instructorId = req.user.id;
+
+    const { rows } = await pool.query(
+      `
+      SELECT DISTINCT 
+        u.id AS student_id,
+        u.fullname AS student_name,
+        u.email,
+        MAX(m.created_at) AS last_message_time
+      FROM messages m
+      JOIN users2 u ON 
+        (u.id = m.sender_id AND m.receiver_id = $1)
+        OR (u.id = m.receiver_id AND m.sender_id = $1)
+      WHERE u.role = 'student'
+      GROUP BY u.id, u.fullname, u.email
+      ORDER BY last_message_time DESC
+      `,
+      [instructorId]
+    );
+
+    const profilePic = req.session.user
+      ? req.session.user.profile_picture
+      : null;
+
+    res.render("instructor/chatList", {
+      chats: rows,
+      info,
+      profilePic,
+      role: "instructor",
+      user: req.session.user,
+    });
+  } catch (err) {
+    console.error("Get instructor chats error:", err);
+    res.status(500).send("Error loading chats");
+  }
+};
+
+// ✅ Full chat conversation with one student
+exports.getChatWithStudent = async (req, res) => {
+  try {
+    const infoResult = await pool.query(
+      "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
+    );
+    const info = infoResult.rows[0] || {};
+    const instructorId = req.user.id;
+    const studentId = req.params.studentId;
+
+    const { rows } = await pool.query(
+      `
+      SELECT 
+        m.id, m.sender_id, m.receiver_id, m.message, m.created_at,
+        CASE WHEN m.sender_id = $1 THEN 'self' ELSE 'other' END AS sender
+      FROM messages m
+      WHERE (m.sender_id = $1 AND m.receiver_id = $2)
+         OR (m.sender_id = $2 AND m.receiver_id = $1)
+      ORDER BY m.created_at ASC
+      `,
+      [instructorId, studentId]
+    );
+
+    const studentResult = await pool.query(
+      `SELECT fullname, email FROM users2 WHERE id = $1`,
+      [studentId]
+    );
+
+    const profilePic = req.session.user
+      ? req.session.user.profile_picture
+      : null;
+
+    res.render("instructor/chatView", {
+      student: studentResult.rows[0],
+      messages: rows,
+      info,
+      profilePic,
+      role: "instructor",
+      user: req.session.user,
+    });
+  } catch (err) {
+    console.error("Get chat with student error:", err);
+    res.status(500).send("Error loading chat conversation");
+  }
+};
 
 
 

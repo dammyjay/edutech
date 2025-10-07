@@ -4,6 +4,7 @@ const router = express.Router();
 const { ensureInstructorOrAdmin } = require("../middlewares/auth");
 const learningController = require("../controllers/learningController");
 const adminController = require("../controllers/adminController");
+const instructorController = require("../controllers/instructorController");
 const upload = require("../middlewares/upload");
 
 router.post("/login", adminController.login);
@@ -113,5 +114,18 @@ router.get(
 router.get("/dashboard", ensureInstructorOrAdmin, (req, res) => {
   res.render("instructor/dashboard", { info: req.info });
 });
+
+// studentRoutes.js
+router.post("/instructor/chat/send", adminController.sendChatMessage);
+router.get("/chat/messages/:receiverId", adminController.getChatMessages);
+
+router.get("/chats", instructorController.getInstructorChats);
+router.get("/chats/:studentId", instructorController.getChatWithStudent);
+router.post("/chat/markRead/:receiverId", instructorController.markMessagesAsRead);
+
+
+// router.get("/chats", adminController.getInstructorChats);
+// router.get("/chats/:studentId", adminController.getChatWithStudent);
+
 
 module.exports = router;

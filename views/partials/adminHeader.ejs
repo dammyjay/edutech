@@ -49,6 +49,11 @@
 
         <a href="/admin/pathways">Pathways</a>
         <a href="/admin/courses">Courses</a>
+        <% if (role === 'instructor') { %>
+          <a href="/instructor/chats">Chats</a>
+        <% } %>
+
+
 
         <% if (role === 'admin') { %>
           <div class="dropdown">

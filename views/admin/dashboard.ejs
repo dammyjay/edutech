@@ -34,6 +34,11 @@
       <option value="">All Roles</option> 
       <option value="admin" <%= role === 'admin' ? 'selected' : '' %>>Admin</option> 
       <option value="user" <%= role === 'user' ? 'selected' : '' %>>User</option> 
+      <option value="instructor" <%= role === 'instructor' ? 'selected' : '' %>>Instructor</option> 
+      <option value="teacher" <%= role === 'teacher' ? 'selected' : '' %>>Teacher</option> 
+      <option value="student" <%= role === 'student' ? 'selected' : '' %>>Student</option> 
+      <option value="school_admin" <%= role === 'school_admin' ? 'selected' : '' %>>School Admin</option> 
+      <option value="parent" <%= role === 'parent' ? 'selected' : '' %>>Parent</option> 
     </select> 
     
     <input type="text" name="email" placeholder="Search by email" value="<%= email || '' %>" /> 

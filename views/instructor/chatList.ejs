@@ -1,0 +1,35 @@
+<%- include('../partials/adminHeader', { info: info, role: role, profilePic: profilePic, user: user }) %>
+
+<h2 style="margin-top:20px;">💬 Your Chat Conversations</h2>
+
+<div class="table-responsive">
+  <% if (chats.length > 0) { %>
+    <table class="user-table" style="width:90%; border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th>Student Name</th>
+          <th>Email</th>
+          <th>Last Message</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% chats.forEach(c => { %>
+          <tr>
+            <td><%= c.student_name %></td>
+            <td><%= c.email %></td>
+            <td><%= new Date(c.last_message_time).toLocaleString() %></td>
+            <td>
+              <a href="/instructor/chats/<%= c.student_id %>" 
+                 style="background:#3498db; color:white; border:none; padding:6px 10px; border-radius:5px; text-decoration:none;">
+                💬 View Chat
+              </a>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p style="color:gray;">No chat conversations yet.</p>
+  <% } %>
+</div>

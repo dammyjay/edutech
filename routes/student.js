@@ -109,6 +109,11 @@ router.get("/classroom", studentController.getClassroom);
 // routes/student.js
 router.get("/teacher", studentController.getTeacher);
 
+// studentRoutes.js
+router.post("/chat/send", studentController.sendChatMessage);
+router.get("/chat/messages/:receiverId", studentController.getChatMessages);
+router.post("/chat/markRead/:receiverId", studentController.markMessagesAsRead);
+
 
 
 module.exports = router;

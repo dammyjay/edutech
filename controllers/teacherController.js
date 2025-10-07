@@ -1200,3 +1200,96 @@ exports.downloadStudentReport = async (req, res) => {
     res.status(500).send("Error generating report");
   }
 };
+
+
+exports.sendChatMessage = async (req, res) => {
+  try {
+    const { receiverId, message } = req.body;
+    const senderId = req.session.user?.id; // Use logged-in user's ID
+
+    if (!senderId) {
+      return res.status(401).json({ success: false, message: "Not logged in" });
+    }
+
+    if (!receiverId || !message.trim()) {
+      return res.status(400).json({ success: false, message: "Invalid input" });
+    }
+
+    await pool.query(
+      `INSERT INTO messages (sender_id, receiver_id, message)
+       VALUES ($1, $2, $3)`,
+      [senderId, receiverId, message]
+    );
+
+    res.json({ success: true, message: "Message sent successfully" });
+  } catch (err) {
+    console.error("Send chat message error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// ✅ Get chat messages (conversation
+exports.getChatMessages = async (req, res) => {
+  try {
+    const receiverId = req.params.receiverId;
+    const senderId = req.session.user?.id;
+
+    if (!senderId) {
+      return res.status(401).json({ success: false, message: "Not logged in" });
+    }
+
+    // 1️⃣ Mark messages as delivered when fetched
+    await pool.query(
+      `UPDATE messages
+       SET is_delivered = TRUE
+       WHERE receiver_id = $1 AND sender_id = $2 AND is_delivered = FALSE`,
+      [senderId, receiverId]
+    );
+
+    // 2️⃣ Fetch all chat messages
+    const { rows } = await pool.query(
+      `
+      SELECT 
+        id, sender_id, receiver_id, message, created_at, is_read, is_delivered,
+        CASE WHEN sender_id = $1 THEN 'self' ELSE 'other' END AS sender
+      FROM messages
+      WHERE (sender_id = $1 AND receiver_id = $2)
+         OR (sender_id = $2 AND receiver_id = $1)
+      ORDER BY created_at ASC
+      `,
+      [senderId, receiverId]
+    );
+
+    // 3️⃣ Optionally mark as read
+    await pool.query(
+      `UPDATE messages 
+       SET is_read = TRUE 
+       WHERE receiver_id = $1 AND sender_id = $2 AND is_read = FALSE`,
+      [senderId, receiverId]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Get chat messages error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.markMessagesAsRead = async (req, res) => {
+  try {
+    const { receiverId } = req.params;
+    const senderId = req.session.user?.id;
+
+    await pool.query(
+      `UPDATE messages
+       SET is_read = TRUE
+       WHERE receiver_id = $1 AND sender_id = $2 AND is_read = FALSE`,
+      [senderId, receiverId]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Mark read error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

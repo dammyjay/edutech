@@ -112,4 +112,9 @@ router.get(
   teacherController.downloadQuizReport
 );
 
+// studentRoutes.js
+router.post("/chat/send", teacherController.sendChatMessage);
+router.get("/chat/messages/:receiverId", teacherController.getChatMessages);
+router.post("/chat/markRead/:receiverId", teacherController.markMessagesAsRead);
+
 module.exports = router;
