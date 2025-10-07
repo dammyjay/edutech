@@ -115,6 +115,9 @@ app.use("/teacher", teacherRoutes);
 const instructorRoutes = require("./routes/instructor");
 app.use("/instructor", instructorRoutes);
 
+const messageRoutes = require("./routes/messageRoutes");
+app.use("/", messageRoutes);
+
 app.get("/test", (req, res) => {
   res.send("✅ Test route works");
 });

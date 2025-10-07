@@ -641,6 +641,18 @@ async function createTables() {
       );
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        sender_id INT REFERENCES users2(id) ON DELETE CASCADE,
+        receiver_id INT REFERENCES users2(id) ON DELETE CASCADE,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        is_read BOOLEAN DEFAULT FALSE
+      );
+
+      `);
+
     console.log("✅ All tables are updated and ready.");
   } catch (err) {
     console.error("❌ Error creating tables:", err.message);

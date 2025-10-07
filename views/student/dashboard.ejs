@@ -153,6 +153,7 @@
           <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
             <a href="/student/dashboard?section=classroom" class="btn-view">👥 Classmates</a>
             <a href="/student/dashboard?section=teacher" class="btn-edit">👨‍🏫 Your Teacher</a>
+            <a href="/student/dashboard?section=instructors" class="btn-edit">🧑🏽‍🔧 Instructors</a>
           </div>
         </div>
       </li>
@@ -210,6 +211,7 @@
 
 
  <main class="main-content">
+  
   <% if (section === 'profile') { %>
     <!-- 👤 PROFILE SECTION -->
     <div class="profile-container">
@@ -306,6 +308,30 @@
   <% } else { %>
     <p>No teacher assigned to this classroom yet.</p>
   <% } %>
+
+  <% } else if (section === 'instructors' && classroom) { %>
+  <h2>🧑🏽‍🔧 Your Instructors for <%= classroom.name %></h2>
+  <% if (instructors.length > 0) { %>
+    <div class="card-container">
+      <% instructors.forEach(i => { %>
+        <div class="card">
+          <div class="card-header">
+            <img src="<%= i.profile_picture || '/images/profile male.png' %>" 
+                 alt="Instructor" 
+                 class="card-avatar" style="object-fit:contain;">
+            <h3><%= i.fullname %></h3>
+          </div>
+          <div class="card-body">
+            <p><strong>Email:</strong> <%= i.email %></p>
+            <p><strong>Role:</strong> Instructor</p>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <p>No instructor assigned to this classroom yet.</p>
+  <% } %>
+
 
 
   <% } else if (section === 'module' && moduleInfo) { %>
