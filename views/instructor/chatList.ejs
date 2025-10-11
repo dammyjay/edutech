@@ -2,6 +2,23 @@
 
 <h2 style="margin-top:20px;">💬 Your Chat Conversations</h2>
 
+<div style="margin:15px 0;">
+  <form id="searchForm" style="display:flex; gap:10px; align-items:center;">
+    <input type="text" id="searchInput" placeholder="🔍 Search student by name or class"
+      style="padding:8px; width:250px; border:1px solid #ccc; border-radius:5px;" />
+    <button type="submit"
+      style="background:#2ecc71; color:white; border:none; padding:8px 12px; border-radius:5px; cursor:pointer;">
+      Search
+    </button>
+  </form>
+</div>
+
+<div class="table-responsive">
+  <div id="searchResults"></div>
+</div>
+
+<h2 style="margin-top:20px;">💬 Previous Chat</h2>
+
 <div class="table-responsive">
   <% if (chats.length > 0) { %>
     <table class="user-table" style="width:90%; border-collapse:collapse;">
@@ -33,3 +50,53 @@
     <p style="color:gray;">No chat conversations yet.</p>
   <% } %>
 </div>
+
+
+<script>
+  document.getElementById("searchForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const query = document.getElementById("searchInput").value.trim();
+    if (!query) return alert("Enter a student name or class");
+
+    const res = await fetch(`/instructor/search-student?q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+
+    const container = document.getElementById("searchResults");
+    container.innerHTML = "";
+
+    if (data.length === 0) {
+      container.innerHTML = "<p style='color:gray;'>No matching students found.</p>";
+      return;
+    }
+
+    const table = document.createElement("table");
+    table.className = "user-table";
+    table.style = "width:90%; border-collapse:collapse; margin-top:10px;";
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Class</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.map(s => `
+          <tr>
+            <td>${s.fullname}</td>
+            <td>${s.email}</td>
+            <td>${s.class_name || "—"}</td>
+            <td>
+              <a href="/instructor/chats/${s.id}" 
+                 style="background:#3498db; color:white; padding:6px 10px; border-radius:5px; text-decoration:none;">
+                 💬 Start Chat
+              </a>
+            </td>
+          </tr>
+        `).join("")}
+      </tbody>
+    `;
+    container.appendChild(table);
+  });
+</script>

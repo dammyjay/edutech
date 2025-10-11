@@ -150,17 +150,6 @@
 
 
     <hr>
-<h2>💬 Messages from Students</h2>
-
-<div style="margin-top: 20px;">
-  <label for="studentSelect"><strong>Select Student:</strong></label>
-  <select id="studentSelect" onchange="loadMessages()" style="padding: 5px;">
-    <option value="">-- Select Student --</option>
-    <% students.forEach(s => { %>
-      <option value="<%= s.id %>"><%= s.full_name %> (<%= s.email %>)</option>
-    <% }) %>
-  </select>
-</div>
 
 <!-- Chat box -->
 <div id="chatBox" style="display:none; border:1px solid #ccc; border-radius:8px; margin-top:20px; padding:10px; max-width:600px; height:400px; overflow-y:auto; background:#fafafa;">

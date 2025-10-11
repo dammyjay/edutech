@@ -46,6 +46,11 @@
       <p>📌 Total Instructors: <%= school.totals.total_instructors %></p>
     </div>
 
+    <a href="/admin/schools/<%= school.id %>/download-progress" class="btn-edit">
+      📄 Download School Summary PDF
+    </a>
+
+
     <hr>
 
     <h3>Classrooms</h3>
@@ -225,6 +230,7 @@
           <th>Email</th>
           <th>Classroom</th>
           <th>Actions</th>
+          <th>Progress</th>
         </tr>
       </thead>
       <tbody>
@@ -242,6 +248,13 @@
                 </button>
 
                 <button class="btn-delete" onclick="deleteUser('<%= student.id %>')">🗑️ Delete</button>
+              </td>
+              <td>
+                <a href="/admin/students/<%= student.id %>/progress?from=admin"
+                  class="btn-edit"
+                  style="background:green; color:#fff; padding:5px 8px; border-radius:4px; text-decoration:none;">
+                  Progress
+                </a>
               </td>
             </tr>
           <% }) %>

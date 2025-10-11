@@ -119,7 +119,6 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-
 exports.showLogin = (req, res) => {
   res.render("admin/login", {
     error: null,
@@ -198,7 +197,11 @@ exports.login = async (req, res) => {
         school_id,
         school_name,
       };
-      await logActivityForUser(req, "School Admin logged in", `School Name: ${school_name}`);
+      await logActivityForUser(
+        req,
+        "School Admin logged in",
+        `School Name: ${school_name}`
+      );
       return res.redirect("/school-admin/dashboard");
     } else if (user.role === "teacher") {
       // 🔍 Get classrooms assigned to this teacher
@@ -220,21 +223,24 @@ exports.login = async (req, res) => {
         profile_pic: user.profile_picture,
         classrooms, // 👈 keep assigned classes in session
       };
-      await logActivityForUser(req, "teacher Logged in", `Classroom: ${user.fullname}`);
+      await logActivityForUser(
+        req,
+        "teacher Logged in",
+        `Classroom: ${user.fullname}`
+      );
       return res.redirect("/teacher/dashboard");
-
     } else if (user.role === "parent") {
-      await logActivityForUser(req, "parent logged in", `Classroom: ${user.fullname}`);
+      await logActivityForUser(
+        req,
+        "parent logged in",
+        `Classroom: ${user.fullname}`
+      );
       return res.redirect("/parent/dashboard");
-
     } else if (user.role === "user" || user.role === "student") {
       return res.redirect("/student/dashboard");
-      
     } else if (user.role === "instructor") {
       return res.redirect("/instructor/dashboard");
     }
-
-
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).send("Server error");
@@ -507,7 +513,6 @@ exports.instructorDashboard = async (req, res) => {
       [instructorId]
     );
 
-
     const profilePic = req.session.user
       ? req.session.user.profile_picture
       : null;
@@ -531,7 +536,6 @@ exports.instructorDashboard = async (req, res) => {
     res.status(500).send("Error loading dashboard");
   }
 };
-
 
 exports.editUserForm = async (req, res) => {
   const userId = req.params.id;
@@ -568,11 +572,7 @@ exports.updateUser = async (req, res) => {
       "UPDATE users2 SET fullname = $1, email = $2, phone = $3, gender = $4, role = $5, wallet_balance2 = $6 WHERE id = $7",
       [fullname, email, phone, gender, role, wallet_balance2, userId]
     );
-    await logActivityForUser(
-      req,
-      "User updated",
-      `user name: ${fullname}`
-    );
+    await logActivityForUser(req, "User updated", `user name: ${fullname}`);
     res.redirect("/admin/dashboard");
   } catch (error) {
     console.error("Error updating user:", error);
@@ -585,10 +585,7 @@ exports.deleteUser = async (req, res) => {
 
   try {
     await pool.query("DELETE FROM users2 WHERE id = $1", [userId]);
-    await logActivityForUser(
-      req,
-      "User Deleted"
-    );
+    await logActivityForUser(req, "User Deleted");
     res.redirect("/admin/dashboard");
   } catch (error) {
     console.error("Error deleting user:", error);
@@ -650,7 +647,12 @@ exports.showPathways = async (req, res) => {
   const result = await pool.query(
     "SELECT * FROM career_pathways ORDER BY id DESC"
   );
-  res.render("admin/pathways", { info, search, pathways: result.rows, role: req.session.user?.role || "admin", });
+  res.render("admin/pathways", {
+    info,
+    search,
+    pathways: result.rows,
+    role: req.session.user?.role || "admin",
+  });
 };
 
 exports.createPathway = async (req, res) => {
@@ -687,22 +689,14 @@ exports.createPathway = async (req, res) => {
       show_on_homepage === "true",
     ]
   );
-  await logActivityForUser(
-    req,
-    "Pathway Created",
-    `Pathway name: ${title}`
-  );
+  await logActivityForUser(req, "Pathway Created", `Pathway name: ${title}`);
   res.redirect("/admin/pathways");
 };
 
 exports.deletePathway = async (req, res) => {
   const { id } = req.params;
   await pool.query("DELETE FROM career_pathways WHERE id = $1", [id]);
-  await logActivityForUser(
-    req,
-    "Pathway deleted",
-    `Pathway ID: ${id}`
-  );
+  await logActivityForUser(req, "Pathway deleted", `Pathway ID: ${id}`);
   res.redirect("/admin/pathways");
 };
 
@@ -759,14 +753,9 @@ exports.editPathway = async (req, res) => {
       id,
     ]
   );
-await logActivityForUser(
-  req,
-  "Pathway edited",
-  `Pathway title: ${title}`
-);
+  await logActivityForUser(req, "Pathway edited", `Pathway title: ${title}`);
   res.redirect("/admin/pathways");
 };
-
 
 // --- COURSES ---
 
@@ -817,8 +806,8 @@ exports.showCourses = async (req, res) => {
 };
 
 exports.createCourse = async (req, res) => {
-    console.log("Creating course with:", req.body);
-  const { title, description, level, career_pathway_id, sort_order,  } = req.body;
+  console.log("Creating course with:", req.body);
+  const { title, description, level, career_pathway_id, sort_order } = req.body;
   let thumbnail_url = null;
 
   if (req.file) {
@@ -828,8 +817,6 @@ exports.createCourse = async (req, res) => {
     thumbnail_url = result.secure_url;
     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
   }
-
-
 
   await pool.query(
     `INSERT INTO courses (
@@ -849,12 +836,7 @@ exports.createCourse = async (req, res) => {
     ]
   );
 
-
-  await logActivityForUser(
-    req,
-    "Course Create",
-    `Course title: ${title}`
-  );
+  await logActivityForUser(req, "Course Create", `Course title: ${title}`);
   res.redirect("/admin/courses");
 };
 
@@ -915,14 +897,8 @@ exports.createCourse = async (req, res) => {
 // };
 exports.editCourse = async (req, res) => {
   const { id } = req.params;
-  const {
-    title,
-    description,
-    level,
-    career_pathway_id,
-    sort_order,
-    amount,
-  } = req.body;
+  const { title, description, level, career_pathway_id, sort_order, amount } =
+    req.body;
 
   let thumbnail_url = null;
 
@@ -978,7 +954,6 @@ exports.editCourse = async (req, res) => {
   }
 };
 
-
 // exports.deleteCourse = async (req, res) => {
 //   const { id } = req.params;
 
@@ -1027,7 +1002,6 @@ exports.deleteCourse = async (req, res) => {
   }
 };
 
-
 exports.showCoursesByPathway = async (req, res) => {
   const { id } = req.params;
 
@@ -1071,8 +1045,6 @@ exports.showCoursesByPathway = async (req, res) => {
   });
 };
 
-
-
 exports.createCourseUnderPathway = async (req, res) => {
   const { id } = req.params;
   const { title, description, level, sort_order } = req.body;
@@ -1105,7 +1077,6 @@ exports.createCourseUnderPathway = async (req, res) => {
     ]
   );
 
-
   res.redirect(`/admin/pathways/${id}/courses`);
 };
 
@@ -1122,7 +1093,7 @@ exports.showBenefits = async (req, res) => {
     benefits: benefitsResult.rows,
     search: req.query.search || "",
   });
-}
+};
 
 exports.createBenefit = async (req, res) => {
   console.log("Form Data:", req.body);
@@ -1142,13 +1113,9 @@ exports.createBenefit = async (req, res) => {
     "INSERT INTO benefits (title, description, icon) VALUES ($1, $2, $3)",
     [title, description, icon]
   );
-  await logActivityForUser(
-    req,
-    "Benefit created",
-    `Benefit title: ${title}`
-  );
+  await logActivityForUser(req, "Benefit created", `Benefit title: ${title}`);
   res.redirect("/admin/benefits");
-}
+};
 
 exports.editBenefitForm = async (req, res) => {
   const id = req.params.id;
@@ -1165,7 +1132,6 @@ exports.editBenefitForm = async (req, res) => {
     benefit: benefitResult.rows[0],
   });
 };
-
 
 exports.updateBenefit = async (req, res) => {
   const id = req.params.id;
@@ -1217,7 +1183,7 @@ exports.createEvent = async (req, res) => {
       location,
       amount,
       discount_amount,
-      discount_deadline
+      discount_deadline,
     } = req.body;
 
     let image_url = null;
@@ -1247,21 +1213,16 @@ exports.createEvent = async (req, res) => {
         discount_deadline || null,
         allow_split_payment,
         image_url,
-        show_on_homepage
+        show_on_homepage,
       ]
     );
-    await logActivityForUser(
-      req,
-      "Event created",
-      `Event title: ${title}`
-    );
+    await logActivityForUser(req, "Event created", `Event title: ${title}`);
     res.redirect("/admin/events");
   } catch (err) {
     console.error("Error creating event:", err.message);
     res.status(500).send("Server error while creating event");
   }
 };
-
 
 exports.viewEventRegistrations = async (req, res) => {
   const eventId = req.params.id;
@@ -1316,7 +1277,6 @@ exports.viewEventRegistrations = async (req, res) => {
   }
 };
 
-
 exports.showEvents = async (req, res) => {
   try {
     const infoResult = await pool.query(
@@ -1338,7 +1298,6 @@ exports.showEvents = async (req, res) => {
     res.status(500).send("Server error");
   }
 };
-
 
 exports.exportEventRegistrations = async (req, res) => {
   const eventId = req.params.id;
@@ -1371,7 +1330,6 @@ exports.exportEventRegistrations = async (req, res) => {
   }
 };
 
-
 // UPDATE EVENT
 exports.updateEvent = async (req, res) => {
   try {
@@ -1388,7 +1346,7 @@ exports.updateEvent = async (req, res) => {
       location,
       amount,
       discount_amount,
-      discount_deadline
+      discount_deadline,
     } = req.body;
 
     let image_url = req.body.current_image || null;
@@ -1420,7 +1378,7 @@ exports.updateEvent = async (req, res) => {
         allow_split_payment,
         image_url,
         show_on_homepage,
-        eventId
+        eventId,
       ]
     );
 
@@ -1430,7 +1388,6 @@ exports.updateEvent = async (req, res) => {
     res.status(500).send("Server error while updating event");
   }
 };
-
 
 // DELETE EVENT
 exports.deleteEvent = async (req, res) => {
@@ -1443,7 +1400,6 @@ exports.deleteEvent = async (req, res) => {
     res.status(500).send("Server error");
   }
 };
-
 
 exports.listStudents = async (req, res) => {
   try {
@@ -1485,6 +1441,199 @@ exports.viewStudentDetails = async (req, res) => {
   }
 };
 
+// exports.viewStudentProgress = async (req, res) => {
+//   try {
+//     const infoResult = await pool.query(
+//       "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
+//     );
+//     const info = infoResult.rows[0];
+//     const { id } = req.params;
+
+//     // detect where user came from (default admin)
+//     const from =
+//       req.query.from ||
+//       (req.get("referer")?.includes("/parent") ? "parent" : "admin");
+
+//     // ✅ Get student info
+//     const studentRes = await pool.query(
+//       `SELECT id, fullname, email, created_at
+//        FROM users2 WHERE id = $1`,
+//       [id]
+//     );
+//     if (!studentRes.rows.length)
+//       return res.status(404).send("Student not found");
+//     const student = studentRes.rows[0];
+
+//     // ✅ Courses
+//     const coursesRes = await pool.query(
+//       `
+//       SELECT c.id, c.title AS course_title, e.enrolled_at
+//       FROM courses c
+//       JOIN course_enrollments e ON e.course_id = c.id
+//       WHERE e.user_id = $1
+//       ORDER BY c.title;
+//       `,
+//       [id]
+//     );
+
+//     // ✅ Modules per course
+//     const modulesRes = await pool.query(
+//       `
+//       SELECT m.id, m.title AS module_title, m.course_id
+//       FROM modules m
+//       LEFT JOIN unlocked_modules um ON um.module_id = m.id AND um.student_id = $1
+//       ORDER BY m.id;
+//       `,
+//       [id]
+//     );
+
+//     // ✅ Lessons per module
+//     const lessonsRes = await pool.query(
+//       `
+//       SELECT l.id, l.title AS lesson_title, l.module_id, ulp.completed_at
+//       FROM lessons l
+//       LEFT JOIN user_lesson_progress ulp
+//         ON ulp.lesson_id = l.id AND ulp.user_id = $1
+//       ORDER BY l.order_number;
+//       `,
+//       [id]
+//     );
+
+//     // ✅ Quizzes
+//     const quizzesRes = await pool.query(
+//       `
+//       SELECT q.id, q.title, l.module_id, qs.score, qs.created_at AS taken_at, l.title AS lesson_title
+//       FROM quiz_submissions qs
+//       JOIN quizzes q ON qs.quiz_id = q.id
+//       JOIN lessons l ON q.lesson_id = l.id
+//       WHERE qs.student_id = $1
+//       ORDER BY qs.created_at DESC;
+//       `,
+//       [id]
+//     );
+
+//     // ✅ Assignments
+//     const assignmentsRes = await pool.query(
+//       `
+//       SELECT ma.id, ma.title, ma.module_id, s.total, s.grade, s.ai_feedback, s.created_at AS submitted_at
+//       FROM assignment_submissions s
+//       JOIN module_assignments ma ON s.assignment_id = ma.id
+//       WHERE s.student_id = $1
+//       ORDER BY s.created_at DESC;
+//       `,
+//       [id]
+//     );
+
+//     // --- Build Nested Structure ---
+//     const courses = coursesRes.rows.map((course) => {
+//       const courseModules = modulesRes.rows.filter(
+//         (m) => m.course_id === course.id
+//       );
+
+//       const modules = courseModules.map((module) => {
+//         const moduleLessons = lessonsRes.rows.filter(
+//           (l) => l.module_id === module.id
+//         );
+
+//         // Progress calculation
+//         const totalLessons = moduleLessons.length;
+//         const completedLessons = moduleLessons.filter(
+//           (l) => l.completed_at
+//         ).length;
+//         const modulePercent = totalLessons
+//           ? Math.round((completedLessons / totalLessons) * 100)
+//           : 0;
+
+//         // Quizzes & Assignments under this module
+//         const moduleQuizzes = quizzesRes.rows.filter(
+//           (q) => q.module_id === module.id
+//         );
+//         const moduleAssignments = assignmentsRes.rows.filter(
+//           (a) => a.module_id === module.id
+//         );
+
+//         const quizAvg = moduleQuizzes.length
+//           ? Math.round(
+//               moduleQuizzes.reduce((a, q) => a + q.score, 0) /
+//                 moduleQuizzes.length
+//             )
+//           : null;
+
+//         const assignmentAvg = moduleAssignments.length
+//           ? Math.round(
+//               moduleAssignments.reduce((a, x) => a + (x.total || 0), 0) /
+//                 moduleAssignments.length
+//             )
+//           : null;
+
+//         return {
+//           ...module,
+//           lessons: moduleLessons,
+//           totalLessons,
+//           completedLessons,
+//           percent: modulePercent,
+//           quizAvg,
+//           assignmentAvg,
+//           assignments: moduleAssignments,
+//           role: "admin", // ✅ important
+//         };
+//       });
+
+//       // Course progress (aggregate of module lessons)
+//       const totalLessons = modules.reduce((sum, m) => sum + m.totalLessons, 0);
+//       const completedLessons = modules.reduce(
+//         (sum, m) => sum + m.completedLessons,
+//         0
+//       );
+//       const coursePercent = totalLessons
+//         ? Math.round((completedLessons / totalLessons) * 100)
+//         : 0;
+
+//       return {
+//         ...course,
+//         modules,
+//         totalLessons,
+//         completedLessons,
+//         percent: coursePercent,
+//       };
+//     });
+
+//     // --- Compute overall averages ---
+//     const allQuizzes = quizzesRes.rows;
+//     const allAssignments = assignmentsRes.rows;
+
+//     const quizAvg =
+//       allQuizzes.length > 0
+//         ? Math.round(
+//             allQuizzes.reduce((a, q) => a + q.score, 0) / allQuizzes.length
+//           )
+//         : null;
+
+//     const assignmentAvg =
+//       allAssignments.length > 0
+//         ? Math.round(
+//             allAssignments.reduce((a, x) => a + (x.total || 0), 0) /
+//               allAssignments.length
+//           )
+//         : null;
+
+//     // ✅ Pass everything to EJS
+//     res.render("admin/studentProgress", {
+//       student,
+//       courses,
+//       quizzes: allQuizzes,
+//       assignments: allAssignments,
+//       quizAvg,
+//       assignmentAvg,
+//       info,
+//       from,
+//     });
+//   } catch (err) {
+//     console.error("View student progress error:", err.message);
+//     res.status(500).send("Failed to fetch progress");
+//   }
+// };
+
 exports.viewStudentProgress = async (req, res) => {
   try {
     const infoResult = await pool.query(
@@ -1508,15 +1657,23 @@ exports.viewStudentProgress = async (req, res) => {
       return res.status(404).send("Student not found");
     const student = studentRes.rows[0];
 
-    // ✅ Courses
+    // ✅ Courses (includes both direct enrollment and classroom-assigned)
     const coursesRes = await pool.query(
       `
-      SELECT c.id, c.title AS course_title, e.enrolled_at
-      FROM courses c
-      JOIN course_enrollments e ON e.course_id = c.id
-      WHERE e.user_id = $1
-      ORDER BY c.title;
-      `,
+  SELECT DISTINCT
+    c.id,
+    c.title AS course_title,
+    COALESCE(e.enrolled_at, cc.assigned_at) AS enrolled_at
+  FROM courses c
+  LEFT JOIN course_enrollments e 
+    ON e.course_id = c.id AND e.user_id = $1
+  LEFT JOIN classroom_courses cc 
+    ON cc.course_id = c.id
+  LEFT JOIN user_school us 
+    ON us.classroom_id = cc.classroom_id AND us.user_id = $1
+  WHERE e.user_id IS NOT NULL OR us.user_id IS NOT NULL
+  ORDER BY c.title;
+  `,
       [id]
     );
 
@@ -1678,7 +1835,6 @@ exports.viewStudentProgress = async (req, res) => {
   }
 };
 
-
 exports.viewStudentEnrollments = async (req, res) => {
   try {
     const infoResult = await pool.query(
@@ -1695,13 +1851,16 @@ exports.viewStudentEnrollments = async (req, res) => {
       [id]
     );
 
-    res.render("admin/studentEnrollments", { courses: courses.rows, info,  role: "admin",});
+    res.render("admin/studentEnrollments", {
+      courses: courses.rows,
+      info,
+      role: "admin",
+    });
   } catch (err) {
     console.error("View student enrollments error:", err.message);
     res.status(500).send("Failed to fetch enrollments");
   }
 };
-
 
 exports.assignChildToParent = async (req, res) => {
   const { parentEmail, childEmail } = req.body;
@@ -1767,7 +1926,6 @@ exports.assignChildToParent = async (req, res) => {
 //     res.status(500).send("Server error removing child");
 //   }
 // };
-
 
 exports.downloadCourseSummary = async (req, res) => {
   const { studentId, courseId } = req.params;
@@ -2058,7 +2216,6 @@ exports.getSchoolDetails = async (req, res) => {
       [id]
     );
 
-
     school.courses = schoolCoursesResult.rows; // attach school courses
 
     // Fetch teachers
@@ -2159,6 +2316,494 @@ exports.getSchoolDetails = async (req, res) => {
   } catch (err) {
     console.error("Error fetching school details:", err);
     res.status(500).send("Error loading school details");
+  }
+};
+
+// exports.downloadSchoolProgressReport = async (req, res) => {
+//   const { schoolId } = req.params;
+
+//   try {
+//     // --- 1. Get school info
+//     const schoolRes = await pool.query(
+//       `SELECT id, name, address, email, phone, created_at
+//        FROM schools WHERE id = $1`,
+//       [schoolId]
+//     );
+//     const school = schoolRes.rows[0];
+//     if (!school) return res.status(404).send("School not found");
+
+//     // --- 2. Get classrooms
+//     const classRes = await pool.query(
+//       `SELECT id, name FROM classrooms WHERE school_id = $1 ORDER BY name`,
+//       [schoolId]
+//     );
+//     const classrooms = classRes.rows;
+
+//     // --- 3. Get students
+//     const studentRes = await pool.query(
+//       `SELECT
+//           u.id,
+//           u.fullname AS full_name,
+//           u.email,
+//           c.name AS classroom_name
+//        FROM user_school us
+//        JOIN users2 u ON us.user_id = u.id
+//        LEFT JOIN classrooms c ON us.classroom_id = c.id
+//        WHERE us.role_in_school = 'student'
+//          AND us.school_id = $1
+//        ORDER BY c.name, u.fullname`,
+//       [schoolId]
+//     );
+//     const students = studentRes.rows;
+
+//     // --- 4. Get teachers
+//     const teacherRes = await pool.query(
+//       `SELECT
+//           u.id,
+//           u.fullname AS full_name,
+//           u.email
+//        FROM user_school us
+//        JOIN users2 u ON us.user_id = u.id
+//        WHERE us.role_in_school = 'teacher'
+//          AND us.school_id = $1
+//        ORDER BY u.fullname`,
+//       [schoolId]
+//     );
+//     const teachers = teacherRes.rows;
+
+//     // --- 5. Get progress data
+//     const progressRes = await pool.query(
+//       `SELECT ulp.user_id, COUNT(l.id) AS total_lessons,
+//               COUNT(ulp.completed_at) AS completed_lessons
+//        FROM user_lesson_progress ulp
+//        JOIN lessons l ON l.id = ulp.lesson_id
+//        GROUP BY ulp.user_id`
+//     );
+//     const progressMap = Object.fromEntries(
+//       progressRes.rows.map((p) => [p.user_id, p])
+//     );
+
+//     const quizRes = await pool.query(
+//       `SELECT student_id, AVG(score) AS avg_quiz
+//        FROM quiz_submissions
+//        GROUP BY student_id`
+//     );
+//     const quizMap = Object.fromEntries(
+//       quizRes.rows.map((q) => [q.student_id, Math.round(q.avg_quiz)])
+//     );
+
+//     const assignmentRes = await pool.query(
+//       `SELECT student_id, AVG(total) AS avg_assignment
+//        FROM assignment_submissions
+//        GROUP BY student_id`
+//     );
+//     const assignmentMap = Object.fromEntries(
+//       assignmentRes.rows.map((a) => [
+//         a.student_id,
+//         Math.round(a.avg_assignment),
+//       ])
+//     );
+
+//     // --- 6. Build School Summary
+//     const summaryHTML = `
+//       <div class="summary">
+//         <h2>🏫 School Summary</h2>
+//         <table>
+//           <tr><th>School Name</th><td>${school.name}</td></tr>
+//           <tr><th>Email</th><td>${school.email || "N/A"}</td></tr>
+//           <tr><th>Phone</th><td>${school.phone || "N/A"}</td></tr>
+//           <tr><th>Address</th><td>${school.address || "N/A"}</td></tr>
+//           <tr><th>Total Classrooms</th><td>${classrooms.length}</td></tr>
+//           <tr><th>Total Teachers</th><td>${teachers.length}</td></tr>
+//           <tr><th>Total Students</th><td>${students.length}</td></tr>
+//           <tr><th>Date Created</th><td>${new Date(
+//             school.created_at
+//           ).toLocaleDateString()}</td></tr>
+//         </table>
+//       </div>
+//     `;
+
+//     // --- 7. Teacher List
+//     const teachersHTML = `
+//       <div class="teachers">
+//         <h2>👨‍🏫 Teachers</h2>
+//         ${
+//           teachers.length
+//             ? `
+//           <table>
+//             <thead><tr><th>Name</th><th>Email</th></tr></thead>
+//             <tbody>
+//               ${teachers
+//                 .map(
+//                   (t) => `<tr><td>${t.full_name}</td><td>${t.email}</td></tr>`
+//                 )
+//                 .join("")}
+//             </tbody>
+//           </table>`
+//             : "<p><em>No teachers registered.</em></p>"
+//         }
+//       </div>
+//     `;
+
+//     // --- 8. Class & Student Progress Section
+//     const classesHTML = classrooms
+//       .map((cls) => {
+//         const classStudents = students.filter(
+//           (s) => s.classroom_name === cls.name
+//         );
+
+//         if (classStudents.length === 0)
+//           return `<div class="class-block"><h2>${cls.name}</h2><p><em>No students enrolled.</em></p></div>`;
+
+//         return `
+//           <div class="class-block">
+//             <h2>📘 ${cls.name}</h2>
+//             <table>
+//               <thead>
+//                 <tr>
+//                   <th>Student Name</th>
+//                   <th>Email</th>
+//                   <th>Lessons Completed</th>
+//                   <th>Quiz Avg</th>
+//                   <th>Assignment Avg</th>
+//                   <th>Progress %</th>
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 ${classStudents
+//                   .map((stu) => {
+//                     const prog = progressMap[stu.id] || {
+//                       total_lessons: 0,
+//                       completed_lessons: 0,
+//                     };
+//                     const percent =
+//                       prog.total_lessons > 0
+//                         ? Math.round(
+//                             (prog.completed_lessons / prog.total_lessons) * 100
+//                           )
+//                         : 0;
+//                     return `
+//                       <tr>
+//                         <td>${stu.full_name}</td>
+//                         <td>${stu.email}</td>
+//                         <td>${prog.completed_lessons}/${prog.total_lessons}</td>
+//                         <td>${quizMap[stu.id] ?? "N/A"}</td>
+//                         <td>${assignmentMap[stu.id] ?? "N/A"}</td>
+//                         <td>${percent}%</td>
+//                       </tr>`;
+//                   })
+//                   .join("")}
+//               </tbody>
+//             </table>
+//           </div>
+//         `;
+//       })
+//       .join("");
+
+//     // --- 9. Combine all HTML
+//     const html = `
+//       <html>
+//       <head>
+//         <style>
+//           body { font-family: Arial, sans-serif; padding: 40px; color: #2c3e50; }
+//           h1, h2 { color: #2c3e50; }
+//           h1 { text-align: center; }
+//           table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+//           th, td { border: 1px solid #ccc; padding: 6px; font-size: 12px; }
+//           th { background-color: #34495e; color: white; }
+//           tr:nth-child(even) { background-color: #f9f9f9; }
+//           .class-block, .teachers, .summary { margin-top: 30px; }
+//           .footer { margin-top: 30px; text-align: center; font-size: 10px; color: gray; }
+//         </style>
+//       </head>
+//       <body>
+//         <h1>${school.name} — School Progress Report</h1>
+//         <p style="text-align:center; color:gray;">Generated on ${new Date().toLocaleString()}</p>
+//         ${summaryHTML}
+//         ${teachersHTML}
+//         ${classesHTML}
+//         <div class="footer">© ${new Date().getFullYear()} School Progress Report</div>
+//       </body>
+//       </html>
+//     `;
+
+//     // --- 10. Puppeteer PDF generation
+//     const browser = await puppeteer.launch({
+//       headless: true,
+//       args: ["--no-sandbox", "--disable-setuid-sandbox"],
+//     });
+//     const page = await browser.newPage();
+//     await page.setContent(html, { waitUntil: "networkidle0" });
+//     const pdfBuffer = await page.pdf({
+//       format: "A4",
+//       printBackground: true,
+//       margin: { top: "1cm", bottom: "1cm", left: "1cm", right: "1cm" },
+//     });
+//     await browser.close();
+
+//     res.setHeader("Content-Type", "application/pdf");
+//     res.setHeader(
+//       "Content-Disposition",
+//       `attachment; filename=${school.name.replace(
+//         /\s+/g,
+//         "_"
+//       )}_Summary_Report.pdf`
+//     );
+//     res.send(pdfBuffer);
+//   } catch (err) {
+//     console.error("Error generating report:", err);
+//     res.status(500).send("Error generating report PDF");
+//   }
+// };
+
+exports.downloadSchoolProgressReport = async (req, res) => {
+  const { schoolId } = req.params;
+
+  try {
+    // --- 1. Get school info
+    const schoolRes = await pool.query(
+      `SELECT id, name, address, email, phone, created_at 
+       FROM schools WHERE id = $1`,
+      [schoolId]
+    );
+    const school = schoolRes.rows[0];
+    if (!school) return res.status(404).send("School not found");
+
+    // --- 2. Get classrooms
+    const classRes = await pool.query(
+      `SELECT id, name FROM classrooms WHERE school_id = $1 ORDER BY name`,
+      [schoolId]
+    );
+    const classrooms = classRes.rows;
+
+    // --- 3. Get students
+    const studentRes = await pool.query(
+      `SELECT 
+          u.id, 
+          u.fullname AS full_name, 
+          u.email, 
+          c.name AS classroom_name
+       FROM user_school us
+       JOIN users2 u ON us.user_id = u.id
+       LEFT JOIN classrooms c ON us.classroom_id = c.id
+       WHERE us.role_in_school = 'student' 
+         AND us.school_id = $1
+       ORDER BY c.name, u.fullname`,
+      [schoolId]
+    );
+    const students = studentRes.rows;
+
+    // --- 4. Get teachers
+    const teacherRes = await pool.query(
+      `SELECT 
+          u.id, 
+          u.fullname AS full_name, 
+          u.email
+       FROM user_school us
+       JOIN users2 u ON us.user_id = u.id
+       WHERE us.role_in_school = 'teacher'
+         AND us.school_id = $1
+       ORDER BY u.fullname`,
+      [schoolId]
+    );
+    const teachers = teacherRes.rows;
+
+    // --- 5. Get progress data
+const progressRes = await pool.query(`
+  SELECT 
+    us.user_id,
+    COUNT(DISTINCT l.id) AS total_lessons,
+    COUNT(DISTINCT ulp.lesson_id) AS completed_lessons
+  FROM user_school us
+  LEFT JOIN classrooms cls ON us.classroom_id = cls.id
+  LEFT JOIN classroom_courses cc ON cc.classroom_id = cls.id
+  LEFT JOIN courses c ON c.id = cc.course_id
+  LEFT JOIN modules m ON m.course_id = c.id
+  LEFT JOIN lessons l ON l.module_id = m.id
+  LEFT JOIN user_lesson_progress ulp
+    ON ulp.user_id = us.user_id 
+    AND ulp.lesson_id = l.id 
+    AND ulp.completed_at IS NOT NULL
+  WHERE us.role_in_school = 'student'
+  GROUP BY us.user_id
+`);
+
+
+
+    const progressMap = Object.fromEntries(
+      progressRes.rows.map((p) => [p.user_id, p])
+    );
+
+    const quizRes = await pool.query(
+      `SELECT student_id, AVG(score) AS avg_quiz
+       FROM quiz_submissions
+       GROUP BY student_id`
+    );
+    const quizMap = Object.fromEntries(
+      quizRes.rows.map((q) => [q.student_id, Math.round(q.avg_quiz)])
+    );
+
+    const assignmentRes = await pool.query(
+      `SELECT student_id, AVG(total) AS avg_assignment
+       FROM assignment_submissions
+       GROUP BY student_id`
+    );
+    const assignmentMap = Object.fromEntries(
+      assignmentRes.rows.map((a) => [
+        a.student_id,
+        Math.round(a.avg_assignment),
+      ])
+    );
+
+    // --- 6. Build School Summary
+    const summaryHTML = `
+      <div class="summary">
+        <h2>🏫 School Summary</h2>
+        <table>
+          <tr><th>School Name</th><td>${school.name}</td></tr>
+          <tr><th>Email</th><td>${school.email || "N/A"}</td></tr>
+          <tr><th>Phone</th><td>${school.phone || "N/A"}</td></tr>
+          <tr><th>Address</th><td>${school.address || "N/A"}</td></tr>
+          <tr><th>Total Classrooms</th><td>${classrooms.length}</td></tr>
+          <tr><th>Total Teachers</th><td>${teachers.length}</td></tr>
+          <tr><th>Total Students</th><td>${students.length}</td></tr>
+          <tr><th>Date Created</th><td>${new Date(
+            school.created_at
+          ).toLocaleDateString()}</td></tr>
+        </table>
+      </div>
+    `;
+
+    // --- 7. Teacher List
+    const teachersHTML = `
+      <div class="teachers">
+        <h2>👨‍🏫 Teachers</h2>
+        ${
+          teachers.length
+            ? `
+          <table>
+            <thead><tr><th>Name</th><th>Email</th></tr></thead>
+            <tbody>
+              ${teachers
+                .map(
+                  (t) => `<tr><td>${t.full_name}</td><td>${t.email}</td></tr>`
+                )
+                .join("")}
+            </tbody>
+          </table>`
+            : "<p><em>No teachers registered.</em></p>"
+        }
+      </div>
+    `;
+
+    // --- 8. Class & Student Progress Section
+    const classesHTML = classrooms
+      .map((cls) => {
+        const classStudents = students.filter(
+          (s) => s.classroom_name === cls.name
+        );
+
+        if (classStudents.length === 0)
+          return `<div class="class-block"><h2>${cls.name}</h2><p><em>No students enrolled.</em></p></div>`;
+
+        return `
+          <div class="class-block">
+            <h2>📘 ${cls.name}</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Student Name</th>
+                  <th>Email</th>
+                  <th>Lessons Completed</th>
+                  <th>Quiz Avg</th>
+                  <th>Assignment Avg</th>
+                  <th>Progress %</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${classStudents
+                  .map((stu) => {
+                    const prog = progressMap[stu.id] || {
+                      total_lessons: 0,
+                      completed_lessons: 0,
+                    };
+                    const percent =
+                      prog.total_lessons > 0
+                        ? Math.round(
+                            (prog.completed_lessons / prog.total_lessons) * 100
+                          )
+                        : 0;
+                    return `
+                      <tr>
+                        <td>${stu.full_name}</td>
+                        <td>${stu.email}</td>
+                        <td>${prog.completed_lessons}/${prog.total_lessons}</td>
+                        <td>${quizMap[stu.id] ?? "N/A"}</td>
+                        <td>${assignmentMap[stu.id] ?? "N/A"}</td>
+                        <td>${percent}%</td>
+                      </tr>`;
+                  })
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+        `;
+      })
+      .join("");
+
+    // --- 9. Combine all HTML
+    const html = `
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; color: #2c3e50; }
+          h1, h2 { color: #2c3e50; }
+          h1 { text-align: center; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th, td { border: 1px solid #ccc; padding: 6px; font-size: 12px; }
+          th { background-color: #34495e; color: white; }
+          tr:nth-child(even) { background-color: #f9f9f9; }
+          .class-block, .teachers, .summary { margin-top: 30px; }
+          .footer { margin-top: 30px; text-align: center; font-size: 10px; color: gray; }
+        </style>
+      </head>
+      <body>
+        <h1>${school.name} — School Progress Report</h1>
+        <p style="text-align:center; color:gray;">Generated on ${new Date().toLocaleString()}</p>
+        ${summaryHTML}
+        ${teachersHTML}
+        ${classesHTML}
+        <div class="footer">© ${new Date().getFullYear()} School Progress Report</div>
+      </body>
+      </html>
+    `;
+
+    // --- 10. Puppeteer PDF generation
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "1cm", bottom: "1cm", left: "1cm", right: "1cm" },
+    });
+    await browser.close();
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=${school.name.replace(
+        /\s+/g,
+        "_"
+      )}_Summary_Report.pdf`
+    );
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error("Error generating report:", err);
+    res.status(500).send("Error generating report PDF");
   }
 };
 
@@ -2266,15 +2911,20 @@ exports.updateClassroom = async (req, res) => {
       }
     }
 
-    return res.json({ success: true, message: "Classroom updated successfully" });
+    return res.json({
+      success: true,
+      message: "Classroom updated successfully",
+    });
   } catch (err) {
     console.error("Error updating classroom:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Server error while updating classroom" });
+      .json({
+        success: false,
+        message: "Server error while updating classroom",
+      });
   }
 };
-
 
 // 🗑️ DELETE CLASSROOM
 exports.deleteClassroom = async (req, res) => {
@@ -2282,19 +2932,30 @@ exports.deleteClassroom = async (req, res) => {
     const { id } = req.params;
 
     // Clear related records
-    await pool.query(`DELETE FROM classroom_teachers WHERE classroom_id = $1`, [id]);
-    await pool.query(`DELETE FROM classroom_instructors WHERE classroom_id = $1`, [id]);
+    await pool.query(`DELETE FROM classroom_teachers WHERE classroom_id = $1`, [
+      id,
+    ]);
+    await pool.query(
+      `DELETE FROM classroom_instructors WHERE classroom_id = $1`,
+      [id]
+    );
     // await pool.query(`DELETE FROM classroom_students WHERE classroom_id = $1`, [id]);
 
     // Delete classroom
     await pool.query(`DELETE FROM classrooms WHERE id = $1`, [id]);
 
-    return res.json({ success: true, message: "Classroom deleted successfully" });
+    return res.json({
+      success: true,
+      message: "Classroom deleted successfully",
+    });
   } catch (err) {
     console.error("Error deleting classroom:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Server error while deleting classroom" });
+      .json({
+        success: false,
+        message: "Server error while deleting classroom",
+      });
   }
 };
 
@@ -2347,12 +3008,10 @@ exports.assignCoursesToClassroom = async (req, res) => {
     });
   } catch (err) {
     console.error("Error assigning courses to classroom:", err);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Server error while assigning courses",
-      });
+    res.status(500).json({
+      success: false,
+      message: "Server error while assigning courses",
+    });
   }
 };
 
@@ -2377,7 +3036,6 @@ exports.getClassroomCourses = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 
 // 📌 GET: Quotes
 exports.getQuotes = async (req, res) => {
@@ -2439,18 +3097,13 @@ exports.getSchoolCourses = async (req, res) => {
   }
 };
 
-
 exports.approveQuote = async (req, res) => {
   try {
     const { id } = req.params;
     await pool.query("UPDATE quotes SET status = 'approved' WHERE id = $1", [
       id,
     ]);
-    await logActivityForUser(
-      req,
-      "Quote approved",
-      `Quote ID: ${id}`
-    );
+    await logActivityForUser(req, "Quote approved", `Quote ID: ${id}`);
     res.redirect("/admin/quotes");
   } catch (err) {
     console.error("Error approving quote:", err);
@@ -2479,14 +3132,20 @@ exports.assignSchoolCourses = async (req, res) => {
     if (!school_id) return res.status(400).send("School ID is required");
 
     // Remove old assignments for this school
-    await pool.query("DELETE FROM school_courses WHERE school_id = $1", [school_id]);
+    await pool.query("DELETE FROM school_courses WHERE school_id = $1", [
+      school_id,
+    ]);
 
     // Get selected courses
     const courseIds = req.body[`school_${school_id}`] || [];
 
     if (courseIds.length > 0) {
-      const insertValues = courseIds.map(id => `(${school_id}, ${id})`).join(",");
-      await pool.query(`INSERT INTO school_courses (school_id, course_id) VALUES ${insertValues}`);
+      const insertValues = courseIds
+        .map((id) => `(${school_id}, ${id})`)
+        .join(",");
+      await pool.query(
+        `INSERT INTO school_courses (school_id, course_id) VALUES ${insertValues}`
+      );
     }
 
     res.redirect("/admin/school-courses");
@@ -2730,7 +3389,6 @@ exports.deleteUserFromSchool = async (req, res) => {
 //   }
 // };
 
-
 exports.addStudentsToClassroom = async (req, res) => {
   const classroomId = parseInt(req.params.id, 10);
   let { student_ids } = req.body;
@@ -2781,12 +3439,10 @@ exports.addStudentsToClassroom = async (req, res) => {
     );
 
     if (studentResult.rows.length === 0) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          message: "No valid students found in this school.",
-        });
+      return res.status(404).json({
+        success: false,
+        message: "No valid students found in this school.",
+      });
     }
 
     // assign
@@ -3196,8 +3852,3 @@ exports.getChatWithStudent = async (req, res) => {
     res.status(500).send("Error loading chat conversation");
   }
 };
-
-
-
-
-

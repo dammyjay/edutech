@@ -122,6 +122,9 @@ router.get("/chat/messages/:receiverId", adminController.getChatMessages);
 router.get("/chats", instructorController.getInstructorChats);
 router.get("/chats/:studentId", instructorController.getChatWithStudent);
 router.post("/chat/markRead/:receiverId", instructorController.markMessagesAsRead);
+router.get("/search-student", instructorController.searchStudent);
+router.get("/messages/unread", instructorController.getUnreadMessages);
+
 
 
 // router.get("/chats", adminController.getInstructorChats);

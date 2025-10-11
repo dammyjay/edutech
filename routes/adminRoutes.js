@@ -284,5 +284,10 @@ router.post(
 );
 
 router.get("/classrooms/:id/courses", adminController.getClassroomCourses);
+router.get(
+  "/schools/:schoolId/download-progress",
+  adminController.downloadSchoolProgressReport
+);
+
 
 module.exports = router;
