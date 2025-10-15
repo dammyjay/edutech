@@ -807,7 +807,7 @@ exports.showCourses = async (req, res) => {
 
 exports.createCourse = async (req, res) => {
   console.log("Creating course with:", req.body);
-  const { title, description, level, career_pathway_id, sort_order } = req.body;
+  const { title, description, level, career_pathway_id, sort_order, amount } = req.body;
   let thumbnail_url = null;
 
   if (req.file) {
