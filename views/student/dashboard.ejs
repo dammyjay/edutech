@@ -1073,93 +1073,171 @@ function loadLessonPart(lessonId, part) {
       }
 
       // 📝 LESSON NOTE + SLIDES SECTION
-      if (part === "content") {
-        const rawContent = lesson.content || "<p>No content available.</p>";
+     if (part === "content") {
+  const rawContent = lesson.content || "<p>No content available.</p>";
 
-        // ✅ Split slides automatically by emoji headers
-        const slideBreaks = /(🎯|🧰|🧠|⚙️|👥|✋|🧾|🧩|🏁|📚)/g;
-        const slides = rawContent
-          .split(slideBreaks)
-          .map((chunk, i, arr) => {
-            if (slideBreaks.test(chunk) && arr[i + 1]) {
-              return chunk + arr[i + 1];
-            } else if (slideBreaks.test(arr[i - 1])) {
-              return "";
-            }
-            return chunk;
-          })
-          .filter(Boolean);
+  // ✅ Split slides automatically by emojis, <hr>, or ---
+  const slideBreaks = /(<hr\s*\/?>|---)/gi;
 
-        const noteView = `
-          <div class="lesson-view-mode">
-            <button id="noteBtn" class="active">📝 Note View</button>
-            <button id="slideBtn">📑 Slides View</button>
-          </div>
-          <div id="noteView" class="lesson-note">${rawContent}</div>
-          <div id="slideView" class="lesson-slides" style="display:none;"></div>
-        `;
+  // Split and clean
+  const rawSlides = rawContent
+    .split(slideBreaks)
+    .map(s => s.trim())
+    .filter(s => s && s !== "<hr>" && s !== "<hr/>" && s !== "---");
 
-        document.getElementById("lessonMainArea").innerHTML = noteView;
+  // ✅ Build slide objects with titles and content
+  const slides = rawSlides.map((s, index) => {
+    // Try to extract the first bold text or first sentence as title
+    let title = "";
 
-        // ✅ Build slides dynamically
-        let current = 0;
-        function renderSlide() {
-          const total = slides.length;
-          const html = `
-            <div class="slide-box">
-              ${slides[current]}
-              <div class="slide-controls">
-                <button id="prevSlide" ${current === 0 ? "disabled" : ""}>⬅ Prev</button>
-                <span>Slide ${current + 1} of ${total}</span>
-                <button id="nextSlide" ${current === total - 1 ? "disabled" : ""}>Next ➡</button>
-              </div>
-            </div>
-          `;
-          document.getElementById("slideView").innerHTML = html;
+    // Match first <strong> or <b> text
+    const boldMatch = s.match(/<strong>(.*?)<\/strong>|<b>(.*?)<\/b>/i);
+    if (boldMatch) {
+      title = boldMatch[1] || boldMatch[2];
+    } else {
+      // Fallback: use first few words
+      const plain = s.replace(/<[^>]+>/g, "").trim();
+      title = plain.split(/\s+/).slice(0, 5).join(" ") + "...";
+    }
 
-          document.getElementById("prevSlide").onclick = () => {
-            if (current > 0) { current--; renderSlide(); }
-          };
-          document.getElementById("nextSlide").onclick = () => {
-            if (current < total - 1) { current++; renderSlide(); }
-          };
-        }
-        renderSlide();
+    return { title, body: s };
+  });
 
-        // ✅ Toggle buttons
-        const noteBtn = document.getElementById("noteBtn");
-        const slideBtn = document.getElementById("slideBtn");
-        const noteDiv = document.getElementById("noteView");
-        const slideDiv = document.getElementById("slideView");
+  // ✅ Build HTML structure
+  // const noteView = `
+  //   <div class="lesson-view-mode">
+  //     <button id="noteBtn" class="active">📝 Note View</button>
+  //     <button id="slideBtn">📑 Slides View</button>
+  //   </div>
+  //   <div id="noteView" class="lesson-note">${rawContent}</div>
+  //   <div id="slideView" class="lesson-slides" style="display:none;"></div>
+  // `;
+  const noteView = `
+  <div class="lesson-view-controls">
+    <div class="text-controls">
+      <label>Text size:</label>
+      <button id="fontInc">A+</button>
+      <button id="fontDec">A−</button>
 
-        noteBtn.onclick = () => {
-          noteDiv.style.display = "block";
-          slideDiv.style.display = "none";
-          noteBtn.classList.add("active");
-          slideBtn.classList.remove("active");
-        };
+      <label>Font:</label>
+      <select id="fontSelect">
+        <option value="system-ui">Default</option>
+        <option value="serif">Serif</option>
+        <option value="sans-serif">Sans-serif</option>
+        <option value="OpenDyslexic, Arial">Dyslexic</option>
+      </select>
 
-        slideBtn.onclick = () => {
-          noteDiv.style.display = "none";
-          slideDiv.style.display = "block";
-          slideBtn.classList.add("active");
-          noteBtn.classList.remove("active");
-        };
+      <label>Line spacing:</label>
+      <select id="lineSpacing">
+        <option value="1.4">Normal</option>
+        <option value="1.8">Comfort</option>
+        <option value="2.2">Wide</option>
+      </select>
+    </div>
 
-        document.getElementById("ai-tutor").style.display = "flex";
+    <div class="lesson-view-mode">
+      <button id="noteBtn" class="active">📝 Note View</button>
+      <button id="slideBtn">📑 Slides View</button>
+    </div>
+  </div>
 
-        // ✅ Show lesson suggestions
-        const suggestions = [
-          `Summarize this lesson in simple terms.`,
-          `What is the key concept in "${lesson.title}"?`,
-          `Can you give me an example based on this lesson?`
-        ];
-        if (window.showLessonSuggestions) {
-          window.showLessonSuggestions(suggestions);
-        }
+  <div id="noteView" class="lesson-note">${rawContent}</div>
+  <div id="slideView" class="lesson-slides" style="display:none;"></div>
+`;
 
-        return; // ⛔ Stop here so no overwrite below
-      }
+
+  document.getElementById("lessonMainArea").innerHTML = noteView;
+
+  // ✅ Render slides
+  let current = 0;
+  function renderSlide() {
+    const total = slides.length;
+    const { title, body } = slides[current];
+
+    const html = `
+      <div class="slide-box">
+        <h3 class="slide-title">${title}</h3>
+        <div class="slide-body">${body}</div>
+        <div class="slide-controls">
+          <button id="prevSlide" ${current === 0 ? "disabled" : ""}>⬅ Prev</button>
+          <span>Slide ${current + 1} of ${total}</span>
+          <button id="nextSlide" ${current === total - 1 ? "disabled" : ""}>Next ➡</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById("slideView").innerHTML = html;
+
+    document.getElementById("prevSlide").onclick = () => {
+      if (current > 0) { current--; renderSlide(); }
+    };
+    document.getElementById("nextSlide").onclick = () => {
+      if (current < total - 1) { current++; renderSlide(); }
+    };
+  }
+
+  renderSlide();
+  // ✅ Text Controls
+let fontSize = 16; // default
+
+function applyTextStyles() {
+  const font = document.getElementById("fontSelect").value;
+  const spacing = document.getElementById("lineSpacing").value;
+  document.querySelectorAll(".lesson-note, .slide-body").forEach(el => {
+    el.style.fontSize = fontSize + "px";
+    el.style.fontFamily = font;
+    el.style.lineHeight = spacing;
+  });
+}
+
+document.getElementById("fontInc").onclick = () => {
+  fontSize += 2;
+  applyTextStyles();
+};
+
+document.getElementById("fontDec").onclick = () => {
+  if (fontSize > 10) fontSize -= 2;
+  applyTextStyles();
+};
+
+document.getElementById("fontSelect").onchange = applyTextStyles;
+document.getElementById("lineSpacing").onchange = applyTextStyles;
+
+
+  // ✅ Toggle Note / Slide views
+  const noteBtn = document.getElementById("noteBtn");
+  const slideBtn = document.getElementById("slideBtn");
+  const noteDiv = document.getElementById("noteView");
+  const slideDiv = document.getElementById("slideView");
+
+  noteBtn.onclick = () => {
+    noteDiv.style.display = "block";
+    slideDiv.style.display = "none";
+    noteBtn.classList.add("active");
+    slideBtn.classList.remove("active");
+  };
+
+  slideBtn.onclick = () => {
+    noteDiv.style.display = "none";
+    slideDiv.style.display = "block";
+    slideBtn.classList.add("active");
+    noteBtn.classList.remove("active");
+  };
+
+  document.getElementById("ai-tutor").style.display = "flex";
+
+  // ✅ Suggest questions
+  const suggestions = [
+    `Summarize this lesson in simple terms.`,
+    `What is the key concept in "${lesson.title}"?`,
+    `Can you give me an example based on this lesson?`
+  ];
+  if (window.showLessonSuggestions) {
+    window.showLessonSuggestions(suggestions);
+  }
+
+  return;
+}
 
       // 🧩 QUIZ SECTION
       if (part === "quiz") {

@@ -1913,6 +1913,7 @@ canvas {
     background: #f0f0f0;
     cursor: pointer;
     font-weight: 500;
+    color: black;
 }
 
 .lesson-view-mode button.active {
@@ -1961,6 +1962,53 @@ canvas {
     cursor: not-allowed;
 }
 
+.slide-title {
+    text-align: center;
+    font-size: 1.4em;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: #2c3e50;
+}
+
+.slide-body {
+    line-height: 1.6;
+    font-size: 1em;
+}
+
+.slide-body img {
+    max-width: 90%;
+    display: block;
+    margin: 10px auto;
+    border-radius: 8px;
+}
+
+.text-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+}
+
+.text-controls label {
+    font-weight: 600;
+}
+
+.text-controls button,
+.text-controls select {
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #f9f9f9;
+    cursor: pointer;
+    color: #333;
+}
+
+.text-controls button:hover,
+.text-controls select:hover {
+    background: #eee;
+}
 @keyframes fadeSlide {
     from {
         opacity: 0;
