@@ -1757,29 +1757,78 @@ exports.getLesson = async (req, res) => {
 };
 
 // POST /student/ai/ask
+// exports.askAITutor = async (req, res) => {
+//   try {
+//     const userId = req.user?.id || req.session.user?.id;
+//     const { question, lessonId } = req.body;
+
+//     // Pull a little lesson context if provided (title + content)
+//     let lessonContext = "";
+//     if (lessonId) {
+//       const ctx = await pool.query(
+//         `SELECT title, content FROM lessons WHERE id = $1 LIMIT 1`,
+//         [lessonId]
+//       );
+//       if (ctx.rows[0]) {
+//         lessonContext = `Title: ${ctx.rows[0].title}\n\n${
+//           ctx.rows[0].content || ""
+//         }`;
+//       }
+//     }
+
+//     const userName = req.session?.user?.fullname || "Student";
+//     const answer = await askTutor({ question, lessonContext, userName });
+
+//     // (Optional) Persist chat logs
+//     // await pool.query(
+//     //   `INSERT INTO ai_tutor_logs (user_id, lesson_id, question, answer)
+//     //    VALUES ($1,$2,$3,$4)`,
+//     //   [userId || null, lessonId || null, question, answer]
+//     // );
+
+//     res.json({ ok: true, answer });
+//   } catch (e) {
+//     console.error("AI tutor error:", e.message);
+//     res.status(500).json({ ok: false, error: "Tutor is unavailable." });
+//   }
+// };
+// POST /student/ai/ask
 exports.askAITutor = async (req, res) => {
   try {
     const userId = req.user?.id || req.session.user?.id;
     const { question, lessonId } = req.body;
 
-    // Pull a little lesson context if provided (title + content)
     let lessonContext = "";
+
     if (lessonId) {
       const ctx = await pool.query(
         `SELECT title, content FROM lessons WHERE id = $1 LIMIT 1`,
         [lessonId]
       );
+
       if (ctx.rows[0]) {
-        lessonContext = `Title: ${ctx.rows[0].title}\n\n${
-          ctx.rows[0].content || ""
-        }`;
+        const { title, content } = ctx.rows[0];
+
+        // 🧹 Clean HTML tags & limit to 3000 characters
+        const cleanText = content
+          ? content.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim()
+          : "";
+
+        const shortText =
+          cleanText.length > 3000
+            ? cleanText.slice(0, 3000) + "..."
+            : cleanText;
+
+        lessonContext = `Lesson Title: ${title}\n\nSummary of Lesson:\n${shortText}`;
       }
     }
 
     const userName = req.session?.user?.fullname || "Student";
+
+    // ✅ Now ask the tutor safely
     const answer = await askTutor({ question, lessonContext, userName });
 
-    // (Optional) Persist chat logs
+    // Optional: log chat
     // await pool.query(
     //   `INSERT INTO ai_tutor_logs (user_id, lesson_id, question, answer)
     //    VALUES ($1,$2,$3,$4)`,
