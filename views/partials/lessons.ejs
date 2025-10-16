@@ -70,105 +70,6 @@
   <% }) %>
 </div>
 
-<!-- CREATE LESSON MODAL -->
-<!-- <div id="lessonModal" class="modal">
-  <form method="POST" action="/admin/lessons/create" enctype="multipart/form-data" class="modal-content">
-    <h2>Create Lesson</h2>
-    <input type="hidden" name="course_id" value="<%= course.id %>">
-    <label>Title</label>
-    <input type="text" name="title" required>
-
-    <label>Content</label>
-    <textarea name="content" id="createLessonContent"></textarea>
-
-    <label>Module</label>
-    <select name="module_id" required>
-      <% modules.forEach(mod => { %>
-        <option value="<%= mod.id %>"><%= mod.title %></option>
-      <% }) %>
-    </select>
-
-    <label>Video</label>
-    <input type="file" name="video_url" accept="video/*">
-
-    <div class="modal-actions">
-      <button type="submit">Save</button>
-      <button type="button" onclick="closeLessonModal()">Cancel</button>
-    </div>
-  </form>
-</div> -->
-
-<!-- CREATE LESSON MODAL -->
-<!-- <div id="lessonModal" class="modal">
-  <form method="POST" action="/admin/lessons/create" enctype="multipart/form-data" class="modal-content">
-    <h2>Create Lesson</h2>
-    <input type="hidden" name="course_id" value="<%= course.id %>">
-
-    <label>Title</label>
-    <input type="text" name="title" required>
-
-    <label>Content</label>
-    <textarea name="content" id="createLessonContent"></textarea>
-
-    <label>Module</label>
-    <select name="module_id" required>
-      <% modules.forEach(mod => { %>
-        <option value="<%= mod.id %>"><%= mod.title %></option>
-      <% }) %>
-    </select>
-
-    <label>Video</label>
-    <input type="file" name="video_url" accept="video/*">
-
-    <div class="modal-actions">
-      <button type="submit">Save</button>
-      <button type="button" onclick="closeLessonModal()">Cancel</button>
-    </div>
-  </form>
-</div> -->
-
-<!-- EDIT LESSON MODAL -->
-<!-- <div id="editLessonModal" class="modal" style="display:none;">
-  <form id="editLessonForm" method="POST" enctype="multipart/form-data" class="modal-content">
-    <h2>Edit Lesson</h2>
-    <input type="hidden" name="course_id" value="<%= course.id %>">
-    <label>Title</label>
-    <input type="text" name="title" id="editLessonTitle" required>
-
-    <label>Content</label>
-    <textarea name="content" id="editLessonContent"></textarea>
-
-    <label>Video</label>
-    <input type="file" name="video_url" accept="video/*">
-
-    <div class="modal-actions">
-      <button type="submit">Update</button>
-      <button type="button" onclick="closeEditLessonModal()">Cancel</button>
-    </div>
-  </form>
-</div> -->
-
-<!-- EDIT LESSON MODAL -->
-<!-- <div id="editLessonModal" class="modal" style="display:none;">
-  <form id="editLessonForm" method="POST" enctype="multipart/form-data" class="modal-content">
-    <h2>Edit Lesson</h2>
-    <input type="hidden" name="course_id" id="editLessonCourseId">
-
-    <label>Title</label>
-    <input type="text" name="title" id="editLessonTitle" required>
-
-    <label>Content</label>
-    <textarea name="content" id="editLessonContent"></textarea>
-
-    <label>Video</label>
-    <input type="file" name="video_url" accept="video/*">
-
-    <div class="modal-actions">
-      <button type="submit">Update</button>
-      <button type="button" onclick="closeEditLessonModal()">Cancel</button>
-    </div>
-  </form>
-</div> -->
 
 <!-- CREATE LESSON MODAL -->
 <div id="lessonModal" class="modal">
@@ -204,28 +105,6 @@
 
 
 <!-- EDIT LESSON MODAL -->
-<!-- <div id="editLessonModal" class="modal" enctype="multipart/form-data" style="display:none;">
-  <form id="editLessonForm" method="POST" class="modal-content">
-    <h2>Edit Lesson</h2>
-    <input type="hidden" name="course_id" id="editLessonCourseId">
-
-    <label>Title</label>
-    <input type="text" name="title" id="editLessonTitle" required>
-
-    <label>Content</label>
-    <textarea name="content" id="editLessonContent"></textarea>
-
-    <label>Video Link (YouTube/Vimeo)</label>
-    <input type="url" name="video_url" id="editLessonVideo" placeholder="https://www.youtube.com/...">
-
-    <div class="modal-actions">
-      <button type="submit">Update</button>
-      <button type="button" onclick="closeEditLessonModal()">Cancel</button>
-    </div>
-  </form>
-</div> -->
-
-<!-- EDIT LESSON MODAL -->
 <div id="editLessonModal" class="modal" style="display:none;">
   <form id="editLessonForm" method="POST" class="modal-content">
     <h2>Edit Lesson</h2>
@@ -250,8 +129,6 @@
     </div>
   </form>
 </div>
-
-
 
 
 <!-- QUIZ MODAL -->
@@ -550,8 +427,9 @@ function deleteQuestion(id) {
 }
 </script>
 
-<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
-<script>
+<!-- <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script> -->
+<!-- <script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script> -->
+<!-- <script>
   let createLessonEditor = null;
   let editLessonEditor = null;
 
@@ -583,48 +461,6 @@ function deleteQuestion(id) {
     document.getElementById('lessonModal').style.display = 'none';
   }
 
-  /* ---------------- EDIT LESSON ---------------- */
-  // function openEditLessonModal(lesson) {
-  //   // document.getElementById('editLessonForm').action = '/admin/lessons/' + lesson.id + '/edit';
-  //   // document.getElementById('editLessonTitle').value = lesson.title;
-  //   // document.getElementById('editLessonCourseId').value = lesson.course_id;
-  //   // document.getElementById('editLessonModal').style.display = 'block';
-
-  //   const form = document.getElementById('editLessonForm');
-  //   form.action = `/admin/lessons/${lesson.id}/edit`;
-  //   document.getElementById('editLessonTitle').value = lesson.title;
-  //   document.getElementById('editLessonCourseId').value = lesson.course_id;
-
-  //   document.getElementById('editLessonModal').style.display = 'block';
-
-  //   if (!editLessonEditor) {
-  //     ClassicEditor.create(document.querySelector('#editLessonContent'))
-  //       .then(editor => {
-  //         editLessonEditor = editor;
-  //         editor.setData(lesson.content || '');
-
-  //         // ✅ sync editor data to hidden textarea before submit
-  //         document.getElementById('editLessonForm').addEventListener('submit', function (e) {
-  //           const content = editLessonEditor.getData().trim();
-  //           if (!content) {
-  //             e.preventDefault();
-  //             alert("Content is required.");
-  //             return;
-  //           }
-  //           document.querySelector('#editLessonContent').value = content;
-  //         }, { once: true });
-  //       })
-  //       .catch(error => console.error('CKEditor edit error:', error));
-  //   } else {
-  //     editLessonEditor.setData(lesson.content || '');
-  //   }
-  // }
-
-  // function closeEditLessonModal() {
-  //   document.getElementById('editLessonModal').style.display = 'none';
-  // }
-
- 
 
 
 async function openEditLessonModal(lessonId) {
@@ -710,12 +546,7 @@ function syncEditLessonContent(e) {
   }
   document.getElementById('editLessonContent').value = content;
 
-  // const courseIdField = document.getElementById('editLessonCourseId');
-  // if (!courseIdField.value) {
-  //   e.preventDefault();
-  //   alert("Course ID is missing. Cannot update lesson.");
-  //   return;
-  // }
+
 }
 
 function closeEditLessonModal() {
@@ -723,6 +554,226 @@ function closeEditLessonModal() {
 }
 
 
+</script> -->
+
+<!-- <script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
+<script>
+  /* ---------------- CREATE LESSON ---------------- */
+  function openLessonModal() {
+    document.getElementById('lessonModal').style.display = 'block';
+
+    // ✅ Initialize CKEditor 4 for create lesson if not already initialized
+    if (!CKEDITOR.instances['createLessonContent']) {
+      CKEDITOR.replace('createLessonContent');
+    }
+  }
+
+  function closeLessonModal() {
+    document.getElementById('lessonModal').style.display = 'none';
+  }
+
+  /* ---------------- EDIT LESSON ---------------- */
+  async function openEditLessonModal(lessonId) {
+    try {
+      const res = await fetch(`/admin/lessons/${lessonId}/json`);
+      const lesson = await res.json();
+
+      if (!lesson) {
+        alert("Failed to load lesson data.");
+        return;
+      }
+
+      const form = document.getElementById('editLessonForm');
+      form.action = `/admin/lessons/${lesson.id}/edit`;
+
+      document.getElementById('editLessonTitle').value = lesson.title;
+      document.getElementById('editLessonOrder').value = lesson.order_number || '';
+
+      // ✅ Module dropdown logic
+      let moduleSelect = document.getElementById('editLessonModule');
+      if (!moduleSelect) {
+        moduleSelect = document.createElement('select');
+        moduleSelect.name = 'module_id';
+        moduleSelect.id = 'editLessonModule';
+        moduleSelect.required = true;
+
+        const titleLabel = document.querySelector('#editLessonForm label[for="editLessonTitle"]') ||
+                           document.querySelector('#editLessonForm input[name="title"]');
+        form.insertBefore(moduleSelect, titleLabel);
+      }
+
+      moduleSelect.innerHTML = '';
+      if (window.modules && Array.isArray(window.modules)) {
+        window.modules.forEach(mod => {
+          const opt = document.createElement('option');
+          opt.value = mod.id;
+          opt.textContent = mod.title;
+          if (lesson.module_id == mod.id) opt.selected = true;
+          moduleSelect.appendChild(opt);
+        });
+      } else {
+        const opt = document.createElement('option');
+        opt.value = lesson.module_id;
+        opt.textContent = lesson.module_title || `Module ${lesson.module_id}`;
+        opt.selected = true;
+        moduleSelect.appendChild(opt);
+      }
+
+      document.getElementById('editLessonVideo').value = lesson.video_url || '';
+      document.getElementById('editLessonModal').style.display = 'block';
+
+      // ✅ Initialize CKEditor 4 for edit lesson
+      if (!CKEDITOR.instances['editLessonContent']) {
+        CKEDITOR.replace('editLessonContent');
+        // Wait a bit for initialization before setting content
+        setTimeout(() => {
+          CKEDITOR.instances['editLessonContent'].setData(lesson.content || '');
+        }, 300);
+      } else {
+        CKEDITOR.instances['editLessonContent'].setData(lesson.content || '');
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("Error fetching lesson data.");
+    }
+  }
+
+  function closeEditLessonModal() {
+    document.getElementById('editLessonModal').style.display = 'none';
+  }
+
+  /* ---------------- FORM SUBMISSION HANDLERS ---------------- */
+  // ✅ Sync CKEditor 4 data before submitting
+  document.addEventListener('submit', function (e) {
+    for (let instance in CKEDITOR.instances) {
+      CKEDITOR.instances[instance].updateElement();
+    }
+
+    const contentFields = ['createLessonContent', 'editLessonContent'];
+    for (let id of contentFields) {
+      const textarea = document.getElementById(id);
+      if (textarea && !textarea.value.trim()) {
+        e.preventDefault();
+        alert("Please enter lesson content before saving.");
+        return false;
+      }
+    }
+  });
+</script> -->
+
+
+<script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
+<script>
+  /* ---------------- CREATE LESSON ---------------- */
+  function openLessonModal() {
+    document.getElementById('lessonModal').style.display = 'block';
+
+    // ✅ Initialize CKEditor 4 for create lesson if not already initialized
+    if (!CKEDITOR.instances['createLessonContent']) {
+      CKEDITOR.replace('createLessonContent');
+    }
+  }
+
+  function closeLessonModal() {
+    document.getElementById('lessonModal').style.display = 'none';
+  }
+
+  /* ---------------- EDIT LESSON ---------------- */
+  async function openEditLessonModal(lessonId) {
+    try {
+      const res = await fetch(`/admin/lessons/${lessonId}/json`);
+      const lesson = await res.json();
+
+      if (!lesson) {
+        alert("Failed to load lesson data.");
+        return;
+      }
+
+      const form = document.getElementById('editLessonForm');
+      form.action = `/admin/lessons/${lesson.id}/edit`;
+
+      document.getElementById('editLessonTitle').value = lesson.title;
+      document.getElementById('editLessonOrder').value = lesson.order_number || '';
+
+      // ✅ Handle module dropdown
+      let moduleSelect = document.getElementById('editLessonModule');
+      if (!moduleSelect) {
+        moduleSelect = document.createElement('select');
+        moduleSelect.name = 'module_id';
+        moduleSelect.id = 'editLessonModule';
+        moduleSelect.required = true;
+
+        const titleLabel = document.querySelector('#editLessonForm label[for="editLessonTitle"]') ||
+                           document.querySelector('#editLessonForm input[name="title"]');
+        form.insertBefore(moduleSelect, titleLabel);
+      }
+
+      moduleSelect.innerHTML = '';
+      if (window.modules && Array.isArray(window.modules)) {
+        window.modules.forEach(mod => {
+          const opt = document.createElement('option');
+          opt.value = mod.id;
+          opt.textContent = mod.title;
+          if (lesson.module_id == mod.id) opt.selected = true;
+          moduleSelect.appendChild(opt);
+        });
+      } else {
+        const opt = document.createElement('option');
+        opt.value = lesson.module_id;
+        opt.textContent = lesson.module_title || `Module ${lesson.module_id}`;
+        opt.selected = true;
+        moduleSelect.appendChild(opt);
+      }
+
+      document.getElementById('editLessonVideo').value = lesson.video_url || '';
+      document.getElementById('editLessonModal').style.display = 'block';
+
+      // ✅ Initialize CKEditor 4 for edit lesson
+      if (!CKEDITOR.instances['editLessonContent']) {
+        CKEDITOR.replace('editLessonContent');
+        setTimeout(() => {
+          CKEDITOR.instances['editLessonContent'].setData(lesson.content || '');
+        }, 300);
+      } else {
+        CKEDITOR.instances['editLessonContent'].setData(lesson.content || '');
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("Error fetching lesson data.");
+    }
+  }
+
+  function closeEditLessonModal() {
+    document.getElementById('editLessonModal').style.display = 'none';
+  }
+
+  /* ---------------- FORM SUBMISSION HANDLERS ---------------- */
+  document.addEventListener('submit', function (e) {
+    // ✅ Update CKEditor fields first before reading their values
+    for (let instance in CKEDITOR.instances) {
+      CKEDITOR.instances[instance].updateElement();
+    }
+
+    // ✅ Now safely check for content
+    const createContent = document.getElementById('createLessonContent');
+    const editContent = document.getElementById('editLessonContent');
+
+    if (createContent && createContent.closest('form') === e.target) {
+      if (!createContent.value.trim()) {
+        e.preventDefault();
+        alert("Please enter lesson content before saving.");
+        return false;
+      }
+    }
+
+    if (editContent && editContent.closest('form') === e.target) {
+      if (!editContent.value.trim()) {
+        e.preventDefault();
+        alert("Lesson content is required.");
+        return false;
+      }
+    }
+  });
 </script>
-
-
