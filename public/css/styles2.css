@@ -1899,6 +1899,80 @@ canvas {
     font-size: 14px;
 }
 
+.lesson-view-mode {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.lesson-view-mode button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    background: #f0f0f0;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.lesson-view-mode button.active {
+    background: #007bff;
+    color: white;
+}
+
+.lesson-note {
+    line-height: 1.6;
+    padding: 20px;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+}
+
+.lesson-slides {
+    padding: 20px;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+}
+
+.slide-box {
+    min-height: 300px;
+    animation: fadeSlide 0.5s ease-in-out;
+}
+
+.slide-controls {
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.slide-controls button {
+    padding: 8px 14px;
+    border: none;
+    background: #007bff;
+    color: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.slide-controls button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+@keyframes fadeSlide {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .ai-tutor {
