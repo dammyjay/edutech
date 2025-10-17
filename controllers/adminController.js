@@ -331,93 +331,6 @@ exports.dashboard = async (req, res) => {
   }
 };
 
-// exports.instructorDashboard = async (req, res) => {
-//   try {
-//     const instructorId = req.user.id; // assuming you're using passport/session middleware
-//     // Step 1: Get Ministry Info
-//     const infoResult = await pool.query(
-//       "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
-//     );
-//     const info = infoResult.rows[0];
-
-//     // 1. Total courses
-//     const coursesCount = await pool.query(
-//       `SELECT COUNT(*) FROM courses WHERE instructor_id = $1`,
-//       [instructorId]
-//     );
-
-//     // 2. Total modules
-//     const modulesCount = await pool.query(
-//       `SELECT COUNT(*)
-//        FROM modules m
-//        JOIN courses c ON m.course_id = c.id
-//        WHERE c.instructor_id = $1`,
-//       [instructorId]
-//     );
-
-//     // 3. Total lessons
-//     const lessonsCount = await pool.query(
-//       `SELECT COUNT(*)
-//        FROM lessons l
-//        JOIN modules m ON l.module_id = m.id
-//        JOIN courses c ON m.course_id = c.id
-//        WHERE c.instructor_id = $1`,
-//       [instructorId]
-//     );
-
-//     // 4. Total students enrolled
-//     const studentsCount = await pool.query(
-//       `SELECT COUNT(DISTINCT e.user_id)
-//        FROM course_enrollments e
-//        JOIN courses c ON e.course_id = c.id
-//        WHERE c.instructor_id = $1`,
-//       [instructorId]
-//     );
-
-//     // 5. Assignment submissions across instructor’s courses
-//     const submissionsCount = await pool.query(
-//       `SELECT COUNT(*)
-//        FROM assignment_submissions s
-//        JOIN lessons l ON s.assignment_id = l.id
-//        JOIN modules m ON l.module_id = m.id
-//        JOIN courses c ON m.course_id = c.id
-//        WHERE c.instructor_id = $1`,
-//       [instructorId]
-//     );
-
-//     // Optionally, fetch instructor’s courses list with enrollments
-//     const coursesList = await pool.query(
-//       `SELECT c.id, c.title, COUNT(e.id) AS student_count
-//        FROM courses c
-//        LEFT JOIN course_enrollments e ON e.course_id = c.id
-//        WHERE c.instructor_id = $1
-//        GROUP BY c.id
-//        ORDER BY c.created_at DESC`,
-//       [instructorId]
-//     );
-
-//     const profilePic = req.session.user
-//       ? req.session.user.profile_picture
-//       : null;
-
-//     res.render("instructor/dashboard", {
-//       total_courses: parseInt(coursesCount.rows[0].count, 10),
-//       total_modules: parseInt(modulesCount.rows[0].count, 10),
-//       total_lessons: parseInt(lessonsCount.rows[0].count, 10),
-//       total_students: parseInt(studentsCount.rows[0].count, 10),
-//       total_submissions: parseInt(submissionsCount.rows[0].count, 10),
-//       courses: coursesList.rows,
-//       info,
-//       profilePic,
-//       role: "instructor", // ✅ pass role
-//       user: req.session.user,
-//     });
-//   } catch (err) {
-//     console.error("Instructor Dashboard Error:", err.message);
-//     res.status(500).send("Error loading dashboard");
-//   }
-// };
-
 exports.instructorDashboard = async (req, res) => {
   try {
     const instructorId = req.user.id;
@@ -840,61 +753,6 @@ exports.createCourse = async (req, res) => {
   res.redirect("/admin/courses");
 };
 
-// exports.editCourse = async (req, res) => {
-//   const { id } = req.params;
-//   const { title, description, level, career_pathway_id, sort_order, amount } = req.body;
-
-//   try {
-//     let thumbnail_url = null;
-
-//     if (req.file) {
-//       const result = await cloudinary.uploader.upload(req.file.path, {
-//         folder: "courses",
-//       });
-//       thumbnail_url = result.secure_url;
-//       if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-//     }
-
-//     // Update course
-//     const existing = await pool.query("SELECT * FROM courses WHERE id = $1", [
-//       id,
-//     ]);
-
-//     const updatedThumbnail = thumbnail_url || existing.rows[0]?.thumbnail_url;
-
-//     await pool.query(
-//       `UPDATE courses
-//        SET title = $1,
-//            description = $2,
-//            level = $3,
-//            career_pathway_id = $4,
-//            thumbnail_url = $5,
-//            sort_order = $6,
-//            amount = $7
-//        WHERE id = $8`,
-//       [
-//         title,
-//         description,
-//         level,
-//         career_pathway_id || null,
-//         updatedThumbnail,
-//         sort_order || null,
-//         amount || null,
-//         id,
-//       ]
-//     );
-
-//     await logActivityForUser(
-//       req,
-//       "Course edited",
-//       `Course title: ${title}`
-//     );
-//     res.redirect("/admin/courses");
-//   } catch (err) {
-//     console.error("❌ Error editing course:", err.message);
-//     res.status(500).send("Server Error");
-//   }
-// };
 exports.editCourse = async (req, res) => {
   const { id } = req.params;
   const { title, description, level, career_pathway_id, sort_order, amount } =
@@ -954,22 +812,6 @@ exports.editCourse = async (req, res) => {
   }
 };
 
-// exports.deleteCourse = async (req, res) => {
-//   const { id } = req.params;
-
-//   try {
-//     await pool.query("DELETE FROM courses WHERE id = $1", [id]);
-//     await logActivityForUser(
-//       req,
-//       "Course deleted",
-//       `Course ID: ${id}`
-//     );
-//     res.redirect("/admin/courses");
-//   } catch (err) {
-//     console.error("❌ Error deleting course:", err.message);
-//     res.status(500).send("Server Error");
-//   }
-// };
 exports.deleteCourse = async (req, res) => {
   const { id } = req.params;
 
@@ -2154,6 +1996,9 @@ exports.getSchools = async (req, res) => {
         s.name,
         s.email,
         s.phone,
+        s.address,
+        s.logo_url,
+        s.created_at,
         COUNT(DISTINCT CASE WHEN us.role_in_school = 'student' THEN u.id END) AS student_count,
         COUNT(DISTINCT CASE WHEN us.role_in_school = 'teacher' THEN u.id END) AS teacher_count,
         COUNT(DISTINCT c.id) AS classroom_count
@@ -2176,6 +2021,62 @@ exports.getSchools = async (req, res) => {
     res.status(500).send("Error loading schools");
   }
 };
+
+exports.updateSchoolInfo = async (req, res) => {
+  try {
+    const { id, email, phone, address } = req.body;
+    let logo_url = null;
+
+    // ✅ Upload new logo to Cloudinary if provided
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "school_logos",
+      });
+      logo_url = result.secure_url;
+
+      // delete local file after upload
+      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    }
+
+    // ✅ Build dynamic SQL update
+    const fields = [];
+    const values = [];
+    let index = 1;
+
+    if (email) {
+      fields.push(`email = $${index++}`);
+      values.push(email);
+    }
+    if (phone) {
+      fields.push(`phone = $${index++}`);
+      values.push(phone);
+    }
+    if (address) {
+      fields.push(`address = $${index++}`);
+      values.push(address);
+    }
+    if (logo_url) {
+      fields.push(`logo_url = $${index++}`);
+      values.push(logo_url);
+    }
+
+    if (fields.length === 0)
+      return res.json({ ok: false, error: "No information to update." });
+
+    values.push(id);
+
+    await pool.query(
+      `UPDATE schools SET ${fields.join(", ")} WHERE id = $${index}`,
+      values
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("❌ Error updating school info:", err);
+    res.json({ ok: false, error: "Failed to update school info." });
+  }
+};
+
 
 // 📌 GET: Single School Details
 exports.getSchoolDetails = async (req, res) => {
@@ -2318,243 +2219,6 @@ exports.getSchoolDetails = async (req, res) => {
     res.status(500).send("Error loading school details");
   }
 };
-
-// exports.downloadSchoolProgressReport = async (req, res) => {
-//   const { schoolId } = req.params;
-
-//   try {
-//     // --- 1. Get school info
-//     const schoolRes = await pool.query(
-//       `SELECT id, name, address, email, phone, created_at
-//        FROM schools WHERE id = $1`,
-//       [schoolId]
-//     );
-//     const school = schoolRes.rows[0];
-//     if (!school) return res.status(404).send("School not found");
-
-//     // --- 2. Get classrooms
-//     const classRes = await pool.query(
-//       `SELECT id, name FROM classrooms WHERE school_id = $1 ORDER BY name`,
-//       [schoolId]
-//     );
-//     const classrooms = classRes.rows;
-
-//     // --- 3. Get students
-//     const studentRes = await pool.query(
-//       `SELECT
-//           u.id,
-//           u.fullname AS full_name,
-//           u.email,
-//           c.name AS classroom_name
-//        FROM user_school us
-//        JOIN users2 u ON us.user_id = u.id
-//        LEFT JOIN classrooms c ON us.classroom_id = c.id
-//        WHERE us.role_in_school = 'student'
-//          AND us.school_id = $1
-//        ORDER BY c.name, u.fullname`,
-//       [schoolId]
-//     );
-//     const students = studentRes.rows;
-
-//     // --- 4. Get teachers
-//     const teacherRes = await pool.query(
-//       `SELECT
-//           u.id,
-//           u.fullname AS full_name,
-//           u.email
-//        FROM user_school us
-//        JOIN users2 u ON us.user_id = u.id
-//        WHERE us.role_in_school = 'teacher'
-//          AND us.school_id = $1
-//        ORDER BY u.fullname`,
-//       [schoolId]
-//     );
-//     const teachers = teacherRes.rows;
-
-//     // --- 5. Get progress data
-//     const progressRes = await pool.query(
-//       `SELECT ulp.user_id, COUNT(l.id) AS total_lessons,
-//               COUNT(ulp.completed_at) AS completed_lessons
-//        FROM user_lesson_progress ulp
-//        JOIN lessons l ON l.id = ulp.lesson_id
-//        GROUP BY ulp.user_id`
-//     );
-//     const progressMap = Object.fromEntries(
-//       progressRes.rows.map((p) => [p.user_id, p])
-//     );
-
-//     const quizRes = await pool.query(
-//       `SELECT student_id, AVG(score) AS avg_quiz
-//        FROM quiz_submissions
-//        GROUP BY student_id`
-//     );
-//     const quizMap = Object.fromEntries(
-//       quizRes.rows.map((q) => [q.student_id, Math.round(q.avg_quiz)])
-//     );
-
-//     const assignmentRes = await pool.query(
-//       `SELECT student_id, AVG(total) AS avg_assignment
-//        FROM assignment_submissions
-//        GROUP BY student_id`
-//     );
-//     const assignmentMap = Object.fromEntries(
-//       assignmentRes.rows.map((a) => [
-//         a.student_id,
-//         Math.round(a.avg_assignment),
-//       ])
-//     );
-
-//     // --- 6. Build School Summary
-//     const summaryHTML = `
-//       <div class="summary">
-//         <h2>🏫 School Summary</h2>
-//         <table>
-//           <tr><th>School Name</th><td>${school.name}</td></tr>
-//           <tr><th>Email</th><td>${school.email || "N/A"}</td></tr>
-//           <tr><th>Phone</th><td>${school.phone || "N/A"}</td></tr>
-//           <tr><th>Address</th><td>${school.address || "N/A"}</td></tr>
-//           <tr><th>Total Classrooms</th><td>${classrooms.length}</td></tr>
-//           <tr><th>Total Teachers</th><td>${teachers.length}</td></tr>
-//           <tr><th>Total Students</th><td>${students.length}</td></tr>
-//           <tr><th>Date Created</th><td>${new Date(
-//             school.created_at
-//           ).toLocaleDateString()}</td></tr>
-//         </table>
-//       </div>
-//     `;
-
-//     // --- 7. Teacher List
-//     const teachersHTML = `
-//       <div class="teachers">
-//         <h2>👨‍🏫 Teachers</h2>
-//         ${
-//           teachers.length
-//             ? `
-//           <table>
-//             <thead><tr><th>Name</th><th>Email</th></tr></thead>
-//             <tbody>
-//               ${teachers
-//                 .map(
-//                   (t) => `<tr><td>${t.full_name}</td><td>${t.email}</td></tr>`
-//                 )
-//                 .join("")}
-//             </tbody>
-//           </table>`
-//             : "<p><em>No teachers registered.</em></p>"
-//         }
-//       </div>
-//     `;
-
-//     // --- 8. Class & Student Progress Section
-//     const classesHTML = classrooms
-//       .map((cls) => {
-//         const classStudents = students.filter(
-//           (s) => s.classroom_name === cls.name
-//         );
-
-//         if (classStudents.length === 0)
-//           return `<div class="class-block"><h2>${cls.name}</h2><p><em>No students enrolled.</em></p></div>`;
-
-//         return `
-//           <div class="class-block">
-//             <h2>📘 ${cls.name}</h2>
-//             <table>
-//               <thead>
-//                 <tr>
-//                   <th>Student Name</th>
-//                   <th>Email</th>
-//                   <th>Lessons Completed</th>
-//                   <th>Quiz Avg</th>
-//                   <th>Assignment Avg</th>
-//                   <th>Progress %</th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//                 ${classStudents
-//                   .map((stu) => {
-//                     const prog = progressMap[stu.id] || {
-//                       total_lessons: 0,
-//                       completed_lessons: 0,
-//                     };
-//                     const percent =
-//                       prog.total_lessons > 0
-//                         ? Math.round(
-//                             (prog.completed_lessons / prog.total_lessons) * 100
-//                           )
-//                         : 0;
-//                     return `
-//                       <tr>
-//                         <td>${stu.full_name}</td>
-//                         <td>${stu.email}</td>
-//                         <td>${prog.completed_lessons}/${prog.total_lessons}</td>
-//                         <td>${quizMap[stu.id] ?? "N/A"}</td>
-//                         <td>${assignmentMap[stu.id] ?? "N/A"}</td>
-//                         <td>${percent}%</td>
-//                       </tr>`;
-//                   })
-//                   .join("")}
-//               </tbody>
-//             </table>
-//           </div>
-//         `;
-//       })
-//       .join("");
-
-//     // --- 9. Combine all HTML
-//     const html = `
-//       <html>
-//       <head>
-//         <style>
-//           body { font-family: Arial, sans-serif; padding: 40px; color: #2c3e50; }
-//           h1, h2 { color: #2c3e50; }
-//           h1 { text-align: center; }
-//           table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-//           th, td { border: 1px solid #ccc; padding: 6px; font-size: 12px; }
-//           th { background-color: #34495e; color: white; }
-//           tr:nth-child(even) { background-color: #f9f9f9; }
-//           .class-block, .teachers, .summary { margin-top: 30px; }
-//           .footer { margin-top: 30px; text-align: center; font-size: 10px; color: gray; }
-//         </style>
-//       </head>
-//       <body>
-//         <h1>${school.name} — School Progress Report</h1>
-//         <p style="text-align:center; color:gray;">Generated on ${new Date().toLocaleString()}</p>
-//         ${summaryHTML}
-//         ${teachersHTML}
-//         ${classesHTML}
-//         <div class="footer">© ${new Date().getFullYear()} School Progress Report</div>
-//       </body>
-//       </html>
-//     `;
-
-//     // --- 10. Puppeteer PDF generation
-//     const browser = await puppeteer.launch({
-//       headless: true,
-//       args: ["--no-sandbox", "--disable-setuid-sandbox"],
-//     });
-//     const page = await browser.newPage();
-//     await page.setContent(html, { waitUntil: "networkidle0" });
-//     const pdfBuffer = await page.pdf({
-//       format: "A4",
-//       printBackground: true,
-//       margin: { top: "1cm", bottom: "1cm", left: "1cm", right: "1cm" },
-//     });
-//     await browser.close();
-
-//     res.setHeader("Content-Type", "application/pdf");
-//     res.setHeader(
-//       "Content-Disposition",
-//       `attachment; filename=${school.name.replace(
-//         /\s+/g,
-//         "_"
-//       )}_Summary_Report.pdf`
-//     );
-//     res.send(pdfBuffer);
-//   } catch (err) {
-//     console.error("Error generating report:", err);
-//     res.status(500).send("Error generating report PDF");
-//   }
-// };
 
 exports.downloadSchoolProgressReport = async (req, res) => {
   const { schoolId } = req.params;
@@ -2806,6 +2470,161 @@ const progressRes = await pool.query(`
     res.status(500).send("Error generating report PDF");
   }
 };
+
+// 📄 Download Student Login Cards (PDF with Logo)
+exports.downloadStudentLoginCards = async (req, res) => {
+  const { schoolId } = req.params;
+  try {
+    // 1️⃣ Fetch school info
+    const schoolRes = await pool.query(
+      `SELECT id, name, logo_url, email FROM schools WHERE id = $1`,
+      [schoolId]
+    );
+    const school = schoolRes.rows[0];
+    if (!school) return res.status(404).send("School not found");
+
+    // 2️⃣ Fetch students
+    const studentRes = await pool.query(
+      `SELECT 
+        u.fullname AS full_name, 
+        u.email, 
+        c.name AS classroom_name
+      FROM user_school us
+      JOIN users2 u ON us.user_id = u.id
+      LEFT JOIN classrooms c ON us.classroom_id = c.id
+      WHERE us.school_id = $1 AND us.role_in_school = 'student'
+      ORDER BY c.name, u.fullname`,
+      [schoolId]
+    );
+    const students = studentRes.rows;
+
+    // 3️⃣ Build the HTML
+    const html = `
+      <html>
+      <head>
+        <style>
+          body {
+            font-family: 'Arial', sans-serif;
+            padding: 30px;
+            color: #2c3e50;
+          }
+          h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+          }
+          .cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            justify-content: center;
+          }
+          .card {
+            border: 2px solid #c8b209ff;
+            border-radius: 12px;
+            padding: 14px;
+            width: 260px;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: #f9f9f9;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            page-break-inside: avoid;
+          }
+          .card img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 6px;
+          }
+          .card h2 {
+            font-size: 1.05em;
+            color: #007bff;
+            margin: 4px 0;
+          }
+          .card p {
+            margin: 3px 0;
+            font-size: 0.88em;
+            color: #333;
+          }
+          .card .footer {
+            font-size: 0.78em;
+            color: #555;
+            text-align: center;
+            margin-top: 6px;
+            border-top: 1px solid #ccc;
+            padding-top: 4px;
+          }
+          .login-link {
+            display: inline-block;
+            margin-top: 3px;
+            color: #007bff;
+            font-weight: bold;
+            text-decoration: none;
+          }
+          @media print {
+            body { padding: 0; }
+            .card { page-break-inside: avoid; }
+          }
+        </style>
+      </head>
+      <body>
+        <h1>🎓 ${school.name} — Student Login Cards</h1>
+        <div class="cards-container">
+          ${students.map(s => `
+            <div class="card">
+              <div>
+                ${
+                  school.logo_url
+                    ? `<img src="${school.logo_url}" alt="Logo" />`
+                    : `<img src="https://via.placeholder.com/50x50.png?text=Logo" alt="Logo" />`
+                }
+                <h2>${s.full_name}</h2>
+                <p><strong>Class:</strong> ${s.classroom_name || "—"}</p>
+                <p><strong>Email:</strong> ${s.email}</p>
+                <p><strong>Password:</strong> 12345678</p>
+                <p><a class="login-link" href="https://acad.jkthub.com/admin/login">acad.jkthub.com/admin/login</a></p>
+              </div>
+              <div class="footer">
+                <em>Keep this card safe ✨</em>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </body>
+      </html>
+    `;
+
+    // 4️⃣ Generate PDF using Puppeteer
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "1cm", bottom: "1cm", left: "1cm", right: "1cm" },
+    });
+    await browser.close();
+
+    // 5️⃣ Send file
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=${school.name.replace(/\s+/g, "_")}_Login_Cards.pdf`
+    );
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error("Error generating login cards PDF:", err);
+    res.status(500).send("Error generating student login cards PDF");
+  }
+};
+
 
 exports.createClassroom = async (req, res) => {
   try {
@@ -3173,9 +2992,8 @@ exports.addUserToSchool = async (req, res) => {
 
     // Handle profile picture
     const profile_picture = file ? file.path : "/profile.webp";
-    const hashed = await bcrypt.hash(password || "123456", 10); // default pw if missing
+    const hashed = await bcrypt.hash(password || "12345678", 10); // default pw if missing
     const created_at = new Date();
-
     let finalEmail = email;
 
     // auto-generate email if student & none provided

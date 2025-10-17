@@ -2337,7 +2337,20 @@ canvas {
     }
 }
 
-/* 🔹 RESPONSIVE STYLING */
+  .btn-download {
+      display: inline-block;
+      background: #007bff;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: 0.3s;
+  }
+
+  .btn-download:hover {
+      background: #0056b3;
+  }
 
 /* Tablet screens (≤1024px) */
 @media (max-width: 1024px) {

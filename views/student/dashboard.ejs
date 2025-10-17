@@ -392,39 +392,26 @@
 
 </div>
 
+  <!-- AI TUTOR BOX -->
+  <div id="ai-tutor" class="ai-tutor" style="display:none;">
+    <div class="ai-tutor-header">
+      🤖 JKT Hub AI Tutor
+      <div class="ai-controls">
+        <button id="ai-fullscreen" class="ai-circle-btn">⛶</button>
+        <button id="ai-toggle" class="ai-circle-btn">–</button>
+      </div>
+    </div>
 
-<!-- <div id="ai-tutor" class="ai-tutor" style="display:none;">
-  <div class="ai-tutor-header">
-    🤖 AI Tutor 
-    <button id="ai-toggle" class="ai-toggle">–</button>
-  </div>
-  <div id="ai-messages" class="ai-messages"></div>
-  <div class="ai-input-row">
-    <input id="ai-question" type="text" placeholder="Ask about your lesson…" />
-    <button id="ai-send">Send</button>
-  </div>
-</div> -->
+    <div id="ai-messages" class="ai-messages"></div>
 
-<!-- AI TUTOR BOX -->
-<div id="ai-tutor" class="ai-tutor" style="display:none;">
-  <div class="ai-tutor-header">
-    🤖 JKT Hub AI Tutor
-    <div class="ai-controls">
-      <button id="ai-fullscreen" class="ai-circle-btn">⛶</button>
-      <button id="ai-toggle" class="ai-circle-btn">–</button>
+    <div class="ai-input-row">
+      <input id="ai-question" type="text" placeholder="Ask about your lesson…" />
+      <button id="ai-send">Send</button>
     </div>
   </div>
 
-  <div id="ai-messages" class="ai-messages"></div>
-
-  <div class="ai-input-row">
-    <input id="ai-question" type="text" placeholder="Ask about your lesson…" />
-    <button id="ai-send">Send</button>
-  </div>
-</div>
-
-<!-- FLOATING MINIMIZED ICON -->
-<div id="ai-float" class="ai-float" title="Open AI Tutor">🤖</div>
+  <!-- FLOATING MINIMIZED ICON -->
+  <div id="ai-float" class="ai-float" title="Open AI Tutor">🤖</div>
 
 
 
@@ -439,7 +426,7 @@
         <button onclick="closeResults()">❌ Close</button>
       </div>
     </div>
-  </div>
+</div>
 
   <% } else if (!selectedPathway || !pathwayCourses[selectedPathway]) { %>
     <!-- DASHBOARD VIEW -->
@@ -529,58 +516,6 @@
   <% } %>
 
   <!-- AI Tutor Widget -->
-
-<!-- <style>
-  .ai-tutor{position:fixed; right:24px; bottom:24px; width:380px; max-width:90vw; background:#fff; border:1px solid #eee; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.08); display:flex; flex-direction:column; overflow:hidden; z-index:9999}
-  .ai-tutor-header{background:#111827; color:#fff; padding:10px 14px; font-weight:600}
-  .ai-messages{height:260px; overflow:auto; padding:12px; display:flex; gap:10px; flex-direction:column}
-  .ai-msg{padding:10px 12px; border-radius:10px; max-width:85%}
-  .ai-msg.user{align-self:flex-end; background:#e5f0ff}
-  .ai-msg.bot{align-self:flex-start; background:#f6f6f6}
-  .ai-input-row{display:flex; gap:6px; padding:10px; border-top:1px solid #eee}
-  .ai-input-row input, .ai-input-row select{flex:1; padding:8px 10px}
-  .ai-input-row button{padding:8px 12px; border:none; background:#2563eb; color:#fff; border-radius:8px; cursor:pointer}
-</style>
-
-<script>
-  const sendBtn = document.getElementById('ai-send');
-  const input = document.getElementById('ai-question');
-  const lessonSel = document.getElementById('ai-lesson');
-  const box = document.getElementById('ai-messages');
-  
-
-  function pushMsg(text, who) {
-    const el = document.createElement('div');
-    el.className = 'ai-msg ' + (who || 'bot');
-    el.textContent = text;
-    box.appendChild(el);
-    box.scrollTop = box.scrollHeight;
-  }
-
-  async function ask() {
-    const q = input.value.trim();
-    if (!q) return;
-    const lessonId = lessonSel.value || "";
-    input.value = '';
-    pushMsg(q, 'user');
-
-    try {
-      const res = await fetch('/student/ai/ask', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ question: q, lessonId })
-      });
-      const data = await res.json();
-      pushMsg(data.answer || 'No answer yet.', 'bot');
-    } catch (e) {
-      pushMsg('Sorry, the tutor is unavailable right now.', 'bot');
-    }
-  }
-
-  sendBtn.addEventListener('click', ask);
-  input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') ask(); });
-</script> -->
-
 <style>
   /* MAIN BOX */
   .ai-tutor {
@@ -1080,803 +1015,640 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 <script>
-function toggleModule(moduleId) {
-  const el = document.getElementById(`module-${moduleId}`);
-  el.style.display = (el.style.display === "none" || !el.style.display) ? "block" : "none";
-}
-
-// function toggleLessonMenu(lessonId) {
-//   const menu = document.getElementById("lesson-menu-" + lessonId);
-//   if (!menu) return;
-//   // Toggle display
-//   if (menu.style.display === "none" || menu.style.display === "") {
-//     menu.style.display = "block";
-//   } else {
-//     menu.style.display = "none";
-//   }
-// }
-
-function handleLessonClick(lessonId, unlocked) {
-  if (!unlocked) {
-    alert("This lesson is locked. Complete previous lessons first.");
-    return;
+  function toggleModule(moduleId) {
+    const el = document.getElementById(`module-${moduleId}`);
+    el.style.display = (el.style.display === "none" || !el.style.display) ? "block" : "none";
   }
-  toggleLessonMenu(lessonId);
-}
 
-function toggleLessonMenu(lessonId) {
-  const menu = document.getElementById("lesson-menu-" + lessonId);
-  if (!menu) return;
-  menu.style.display = (menu.style.display === "none" || !menu.style.display) ? "block" : "none";
-}
+  // function toggleLessonMenu(lessonId) {
+  //   const menu = document.getElementById("lesson-menu-" + lessonId);
+  //   if (!menu) return;
+  //   // Toggle display
+  //   if (menu.style.display === "none" || menu.style.display === "") {
+  //     menu.style.display = "block";
+  //   } else {
+  //     menu.style.display = "none";
+  //   }
+  // }
 
+  function handleLessonClick(lessonId, unlocked) {
+    if (!unlocked) {
+      alert("This lesson is locked. Complete previous lessons first.");
+      return;
+    }
+    toggleLessonMenu(lessonId);
+  }
 
-// function loadLessonPart(lessonId, part) {
-//   fetch(`/student/lessons/${lessonId}`)
-//     .then(res => res.json())
-//     .then(lesson => {
-//       window.currentLessonId = lessonId; // ✅ keep track
+  function toggleLessonMenu(lessonId) {
+    const menu = document.getElementById("lesson-menu-" + lessonId);
+    if (!menu) return;
+    menu.style.display = (menu.style.display === "none" || !menu.style.display) ? "block" : "none";
+  }
 
-//       let html = `<h2>${lesson.title}</h2>`;
+  function loadLessonPart(lessonId, part) {
+    fetch(`/student/lessons/${lessonId}`)
+      .then(res => res.json())
+      .then(lesson => {
+        window.currentLessonId = lessonId; // ✅ Keep track
+        let html = `<h2>${lesson.title}</h2>`;
 
-//       // if (part === "video" && lesson.video_url) {
-//       //   html += `<div class="lesson-video"><iframe src="${lesson.video_url}" frameborder="0" allowfullscreen></iframe></div>`;
-//       // }
+        // 🎥 VIDEO SECTION
+        if (part === "video" && lesson.video_url) {
+          let embedUrl = lesson.video_url.trim();
 
-//       if (part === "video" && lesson.video_url) {
-//         let embedUrl = lesson.video_url.trim();
+          if (embedUrl.includes("youtube.com/watch?v=")) {
+            const videoId = embedUrl.split("v=")[1].split("&")[0];
+            embedUrl = `https://www.youtube.com/embed/${videoId}`;
+          } else if (embedUrl.includes("youtu.be/")) {
+            const videoId = embedUrl.split("youtu.be/")[1].split("?")[0];
+            embedUrl = `https://www.youtube.com/embed/${videoId}`;
+          } else if (embedUrl.includes("vimeo.com/")) {
+            const videoId = embedUrl.split("vimeo.com/")[1].split("?")[0];
+            embedUrl = `https://player.vimeo.com/video/${videoId}`;
+          }
 
-//         // ✅ YouTube full link (watch?v=...)
-//         if (embedUrl.includes("youtube.com/watch?v=")) {
-//           const videoId = embedUrl.split("v=")[1].split("&")[0];
-//           embedUrl = `https://www.youtube.com/embed/${videoId}`;
-//         }
+          html += `
+            <div class="lesson-video">
+              <iframe 
+                src="${embedUrl}" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen>
+              </iframe>
+            </div>
+          `;
 
-//         // ✅ YouTube short link (youtu.be/...)
-//         else if (embedUrl.includes("youtu.be/")) {
-//           const videoId = embedUrl.split("youtu.be/")[1].split("?")[0];
-//           embedUrl = `https://www.youtube.com/embed/${videoId}`;
-//         }
-
-//         // ✅ Vimeo link
-//         else if (embedUrl.includes("vimeo.com/")) {
-//           const videoId = embedUrl.split("vimeo.com/")[1].split("?")[0];
-//           embedUrl = `https://player.vimeo.com/video/${videoId}`;
-//         }
-
-//         html += `
-//           <div class="lesson-video">
-//             <iframe 
-//               src="${embedUrl}" 
-//               frameborder="0" 
-//               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-//               allowfullscreen>
-//             </iframe>
-//           </div>
-//         `;
-//       }
-
-
-//       if (part === "content") {
-//         html += `<div class="lesson-text">${lesson.content || "<p>No content available.</p>"}</div>` +
-//                 `<style>
-//                   .lesson-text img {
-//                     max-width: 90%;
-//                     height: auto;
-//                     display: block;
-//                     margin: 10px 0;
-//                   }
-//                 </style>`;
-//         document.getElementById("ai-tutor").style.display = "flex";
-
-// //         if (part === "content") {
-// //   const rawContent = lesson.content || "<p>No content available.</p>";
-
-// //   // ✅ Split slides automatically by big emoji sections or bold headers
-// //   const slideBreaks = /(🎯|🧰|🧠|⚙️|👥|✋|🧾|🧩|🏁|📚)/g;
-// //   const slides = rawContent
-// //     .split(slideBreaks)
-// //     .map((chunk, i, arr) => {
-// //       // Combine emoji with following text for slide context
-// //       if (slideBreaks.test(chunk) && arr[i + 1]) {
-// //         return chunk + arr[i + 1];
-// //       } else if (slideBreaks.test(arr[i - 1])) {
-// //         return "";
-// //       }
-// //       return chunk;
-// //     })
-// //     .filter(Boolean);
-
-// //   const noteView = `
-// //     <div class="lesson-view-mode">
-// //       <button id="noteBtn" class="active">📝 Note View</button>
-// //       <button id="slideBtn">📑 Slides View</button>
-// //     </div>
-// //     <div id="noteView" class="lesson-note">${rawContent}</div>
-// //     <div id="slideView" class="lesson-slides" style="display:none;"></div>
-// //   `;
-
-// //   document.getElementById("lessonMainArea").innerHTML = noteView;
-
-// //   // ✅ Build slides dynamically
-// //   let current = 0;
-// //   function renderSlide() {
-// //     const total = slides.length;
-// //     const html = `
-// //       <div class="slide-box">
-// //         ${slides[current]}
-// //         <div class="slide-controls">
-// //           <button id="prevSlide" ${current === 0 ? "disabled" : ""}>⬅ Prev</button>
-// //           <span>Slide ${current + 1} of ${total}</span>
-// //           <button id="nextSlide" ${current === total - 1 ? "disabled" : ""}>Next ➡</button>
-// //         </div>
-// //       </div>
-// //     `;
-// //     document.getElementById("slideView").innerHTML = html;
-
-// //     document.getElementById("prevSlide").onclick = () => {
-// //       if (current > 0) { current--; renderSlide(); }
-// //     };
-// //     document.getElementById("nextSlide").onclick = () => {
-// //       if (current < total - 1) { current++; renderSlide(); }
-// //     };
-// //   }
-// //   renderSlide();
-
-// //   // ✅ Toggle buttons
-// //   const noteBtn = document.getElementById("noteBtn");
-// //   const slideBtn = document.getElementById("slideBtn");
-// //   const noteDiv = document.getElementById("noteView");
-// //   const slideDiv = document.getElementById("slideView");
-
-// //   noteBtn.onclick = () => {
-// //     noteDiv.style.display = "block";
-// //     slideDiv.style.display = "none";
-// //     noteBtn.classList.add("active");
-// //     slideBtn.classList.remove("active");
-// //   };
-
-// //   slideBtn.onclick = () => {
-// //     noteDiv.style.display = "none";
-// //     slideDiv.style.display = "block";
-// //     slideBtn.classList.add("active");
-// //     noteBtn.classList.remove("active");
-// //   };
-
-// //   document.getElementById("ai-tutor").style.display = "flex";
-// // }
-
-
-//         // ✅ Generate 2–3 suggested Qs
-//         const suggestions = [
-//           `Summarize this lesson in simple terms.`,
-//           `What is the key concept in "${lesson.title}"?`,
-//           `Can you give me an example based on this lesson?`
-//         ];
-//         if (window.showLessonSuggestions) {
-//           window.showLessonSuggestions(suggestions);
-//         }
-
-//       } else {
-//         document.getElementById("ai-tutor").style.display = "none";
-//       }
-
-//       if (part === "quiz") {
-//         loadQuizInline(lessonId);
-//         return;
-//       }
-
-//       document.getElementById("lessonMainArea").innerHTML = html;
-//     });
-// }
-
-function loadLessonPart(lessonId, part) {
-  fetch(`/student/lessons/${lessonId}`)
-    .then(res => res.json())
-    .then(lesson => {
-      window.currentLessonId = lessonId; // ✅ Keep track
-      let html = `<h2>${lesson.title}</h2>`;
-
-      // 🎥 VIDEO SECTION
-      if (part === "video" && lesson.video_url) {
-        let embedUrl = lesson.video_url.trim();
-
-        if (embedUrl.includes("youtube.com/watch?v=")) {
-          const videoId = embedUrl.split("v=")[1].split("&")[0];
-          embedUrl = `https://www.youtube.com/embed/${videoId}`;
-        } else if (embedUrl.includes("youtu.be/")) {
-          const videoId = embedUrl.split("youtu.be/")[1].split("?")[0];
-          embedUrl = `https://www.youtube.com/embed/${videoId}`;
-        } else if (embedUrl.includes("vimeo.com/")) {
-          const videoId = embedUrl.split("vimeo.com/")[1].split("?")[0];
-          embedUrl = `https://player.vimeo.com/video/${videoId}`;
+          document.getElementById("lessonMainArea").innerHTML = html;
+          document.getElementById("ai-tutor").style.display = "none";
+          return;
         }
 
-        html += `
-          <div class="lesson-video">
-            <iframe 
-              src="${embedUrl}" 
-              frameborder="0" 
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-              allowfullscreen>
-            </iframe>
+        // 📝 LESSON NOTE + SLIDES SECTION
+      if (part === "content") {
+    const rawContent = lesson.content || "<p>No content available.</p>";
+
+    // ✅ Split slides automatically by emojis, <hr>, or ---
+    const slideBreaks = /(<hr\s*\/?>|---)/gi;
+
+    // Split and clean
+    // const rawSlides = rawContent
+    //   .split(slideBreaks)
+    //   .map(s => s.trim())
+    //   .filter(s => s && s !== "<hr>" && s !== "<hr/>" && s !== "---");
+    const rawSlides = rawContent
+    .split(slideBreaks)
+    .map(s => s.trim())
+    .filter(s => {
+      // Remove empty, HR-only, or image-only fragments
+      const clean = s.replace(/<img[^>]*>/g, '').replace(/<[^>]+>/g, '').trim();
+      return clean.length > 0 && !/^(-{3,}|<hr\s*\/?>)$/i.test(s);
+    });
+
+
+    // ✅ Build slide objects with titles and content
+    const slides = rawSlides.map((s, index) => {
+      // Try to extract the first bold text or first sentence as title
+      let title = "";
+
+      // Match first <strong> or <b> text
+      const boldMatch = s.match(/<strong>(.*?)<\/strong>|<b>(.*?)<\/b>/i);
+      if (boldMatch) {
+        title = boldMatch[1] || boldMatch[2];
+      } else {
+        // Fallback: use first few words
+        const plain = s.replace(/<[^>]+>/g, "").trim();
+        title = plain.split(/\s+/).slice(0, 5).join(" ") + "...";
+      }
+
+      return { title, body: s };
+    });
+
+    // ✅ Build HTML structure
+    // const noteView = `
+    //   <div class="lesson-view-mode">
+    //     <button id="noteBtn" class="active">📝 Note View</button>
+    //     <button id="slideBtn">📑 Slides View</button>
+    //   </div>
+    //   <div id="noteView" class="lesson-note">${rawContent}</div>
+    //   <div id="slideView" class="lesson-slides" style="display:none;"></div>
+    // `;
+    const noteView = `
+    <div class="lesson-view-controls">
+      <div class="text-controls">
+        <label>Text size:</label>
+        <button id="fontInc">A+</button>
+        <button id="fontDec">A−</button>
+
+        <label>Font:</label>
+        <select id="fontSelect">
+          <option value="system-ui">Default</option>
+          <option value="serif">Serif</option>
+          <option value="sans-serif">Sans-serif</option>
+          <option value="OpenDyslexic, Arial">Dyslexic</option>
+        </select>
+
+        <label>Line spacing:</label>
+        <select id="lineSpacing">
+          <option value="1.4">Normal</option>
+          <option value="1.8">Comfort</option>
+          <option value="2.2">Wide</option>
+        </select>
+      </div>
+
+      <div class="lesson-view-mode">
+        <button id="noteBtn" class="active">📝 Note View</button>
+        <button id="slideBtn">📑 Slides View</button>
+      </div>
+    </div>
+
+    <div id="noteView" class="lesson-note">${rawContent}</div>
+    <div id="slideView" class="lesson-slides" style="display:none;"></div>
+  `;
+
+
+    document.getElementById("lessonMainArea").innerHTML = noteView;
+
+    // ✅ Render slides
+    let current = 0;
+    function renderSlide() {
+      const total = slides.length;
+      const { title, body } = slides[current];
+
+      const html = `
+        <div class="slide-box">
+          <div class="slide-body">${body}</div>
+          <div class="slide-controls">
+            <button id="prevSlide" ${current === 0 ? "disabled" : ""}>⬅ Prev</button>
+            <span>Slide ${current + 1} of ${total}</span>
+            <button id="nextSlide" ${current === total - 1 ? "disabled" : ""}>Next ➡</button>
+            <button id="fullscreenBtn" class="fullscreen-btn" title="Toggle Fullscreen">⛶</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("slideView").innerHTML = html;
+      document.getElementById("fullscreenBtn").onclick = toggleFullscreen;
+      document.getElementById("prevSlide").onclick = () => {
+        if (current > 0) { current--; renderSlide(); }
+      };
+      document.getElementById("nextSlide").onclick = () => {
+        if (current < total - 1) { current++; renderSlide(); }
+      };
+    }
+
+    // ✅ Add fullscreen toggle support
+  // function toggleFullscreen() {
+  //   const slideView = document.getElementById("slideView");
+  //   if (!document.fullscreenElement) {
+  //     slideView.requestFullscreen().catch(err => {
+  //       console.error("Fullscreen error:", err);
+  //     });
+  //   } else {
+  //     document.exitFullscreen();
+  //   }
+  // }
+
+  /* ==============================
+    🔹 FULLSCREEN + KEYBOARD CONTROLS
+    ============================== */
+
+  // Track fullscreen state
+  function toggleFullscreen() {
+    const slideView = document.getElementById("slideView");
+    if (!document.fullscreenElement) {
+      slideView.requestFullscreen().catch(err => {
+        console.error("Fullscreen error:", err);
+        alert("Your browser doesn't support fullscreen mode.");
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }
+
+  // 🔸 Default font size
+  let fontSize = 16;
+
+  // 🔸 Adjust font size dynamically
+  function adjustFont(delta) {
+    fontSize = Math.min(26, Math.max(12, fontSize + delta));
+    const slideBody = document.querySelector(".slide-body");
+    if (slideBody) slideBody.style.fontSize = fontSize + "px";
+  }
+
+  // 🔸 Dark mode toggle
+  let darkMode = false;
+  function toggleDarkMode() {
+    const slideBox = document.querySelector(".slide-box");
+    if (!slideBox) return;
+    darkMode = !darkMode;
+
+    if (darkMode) {
+      slideBox.style.background = "#111";
+      slideBox.style.color = "#fff";
+    } else {
+      slideBox.style.background = "#fff";
+      slideBox.style.color = "#111";
+    }
+  }
+
+  // 🔸 Auto-play toggle
+  let autoPlay = null;
+  function toggleAutoPlay() {
+    if (autoPlay) {
+      clearInterval(autoPlay);
+      autoPlay = null;
+      showToast("⏸ Auto-play stopped");
+    } else {
+      autoPlay = setInterval(() => {
+        document.getElementById("nextSlide")?.click();
+      }, 5000); // every 5 seconds
+      showToast("▶️ Auto-play started");
+    }
+  }
+
+  // 🔸 Toast notification for feedback
+  function showToast(message) {
+    let toast = document.createElement("div");
+    toast.textContent = message;
+    toast.style.position = "fixed";
+    toast.style.bottom = "20px";
+    toast.style.right = "20px";
+    toast.style.background = "rgba(0,0,0,0.7)";
+    toast.style.color = "#fff";
+    toast.style.padding = "10px 14px";
+    toast.style.borderRadius = "6px";
+    toast.style.zIndex = "99999";
+    toast.style.fontSize = "14px";
+    toast.style.transition = "opacity 0.3s";
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = "0"; }, 2000);
+    setTimeout(() => { toast.remove(); }, 2500);
+  }
+
+  // 🔸 Keyboard shortcuts while in fullscreen
+  document.addEventListener("keydown", (e) => {
+    if (!document.fullscreenElement) return; // only works in fullscreen
+
+    switch (e.key.toLowerCase()) {
+      case "arrowright":
+      case "d":
+        document.getElementById("nextSlide")?.click();
+        break;
+      case "arrowleft":
+      case "a":
+        document.getElementById("prevSlide")?.click();
+        break;
+      case "f":
+        toggleFullscreen();
+        break;
+      case "escape":
+        document.exitFullscreen();
+        break;
+      case "+":
+        adjustFont(1);
+        break;
+      case "-":
+        adjustFont(-1);
+        break;
+      case "0":
+        fontSize = 17;
+        const body = document.querySelector(".slide-body");
+        if (body) body.style.fontSize = "17px";
+        break;
+      case "p":
+        toggleAutoPlay();
+        break;
+      case "m":
+        toggleDarkMode();
+        break;
+    }
+  });
+
+
+
+    renderSlide();
+    // ✅ Text Controls
+  // let fontSize = 16; // default
+
+  function applyTextStyles() {
+    const font = document.getElementById("fontSelect").value;
+    const spacing = document.getElementById("lineSpacing").value;
+    document.querySelectorAll(".lesson-note, .slide-body").forEach(el => {
+      el.style.fontSize = fontSize + "px";
+      el.style.fontFamily = font;
+      el.style.lineHeight = spacing;
+    });
+  }
+
+  document.getElementById("fontInc").onclick = () => {
+    fontSize += 2;
+    applyTextStyles();
+  };
+
+  document.getElementById("fontDec").onclick = () => {
+    if (fontSize > 10) fontSize -= 2;
+    applyTextStyles();
+  };
+
+  document.getElementById("fontSelect").onchange = applyTextStyles;
+  document.getElementById("lineSpacing").onchange = applyTextStyles;
+
+
+    // ✅ Toggle Note / Slide views
+    const noteBtn = document.getElementById("noteBtn");
+    const slideBtn = document.getElementById("slideBtn");
+    const noteDiv = document.getElementById("noteView");
+    const slideDiv = document.getElementById("slideView");
+
+    noteBtn.onclick = () => {
+      noteDiv.style.display = "block";
+      slideDiv.style.display = "none";
+      noteBtn.classList.add("active");
+      slideBtn.classList.remove("active");
+    };
+
+    slideBtn.onclick = () => {
+      noteDiv.style.display = "none";
+      slideDiv.style.display = "block";
+      slideBtn.classList.add("active");
+      noteBtn.classList.remove("active");
+    };
+
+    document.getElementById("ai-tutor").style.display = "flex";
+
+    // ✅ Suggest questions
+    const suggestions = [
+      `Summarize this lesson in simple terms.`,
+      `What is the key concept in "${lesson.title}"?`,
+      `Can you give me an example based on this lesson?`
+    ];
+    if (window.showLessonSuggestions) {
+      window.showLessonSuggestions(suggestions);
+    }
+
+    return;
+  }
+
+        // 🧩 QUIZ SECTION
+        if (part === "quiz") {
+          loadQuizInline(lessonId);
+          document.getElementById("ai-tutor").style.display = "none";
+          return;
+        }
+      })
+      .catch(err => {
+        console.error("Error loading lesson:", err);
+        document.getElementById("lessonMainArea").innerHTML = "<p>⚠️ Failed to load lesson.</p>";
+      });
+  }
+
+
+  function loadQuizInMain(lessonId) {
+    fetch(`/student/lessons/${lessonId}/quiz`)
+      .then(res => res.json())
+      .then(data => {
+        let html = `<h2>Lesson Quiz</h2>`;
+        if (!data.success) {
+          html += `<p>No quiz for this lesson.</p>`;
+        } else {
+          html += `<form onsubmit="submitQuizInline(event, ${lessonId})">`;
+          data.questions.forEach((q, idx) => {
+            html += `<p><strong>Q${idx+1}:</strong> ${q.question}</p>`;
+            q.options.forEach(opt => {
+              html += `<label><input type="radio" name="q${q.id}" value="${opt}" required> ${opt}</label><br>`;
+            });
+          });
+          html += `<button type="submit">Submit Quiz</button></form>`;
+        }
+        document.getElementById("lessonMainArea").innerHTML = html;
+      });
+  }
+
+
+  async function loadAssignment(assignmentId) {
+    try {
+      const res = await fetch(`/student/assignments/${assignmentId}`);
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Assignment fetch failed:", text);
+        alert("Could not load assignment");
+        return;
+      }
+      const data = await res.json();
+
+      const lessonMain = document.getElementById("lessonMainArea");
+
+      if (data.submitted) {
+        // ✅ Show previous submission with breakdown
+        const criteriaHTML = data.submission.criteria
+          ? Object.entries(data.submission.criteria)
+              .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
+              .join("")
+          : "<p>No detailed breakdown.</p>";
+
+        lessonMain.innerHTML = `
+          <div class="assignment-container" style="border:1px solid #ccc; padding:15px; border-radius:8px; max-width:600px;">
+            <h2>📑 ${data.assignment.title}</h2>
+            <p><strong>Course:</strong> ${data.assignment.course_title}</p>
+            <p><strong>Module:</strong> ${data.assignment.module_title}</p>
+            <hr>
+            <h3>✅ You already submitted this assignment</h3>
+            <p><strong>Description:</strong> ${data.submission.description}</p>
+            ${data.submission.file_url ? `<p><a href="${data.submission.file_url}" target="_blank">📂 View File</a></p>` : ""}
+            <h3>📊 AI Feedback</h3>
+            <p><strong>Total Score:</strong> ${data.submission.total ?? "Pending"}</p>
+            <p><strong>Grade:</strong> ${data.submission.grade ?? "N/A"}</p>
+            <div><strong>Criteria Breakdown:</strong>${criteriaHTML}</div>
+            <div><strong>Comments:</strong><p>${data.submission.ai_feedback ?? "Pending"}</p></div>
+          </div>
+        `;
+      } else {
+        // ✅ Show form if not yet submitted
+        lessonMain.innerHTML = `
+          <div class="assignment-container" style="border:1px solid #ccc; padding:15px; border-radius:8px; max-width:600px;">
+            <h2>📑 ${data.assignment.title}</h2>
+            <p><strong>Course:</strong> ${data.assignment.course_title}</p>
+            <p><strong>Module:</strong> ${data.assignment.module_title}</p>
+            <div class="instructions">
+              <strong>Instructions:</strong>
+              <p>${data.assignment.instructions}</p>
+            </div>
+            <p><strong>Due Date:</strong> ${data.assignment.due_date || "No due date"}</p>
+
+            <h3>Submit Your Work</h3>
+            <form id="submitAssignmentForm" enctype="multipart/form-data">
+              <input type="hidden" name="assignmentId" value="${assignmentId}" />
+              <label>Description:</label><br>
+              <textarea name="description" placeholder="Write your answer..." required></textarea><br><br>
+              <label>Upload File (optional):</label>
+              <input type="file" name="file"><br><br>
+              <button type="submit">Submit Assignment</button>
+            </form>
           </div>
         `;
 
-        document.getElementById("lessonMainArea").innerHTML = html;
-        document.getElementById("ai-tutor").style.display = "none";
-        return;
-      }
+        // ✅ Attach submit handler
+        document.getElementById("submitAssignmentForm")
+          .addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
 
-      // 📝 LESSON NOTE + SLIDES SECTION
-     if (part === "content") {
-  const rawContent = lesson.content || "<p>No content available.</p>";
+            const res2 = await fetch(`/student/assignments/${assignmentId}/submit`, {
+              method: "POST",
+              body: formData
+            });
 
-  // ✅ Split slides automatically by emojis, <hr>, or ---
-  const slideBreaks = /(<hr\s*\/?>|---)/gi;
+            const result = await res2.json();
 
-  // Split and clean
-  // const rawSlides = rawContent
-  //   .split(slideBreaks)
-  //   .map(s => s.trim())
-  //   .filter(s => s && s !== "<hr>" && s !== "<hr/>" && s !== "---");
-  const rawSlides = rawContent
-  .split(slideBreaks)
-  .map(s => s.trim())
-  .filter(s => {
-    // Remove empty, HR-only, or image-only fragments
-    const clean = s.replace(/<img[^>]*>/g, '').replace(/<[^>]+>/g, '').trim();
-    return clean.length > 0 && !/^(-{3,}|<hr\s*\/?>)$/i.test(s);
-  });
+            if (result.success) {
+              const criteriaHTML = result.criteria
+                ? Object.entries(result.criteria)
+                    .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
+                    .join("")
+                : "<p>No detailed breakdown.</p>";
 
-
-  // ✅ Build slide objects with titles and content
-  const slides = rawSlides.map((s, index) => {
-    // Try to extract the first bold text or first sentence as title
-    let title = "";
-
-    // Match first <strong> or <b> text
-    const boldMatch = s.match(/<strong>(.*?)<\/strong>|<b>(.*?)<\/b>/i);
-    if (boldMatch) {
-      title = boldMatch[1] || boldMatch[2];
-    } else {
-      // Fallback: use first few words
-      const plain = s.replace(/<[^>]+>/g, "").trim();
-      title = plain.split(/\s+/).slice(0, 5).join(" ") + "...";
-    }
-
-    return { title, body: s };
-  });
-
-  // ✅ Build HTML structure
-  // const noteView = `
-  //   <div class="lesson-view-mode">
-  //     <button id="noteBtn" class="active">📝 Note View</button>
-  //     <button id="slideBtn">📑 Slides View</button>
-  //   </div>
-  //   <div id="noteView" class="lesson-note">${rawContent}</div>
-  //   <div id="slideView" class="lesson-slides" style="display:none;"></div>
-  // `;
-  const noteView = `
-  <div class="lesson-view-controls">
-    <div class="text-controls">
-      <label>Text size:</label>
-      <button id="fontInc">A+</button>
-      <button id="fontDec">A−</button>
-
-      <label>Font:</label>
-      <select id="fontSelect">
-        <option value="system-ui">Default</option>
-        <option value="serif">Serif</option>
-        <option value="sans-serif">Sans-serif</option>
-        <option value="OpenDyslexic, Arial">Dyslexic</option>
-      </select>
-
-      <label>Line spacing:</label>
-      <select id="lineSpacing">
-        <option value="1.4">Normal</option>
-        <option value="1.8">Comfort</option>
-        <option value="2.2">Wide</option>
-      </select>
-    </div>
-
-    <div class="lesson-view-mode">
-      <button id="noteBtn" class="active">📝 Note View</button>
-      <button id="slideBtn">📑 Slides View</button>
-    </div>
-  </div>
-
-  <div id="noteView" class="lesson-note">${rawContent}</div>
-  <div id="slideView" class="lesson-slides" style="display:none;"></div>
-`;
-
-
-  document.getElementById("lessonMainArea").innerHTML = noteView;
-
-  // ✅ Render slides
-  let current = 0;
-  function renderSlide() {
-    const total = slides.length;
-    const { title, body } = slides[current];
-
-    const html = `
-      <div class="slide-box">
-        <div class="slide-body">${body}</div>
-        <div class="slide-controls">
-          <button id="prevSlide" ${current === 0 ? "disabled" : ""}>⬅ Prev</button>
-          <span>Slide ${current + 1} of ${total}</span>
-          <button id="nextSlide" ${current === total - 1 ? "disabled" : ""}>Next ➡</button>
-          <button id="fullscreenBtn" class="fullscreen-btn" title="Toggle Fullscreen">⛶</button>
-        </div>
-      </div>
-    `;
-
-    document.getElementById("slideView").innerHTML = html;
-    document.getElementById("fullscreenBtn").onclick = toggleFullscreen;
-    document.getElementById("prevSlide").onclick = () => {
-      if (current > 0) { current--; renderSlide(); }
-    };
-    document.getElementById("nextSlide").onclick = () => {
-      if (current < total - 1) { current++; renderSlide(); }
-    };
-  }
-
-  // ✅ Add fullscreen toggle support
-// function toggleFullscreen() {
-//   const slideView = document.getElementById("slideView");
-//   if (!document.fullscreenElement) {
-//     slideView.requestFullscreen().catch(err => {
-//       console.error("Fullscreen error:", err);
-//     });
-//   } else {
-//     document.exitFullscreen();
-//   }
-// }
-
-/* ==============================
-   🔹 FULLSCREEN + KEYBOARD CONTROLS
-   ============================== */
-
-// Track fullscreen state
-function toggleFullscreen() {
-  const slideView = document.getElementById("slideView");
-  if (!document.fullscreenElement) {
-    slideView.requestFullscreen().catch(err => {
-      console.error("Fullscreen error:", err);
-      alert("Your browser doesn't support fullscreen mode.");
-    });
-  } else {
-    document.exitFullscreen();
-  }
-}
-
-// 🔸 Default font size
-let fontSize = 16;
-
-// 🔸 Adjust font size dynamically
-function adjustFont(delta) {
-  fontSize = Math.min(26, Math.max(12, fontSize + delta));
-  const slideBody = document.querySelector(".slide-body");
-  if (slideBody) slideBody.style.fontSize = fontSize + "px";
-}
-
-// 🔸 Dark mode toggle
-let darkMode = false;
-function toggleDarkMode() {
-  const slideBox = document.querySelector(".slide-box");
-  if (!slideBox) return;
-  darkMode = !darkMode;
-
-  if (darkMode) {
-    slideBox.style.background = "#111";
-    slideBox.style.color = "#fff";
-  } else {
-    slideBox.style.background = "#fff";
-    slideBox.style.color = "#111";
-  }
-}
-
-// 🔸 Auto-play toggle
-let autoPlay = null;
-function toggleAutoPlay() {
-  if (autoPlay) {
-    clearInterval(autoPlay);
-    autoPlay = null;
-    showToast("⏸ Auto-play stopped");
-  } else {
-    autoPlay = setInterval(() => {
-      document.getElementById("nextSlide")?.click();
-    }, 5000); // every 5 seconds
-    showToast("▶️ Auto-play started");
-  }
-}
-
-// 🔸 Toast notification for feedback
-function showToast(message) {
-  let toast = document.createElement("div");
-  toast.textContent = message;
-  toast.style.position = "fixed";
-  toast.style.bottom = "20px";
-  toast.style.right = "20px";
-  toast.style.background = "rgba(0,0,0,0.7)";
-  toast.style.color = "#fff";
-  toast.style.padding = "10px 14px";
-  toast.style.borderRadius = "6px";
-  toast.style.zIndex = "99999";
-  toast.style.fontSize = "14px";
-  toast.style.transition = "opacity 0.3s";
-  document.body.appendChild(toast);
-  setTimeout(() => { toast.style.opacity = "0"; }, 2000);
-  setTimeout(() => { toast.remove(); }, 2500);
-}
-
-// 🔸 Keyboard shortcuts while in fullscreen
-document.addEventListener("keydown", (e) => {
-  if (!document.fullscreenElement) return; // only works in fullscreen
-
-  switch (e.key.toLowerCase()) {
-    case "arrowright":
-    case "d":
-      document.getElementById("nextSlide")?.click();
-      break;
-    case "arrowleft":
-    case "a":
-      document.getElementById("prevSlide")?.click();
-      break;
-    case "f":
-      toggleFullscreen();
-      break;
-    case "escape":
-      document.exitFullscreen();
-      break;
-    case "+":
-      adjustFont(1);
-      break;
-    case "-":
-      adjustFont(-1);
-      break;
-    case "0":
-      fontSize = 17;
-      const body = document.querySelector(".slide-body");
-      if (body) body.style.fontSize = "17px";
-      break;
-    case "p":
-      toggleAutoPlay();
-      break;
-    case "m":
-      toggleDarkMode();
-      break;
-  }
-});
-
-
-
-  renderSlide();
-  // ✅ Text Controls
-// let fontSize = 16; // default
-
-function applyTextStyles() {
-  const font = document.getElementById("fontSelect").value;
-  const spacing = document.getElementById("lineSpacing").value;
-  document.querySelectorAll(".lesson-note, .slide-body").forEach(el => {
-    el.style.fontSize = fontSize + "px";
-    el.style.fontFamily = font;
-    el.style.lineHeight = spacing;
-  });
-}
-
-document.getElementById("fontInc").onclick = () => {
-  fontSize += 2;
-  applyTextStyles();
-};
-
-document.getElementById("fontDec").onclick = () => {
-  if (fontSize > 10) fontSize -= 2;
-  applyTextStyles();
-};
-
-document.getElementById("fontSelect").onchange = applyTextStyles;
-document.getElementById("lineSpacing").onchange = applyTextStyles;
-
-
-  // ✅ Toggle Note / Slide views
-  const noteBtn = document.getElementById("noteBtn");
-  const slideBtn = document.getElementById("slideBtn");
-  const noteDiv = document.getElementById("noteView");
-  const slideDiv = document.getElementById("slideView");
-
-  noteBtn.onclick = () => {
-    noteDiv.style.display = "block";
-    slideDiv.style.display = "none";
-    noteBtn.classList.add("active");
-    slideBtn.classList.remove("active");
-  };
-
-  slideBtn.onclick = () => {
-    noteDiv.style.display = "none";
-    slideDiv.style.display = "block";
-    slideBtn.classList.add("active");
-    noteBtn.classList.remove("active");
-  };
-
-  document.getElementById("ai-tutor").style.display = "flex";
-
-  // ✅ Suggest questions
-  const suggestions = [
-    `Summarize this lesson in simple terms.`,
-    `What is the key concept in "${lesson.title}"?`,
-    `Can you give me an example based on this lesson?`
-  ];
-  if (window.showLessonSuggestions) {
-    window.showLessonSuggestions(suggestions);
-  }
-
-  return;
-}
-
-      // 🧩 QUIZ SECTION
-      if (part === "quiz") {
-        loadQuizInline(lessonId);
-        document.getElementById("ai-tutor").style.display = "none";
-        return;
-      }
-    })
-    .catch(err => {
-      console.error("Error loading lesson:", err);
-      document.getElementById("lessonMainArea").innerHTML = "<p>⚠️ Failed to load lesson.</p>";
-    });
-}
-
-
-function loadQuizInMain(lessonId) {
-  fetch(`/student/lessons/${lessonId}/quiz`)
-    .then(res => res.json())
-    .then(data => {
-      let html = `<h2>Lesson Quiz</h2>`;
-      if (!data.success) {
-        html += `<p>No quiz for this lesson.</p>`;
-      } else {
-        html += `<form onsubmit="submitQuizInline(event, ${lessonId})">`;
-        data.questions.forEach((q, idx) => {
-          html += `<p><strong>Q${idx+1}:</strong> ${q.question}</p>`;
-          q.options.forEach(opt => {
-            html += `<label><input type="radio" name="q${q.id}" value="${opt}" required> ${opt}</label><br>`;
+              lessonMain.innerHTML = `
+                <div class="assignment-container" style="border:1px solid #ccc; padding:15px; border-radius:8px; max-width:600px;">
+                  <h2>✅ Assignment Submitted Successfully!</h2>
+                  <p><strong>Assignment:</strong> ${data.assignment.title}</p>
+                  <p><strong>Status:</strong> Graded by AI</p>
+                  <hr>
+                  <h3>📊 AI Feedback</h3>
+                  <div class="feedback-box">
+                    <p><strong>Total Score:</strong> ${result.total ?? "Pending"}</p>
+                    <p><strong>Grade:</strong> ${result.grade ?? "N/A"}</p>
+                    <div><strong>Criteria Breakdown:</strong>${criteriaHTML}</div>
+                    <div><strong>Comments:</strong><p>${result.feedbackText ?? "Feedback not available yet."}</p></div>
+                  </div>
+                </div>
+              `;
+            } else {
+              alert(result.message || "❌ Submission failed.");
+            }
           });
-        });
-        html += `<button type="submit">Submit Quiz</button></form>`;
       }
-      document.getElementById("lessonMainArea").innerHTML = html;
-    });
-}
 
-
-async function loadAssignment(assignmentId) {
-  try {
-    const res = await fetch(`/student/assignments/${assignmentId}`);
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("Assignment fetch failed:", text);
+    } catch (err) {
+      console.error("Error loading assignment:", err);
       alert("Could not load assignment");
-      return;
     }
-    const data = await res.json();
+  }
 
-    const lessonMain = document.getElementById("lessonMainArea");
 
-    if (data.submitted) {
-      // ✅ Show previous submission with breakdown
-      const criteriaHTML = data.submission.criteria
-        ? Object.entries(data.submission.criteria)
-            .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
-            .join("")
-        : "<p>No detailed breakdown.</p>";
+  document.addEventListener("DOMContentLoaded", () => {
+    // Assignment button event binding
+    document.querySelectorAll(".assignment-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = Number(btn.dataset.id);
+        if (!isNaN(id)) {
+          loadAssignment(id);
+        } else {
+          console.error("Invalid assignment id:", btn.dataset.id);
+        }
+      });
+    });
+  });
 
+  async function loadPastSubmissions() {
+    try {
+      const res = await fetch("/student/assignments/mine");
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.message || "Could not load submissions");
+        return;
+      }
+
+      const lessonMain = document.getElementById("lessonMainArea");
       lessonMain.innerHTML = `
-        <div class="assignment-container" style="border:1px solid #ccc; padding:15px; border-radius:8px; max-width:600px;">
-          <h2>📑 ${data.assignment.title}</h2>
-          <p><strong>Course:</strong> ${data.assignment.course_title}</p>
-          <p><strong>Module:</strong> ${data.assignment.module_title}</p>
-          <hr>
-          <h3>✅ You already submitted this assignment</h3>
-          <p><strong>Description:</strong> ${data.submission.description}</p>
-          ${data.submission.file_url ? `<p><a href="${data.submission.file_url}" target="_blank">📂 View File</a></p>` : ""}
-          <h3>📊 AI Feedback</h3>
-          <p><strong>Total Score:</strong> ${data.submission.total ?? "Pending"}</p>
-          <p><strong>Grade:</strong> ${data.submission.grade ?? "N/A"}</p>
-          <div><strong>Criteria Breakdown:</strong>${criteriaHTML}</div>
-          <div><strong>Comments:</strong><p>${data.submission.ai_feedback ?? "Pending"}</p></div>
-        </div>
-      `;
-    } else {
-      // ✅ Show form if not yet submitted
-      lessonMain.innerHTML = `
-        <div class="assignment-container" style="border:1px solid #ccc; padding:15px; border-radius:8px; max-width:600px;">
-          <h2>📑 ${data.assignment.title}</h2>
-          <p><strong>Course:</strong> ${data.assignment.course_title}</p>
-          <p><strong>Module:</strong> ${data.assignment.module_title}</p>
-          <div class="instructions">
-            <strong>Instructions:</strong>
-            <p>${data.assignment.instructions}</p>
-          </div>
-          <p><strong>Due Date:</strong> ${data.assignment.due_date || "No due date"}</p>
+        <h2>📚 My Assignment Submissions</h2>
+        <div class="submissions-list">
+          ${data.submissions.map(s => {
+            // const criteriaHTML = s.criteria
+            //   ? Object.entries(s.criteria)
+            //       .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
+            //       .join("")
+            //   : "<p>No detailed breakdown.</p>";
+            const criteriaData = s.criteria 
+              ? (typeof s.criteria === "string" ? JSON.parse(s.criteria) : s.criteria) 
+              : null;
 
-          <h3>Submit Your Work</h3>
-          <form id="submitAssignmentForm" enctype="multipart/form-data">
-            <input type="hidden" name="assignmentId" value="${assignmentId}" />
-            <label>Description:</label><br>
-            <textarea name="description" placeholder="Write your answer..." required></textarea><br><br>
-            <label>Upload File (optional):</label>
-            <input type="file" name="file"><br><br>
-            <button type="submit">Submit Assignment</button>
-          </form>
-        </div>
-      `;
-
-      // ✅ Attach submit handler
-      document.getElementById("submitAssignmentForm")
-        .addEventListener("submit", async (e) => {
-          e.preventDefault();
-          const formData = new FormData(e.target);
-
-          const res2 = await fetch(`/student/assignments/${assignmentId}/submit`, {
-            method: "POST",
-            body: formData
-          });
-
-          const result = await res2.json();
-
-          if (result.success) {
-            const criteriaHTML = result.criteria
-              ? Object.entries(result.criteria)
+            const criteriaHTML = criteriaData
+              ? Object.entries(criteriaData)
                   .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
                   .join("")
               : "<p>No detailed breakdown.</p>";
 
-            lessonMain.innerHTML = `
-              <div class="assignment-container" style="border:1px solid #ccc; padding:15px; border-radius:8px; max-width:600px;">
-                <h2>✅ Assignment Submitted Successfully!</h2>
-                <p><strong>Assignment:</strong> ${data.assignment.title}</p>
-                <p><strong>Status:</strong> Graded by AI</p>
-                <hr>
-                <h3>📊 AI Feedback</h3>
-                <div class="feedback-box">
-                  <p><strong>Total Score:</strong> ${result.total ?? "Pending"}</p>
-                  <p><strong>Grade:</strong> ${result.grade ?? "N/A"}</p>
-                  <div><strong>Criteria Breakdown:</strong>${criteriaHTML}</div>
-                  <div><strong>Comments:</strong><p>${result.feedbackText ?? "Feedback not available yet."}</p></div>
-                </div>
+            return `
+              <div class="submission-card" style="border:1px solid #ccc; padding:10px; margin-bottom:10px; width:50%;">
+                <h3>${s.assignment_title}</h3>
+                <p><strong>Course:</strong> ${s.course_title}</p>
+                <p><strong>Module:</strong> ${s.module_title}</p>
+                <p><strong>Submitted:</strong> ${new Date(s.submitted_at).toLocaleString()}</p>
+                <p><strong>Total Score:</strong> ${s.total ?? "Not graded yet"}</p>
+                <p><strong>Grade:</strong> ${s.grade ?? "-"}</p>
+                <div><strong>Criteria Breakdown:</strong>${criteriaHTML}</div>
+                <p><strong>Feedback:</strong> ${s.ai_feedback ?? "Not graded yet"}</p>
+                <button onclick="reviewSubmission(${s.id})">🔍 Review</button>
               </div>
             `;
-          } else {
-            alert(result.message || "❌ Submission failed.");
-          }
-        });
+          }).join("")}
+        </div>
+      `;
+    } catch (err) {
+      console.error("Error loading past submissions:", err);
+      alert("Could not load past submissions");
     }
-
-  } catch (err) {
-    console.error("Error loading assignment:", err);
-    alert("Could not load assignment");
   }
-}
 
-
-document.addEventListener("DOMContentLoaded", () => {
-  // Assignment button event binding
-  document.querySelectorAll(".assignment-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const id = Number(btn.dataset.id);
-      if (!isNaN(id)) {
-        loadAssignment(id);
-      } else {
-        console.error("Invalid assignment id:", btn.dataset.id);
+  async function reviewSubmission(subId) {
+    try {
+      const res = await fetch(`/student/assignments/submission/${subId}`);
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.message || "Could not load submission");
+        return;
       }
-    });
-  });
-});
 
+      const s = data.submission;
 
-async function loadPastSubmissions() {
-  try {
-    const res = await fetch("/student/assignments/mine");
-    const data = await res.json();
-    if (!data.success) {
-      alert(data.message || "Could not load submissions");
-      return;
+      // const criteriaHTML = s.criteria
+      //   ? Object.entries(s.criteria)
+      //       .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
+      //       .join("")
+      //   : "<p>No detailed breakdown.</p>";
+
+      const criteriaData = s.criteria 
+        ? (typeof s.criteria === "string" ? JSON.parse(s.criteria) : s.criteria) 
+        : null;
+
+      const criteriaHTML = criteriaData
+        ? Object.entries(criteriaData)
+            .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
+            .join("")
+        : "<p>No detailed breakdown.</p>";
+
+      const lessonMain = document.getElementById("lessonMainArea");
+      lessonMain.innerHTML = `
+        <div class="submission-review" style="border:1px solid #ccc; padding:15px; border-radius:8px; max-width:600px;">
+          <h2>📝 ${s.assignment_title}</h2>
+          <p><strong>Instructions:</strong> ${s.instructions}</p>
+          <p><strong>Your Answer:</strong> ${s.description}</p>
+          ${s.file_url ? `<p><a href="${s.file_url}" target="_blank">📂 View File</a></p>` : ""}
+
+          <h3>✅ AI Feedback</h3>
+          <p><strong>Total Score:</strong> ${s.total ?? "Pending"}</p>
+          <p><strong>Grade:</strong> ${s.grade ?? "-"}</p>
+          <div><strong>Criteria Breakdown:</strong>${criteriaHTML}</div>
+          <div class="ai-feedback-box"><strong>Comments:</strong> ${s.ai_feedback ?? "Not graded yet"}</div>
+
+          <button onclick="loadPastSubmissions()">⬅ Back to Submissions</button>
+        </div>
+      `;
+    } catch (err) {
+      console.error("Error reviewing submission:", err);
+      alert("Could not review submission");
     }
-
-    const lessonMain = document.getElementById("lessonMainArea");
-    lessonMain.innerHTML = `
-      <h2>📚 My Assignment Submissions</h2>
-      <div class="submissions-list">
-        ${data.submissions.map(s => {
-          // const criteriaHTML = s.criteria
-          //   ? Object.entries(s.criteria)
-          //       .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
-          //       .join("")
-          //   : "<p>No detailed breakdown.</p>";
-          const criteriaData = s.criteria 
-            ? (typeof s.criteria === "string" ? JSON.parse(s.criteria) : s.criteria) 
-            : null;
-
-          const criteriaHTML = criteriaData
-            ? Object.entries(criteriaData)
-                .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
-                .join("")
-            : "<p>No detailed breakdown.</p>";
-
-          return `
-            <div class="submission-card" style="border:1px solid #ccc; padding:10px; margin-bottom:10px; width:50%;">
-              <h3>${s.assignment_title}</h3>
-              <p><strong>Course:</strong> ${s.course_title}</p>
-              <p><strong>Module:</strong> ${s.module_title}</p>
-              <p><strong>Submitted:</strong> ${new Date(s.submitted_at).toLocaleString()}</p>
-              <p><strong>Total Score:</strong> ${s.total ?? "Not graded yet"}</p>
-              <p><strong>Grade:</strong> ${s.grade ?? "-"}</p>
-              <div><strong>Criteria Breakdown:</strong>${criteriaHTML}</div>
-              <p><strong>Feedback:</strong> ${s.ai_feedback ?? "Not graded yet"}</p>
-              <button onclick="reviewSubmission(${s.id})">🔍 Review</button>
-            </div>
-          `;
-        }).join("")}
-      </div>
-    `;
-  } catch (err) {
-    console.error("Error loading past submissions:", err);
-    alert("Could not load past submissions");
   }
-}
-
-
-async function reviewSubmission(subId) {
-  try {
-    const res = await fetch(`/student/assignments/submission/${subId}`);
-    const data = await res.json();
-    if (!data.success) {
-      alert(data.message || "Could not load submission");
-      return;
-    }
-
-    const s = data.submission;
-
-    // const criteriaHTML = s.criteria
-    //   ? Object.entries(s.criteria)
-    //       .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
-    //       .join("")
-    //   : "<p>No detailed breakdown.</p>";
-
-    const criteriaData = s.criteria 
-      ? (typeof s.criteria === "string" ? JSON.parse(s.criteria) : s.criteria) 
-      : null;
-
-    const criteriaHTML = criteriaData
-      ? Object.entries(criteriaData)
-          .map(([crit, score]) => `<p>${crit}: <strong>${score}</strong></p>`)
-          .join("")
-      : "<p>No detailed breakdown.</p>";
-
-    const lessonMain = document.getElementById("lessonMainArea");
-    lessonMain.innerHTML = `
-      <div class="submission-review" style="border:1px solid #ccc; padding:15px; border-radius:8px; max-width:600px;">
-        <h2>📝 ${s.assignment_title}</h2>
-        <p><strong>Instructions:</strong> ${s.instructions}</p>
-        <p><strong>Your Answer:</strong> ${s.description}</p>
-        ${s.file_url ? `<p><a href="${s.file_url}" target="_blank">📂 View File</a></p>` : ""}
-
-        <h3>✅ AI Feedback</h3>
-        <p><strong>Total Score:</strong> ${s.total ?? "Pending"}</p>
-        <p><strong>Grade:</strong> ${s.grade ?? "-"}</p>
-        <div><strong>Criteria Breakdown:</strong>${criteriaHTML}</div>
-        <div class="ai-feedback-box"><strong>Comments:</strong> ${s.ai_feedback ?? "Not graded yet"}</div>
-
-        <button onclick="loadPastSubmissions()">⬅ Back to Submissions</button>
-      </div>
-    `;
-  } catch (err) {
-    console.error("Error reviewing submission:", err);
-    alert("Could not review submission");
-  }
-}
-
 
 </script>
 
@@ -2202,39 +1974,38 @@ async function reviewSubmission(subId) {
     }
   }
 
-
 </script>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const aiTutor = document.getElementById("ai-tutor");
-  const header = aiTutor.querySelector(".ai-tutor-header");
+  document.addEventListener("DOMContentLoaded", () => {
+    const aiTutor = document.getElementById("ai-tutor");
+    const header = aiTutor.querySelector(".ai-tutor-header");
 
-  let isDragging = false;
-  let offsetX = 0;
-  let offsetY = 0;
+    let isDragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
 
-  header.addEventListener("mousedown", (e) => {
-    isDragging = true;
-    offsetX = e.clientX - aiTutor.offsetLeft;
-    offsetY = e.clientY - aiTutor.offsetTop;
-    aiTutor.style.transition = "none"; // disable smooth snap
-    document.body.style.userSelect = "none"; // prevent text selection
+    header.addEventListener("mousedown", (e) => {
+      isDragging = true;
+      offsetX = e.clientX - aiTutor.offsetLeft;
+      offsetY = e.clientY - aiTutor.offsetTop;
+      aiTutor.style.transition = "none"; // disable smooth snap
+      document.body.style.userSelect = "none"; // prevent text selection
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      if (!isDragging) return;
+      aiTutor.style.left = e.clientX - offsetX + "px";
+      aiTutor.style.top = e.clientY - offsetY + "px";
+      aiTutor.style.right = "auto"; // stop sticking to right when moved
+      aiTutor.style.bottom = "auto";
+      aiTutor.style.position = "fixed";
+    });
+
+    document.addEventListener("mouseup", () => {
+      isDragging = false;
+      document.body.style.userSelect = "auto"; // re-enable selection
+    });
   });
-
-  document.addEventListener("mousemove", (e) => {
-    if (!isDragging) return;
-    aiTutor.style.left = e.clientX - offsetX + "px";
-    aiTutor.style.top = e.clientY - offsetY + "px";
-    aiTutor.style.right = "auto"; // stop sticking to right when moved
-    aiTutor.style.bottom = "auto";
-    aiTutor.style.position = "fixed";
-  });
-
-  document.addEventListener("mouseup", () => {
-    isDragging = false;
-    document.body.style.userSelect = "auto"; // re-enable selection
-  });
-});
 </script>
 

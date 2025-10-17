@@ -235,6 +235,11 @@ router.get(
 
 // routes/admin.js
 router.get("/schools", adminController.getSchools);
+router.post(
+  "/schools/update",
+  upload.single("logo"),
+  adminController.updateSchoolInfo
+);
 router.get("/schools/:id", adminController.getSchoolDetails);
 
 // for quotes and course assignment
@@ -289,5 +294,9 @@ router.get(
   adminController.downloadSchoolProgressReport
 );
 
+router.get(
+  "/schools/:schoolId/download-login-cards",
+  adminController.downloadStudentLoginCards
+);
 
 module.exports = router;
