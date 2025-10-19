@@ -1350,8 +1350,6 @@ exports.getLessonQuiz = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
-
 exports.submitLessonQuiz = async (req, res) => {
   try {
     const { lessonId, answers } = req.body;
