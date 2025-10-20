@@ -210,6 +210,16 @@ router.get("/testimony", async (req, res) => {
   const testimonyResult = await pool.query(
     "SELECT * FROM testimonies WHERE is_published = true ORDER BY id"
   );
+  const user = req.session.user;
+    let walletBalance = 0;
+    if (user) {
+      const wallet = await pool.query(
+        "SELECT wallet_balance2 FROM users2 WHERE email = $1",
+        [user.email]
+      );
+      walletBalance = wallet.rows[0]?.wallet_balance2 || 0;
+    }
+  
   res.render("testimony", {
     info: infoResult.rows[0] || {},
     testimonies: testimonyResult.rows,
@@ -217,12 +227,17 @@ router.get("/testimony", async (req, res) => {
     activePage: "testimony", // 👈 Pass active page
     isLoggedIn: !!req.session.user,
     subscribed: req.query.subscribed,
+    users: user,
+    walletBalance,
+    subscribed: req.query.subscribed,
+    paid: req.query.paid,
   });
 });
 
 // Handle Testimony Submission
 router.post("/testimony", async (req, res) => {
   const { name, email, message } = req.body;
+   
 
   if (!message || !name) {
     return res.redirect("/testimony?error=Message and name are required");
@@ -252,12 +267,14 @@ router.get("/testimonies", async (req, res) => {
   const result = await pool.query(
     "SELECT * FROM testimonies WHERE is_published = true ORDER BY created_at DESC"
   );
+    const user = req.session.user;
   res.render("testimonies", {
     testimonies: result.rows,
     title: "Testimonies",
     activePage: "testimony", // 👈 Pass active page
     isLoggedIn: !!req.session.user,
     subscribed: req.query.subscribed,
+    users: user,
   });
 });
 
