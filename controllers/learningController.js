@@ -4,7 +4,6 @@ const fs = require("fs");
 // controllers/learningController.js
 const { askTutor } = require("../utils/ai");
 
-
 exports.updateCourse = async (req, res) => {
   const { id } = req.params;
   const { title, description, level, amount } = req.body;
@@ -101,7 +100,6 @@ exports.createModule = async (req, res) => {
 //   res.redirect(`/admin/courses/${result.rows[0].course_id}?tab=modules`);
 // };
 
-
 exports.editModule = async (req, res) => {
   const { title, description, objectives, learning_outcomes, order_number } =
     req.body;
@@ -143,7 +141,6 @@ exports.editModule = async (req, res) => {
   res.redirect(`/admin/courses/${result.rows[0].course_id}?tab=modules`);
 };
 
-
 exports.deleteModule = async (req, res) => {
   const { id } = req.params;
 
@@ -158,23 +155,79 @@ exports.deleteModule = async (req, res) => {
   res.redirect(`/admin/courses/${course_id}?tab=modules`);
 };
 
+// exports.getLessonsPage = async (req, res) => {
+//   try {
+//     const modulesRes = await pool.query(`
+//       SELECT m.*, c.title AS course_title
+//       FROM modules m
+//       JOIN courses c ON m.course_id = c.id
+//       ORDER BY c.title, m.title
+//     `);
+
+//     const selectedModuleId = req.query.module || null;
+//     let lessons = [];
+
+//     if (selectedModuleId) {
+//       const lessonsRes = await pool.query(
+//         `SELECT * FROM lessons WHERE module_id = $1 ORDER BY id DESC`,
+//         [selectedModuleId]
+//       );
+//       lessons = lessonsRes.rows;
+//     }
+
+//     res.render("admin/adminLessons", {
+//       modules: modulesRes.rows,
+//       lessons,
+//       selectedModuleId,
+//       role: req.session.user?.role || "admin",
+//     });
+//   } catch (err) {
+//     console.error("Get Lessons Error:", err.message);
+//     res.status(500).send("Server Error");
+//   }
+// };
 
 exports.getLessonsPage = async (req, res) => {
   try {
-    const modulesRes = await pool.query(`
+    const courseId = req.query.course || null;
+    const selectedModuleId = req.query.module || null;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const offset = (page - 1) * limit;
+
+    // 🔹 Load modules (filtered by course if provided)
+    let modulesQuery = `
       SELECT m.*, c.title AS course_title
       FROM modules m
       JOIN courses c ON m.course_id = c.id
-      ORDER BY c.title, m.title
-    `);
+    `;
+    let queryParams = [];
 
-    const selectedModuleId = req.query.module || null;
+    if (courseId) {
+      modulesQuery += ` WHERE c.id = $1`;
+      queryParams.push(courseId);
+    }
+
+    modulesQuery += ` ORDER BY c.title, m.title`;
+    const modulesRes = await pool.query(modulesQuery, queryParams);
+
+    // 🔹 Load lessons (only for selected module)
     let lessons = [];
+    let totalPages = 0;
 
-    if (selectedModuleId) {
-      const lessonsRes = await pool.query(
-        `SELECT * FROM lessons WHERE module_id = $1 ORDER BY id DESC`,
+    if (selectedModuleId && selectedModuleId !== "all") {
+      // Count total lessons
+      const countRes = await pool.query(
+        `SELECT COUNT(*) AS total FROM lessons WHERE module_id = $1`,
         [selectedModuleId]
+      );
+      const totalLessons = parseInt(countRes.rows[0].total);
+      totalPages = Math.ceil(totalLessons / limit);
+
+      // Fetch paginated lessons
+      const lessonsRes = await pool.query(
+        `SELECT * FROM lessons WHERE module_id = $1 ORDER BY order_number ASC LIMIT $2 OFFSET $3`,
+        [selectedModuleId, limit, offset]
       );
       lessons = lessonsRes.rows;
     }
@@ -184,6 +237,8 @@ exports.getLessonsPage = async (req, res) => {
       lessons,
       selectedModuleId,
       role: req.session.user?.role || "admin",
+      page,
+      totalPages,
     });
   } catch (err) {
     console.error("Get Lessons Error:", err.message);
@@ -295,7 +350,7 @@ exports.getLessonsPage = async (req, res) => {
 //     const { title, content, module_id, course_id, video_url } = req.body;
 
 //     await pool.query(
-//       `INSERT INTO lessons (title, content, module_id, video_url) 
+//       `INSERT INTO lessons (title, content, module_id, video_url)
 //        VALUES ($1, $2, $3, $4)`,
 //       [title, content, module_id, video_url || null]
 //     );
@@ -314,8 +369,8 @@ exports.getLessonsPage = async (req, res) => {
 
 //   try {
 //     await pool.query(
-//       `UPDATE lessons 
-//        SET title=$1, content=$2, video_url=$3 
+//       `UPDATE lessons
+//        SET title=$1, content=$2, video_url=$3
 //        WHERE id=$4`,
 //       [title, content, video_url || null, id]
 //     );
@@ -327,13 +382,13 @@ exports.getLessonsPage = async (req, res) => {
 //   }
 // };
 
-
 // DELETE LESSON
 
 // CREATE LESSON
 exports.createLesson = async (req, res) => {
   try {
-    const { title, content, module_id, course_id, video_url, order_number } = req.body;
+    const { title, content, module_id, course_id, video_url, order_number } =
+      req.body;
 
     await pool.query(
       `INSERT INTO lessons (title, content, module_id, video_url, order_number)
@@ -415,8 +470,6 @@ exports.editLesson = async (req, res) => {
   }
 };
 
-
-
 exports.deleteLesson = async (req, res) => {
   const { id } = req.params;
   const { course_id } = req.body;
@@ -456,7 +509,8 @@ exports.getLessonJSON = async (req, res) => {
       [lessonId]
     );
 
-    if (!result.rows[0]) return res.status(404).json({ error: "Lesson not found" });
+    if (!result.rows[0])
+      return res.status(404).json({ error: "Lesson not found" });
 
     res.json(result.rows[0]);
   } catch (err) {
@@ -464,8 +518,6 @@ exports.getLessonJSON = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
-
-
 
 // exports.createQuiz = async (req, res) => {
 //   const { title, lesson_id } = req.body;
@@ -524,7 +576,6 @@ exports.getLessonJSON = async (req, res) => {
 
 // GET quiz questions for a lesson
 
-
 // GET or CREATE quiz for a lesson
 exports.getOrCreateLessonQuiz = async (req, res) => {
   const { lessonId } = req.params;
@@ -557,9 +608,8 @@ exports.getOrCreateLessonQuiz = async (req, res) => {
     res.json({
       success: true,
       quiz,
-      questions: questions.rows
+      questions: questions.rows,
     });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: "Server error" });
@@ -668,7 +718,6 @@ exports.editQuizQuestion = async (req, res) => {
   }
 };
 
-
 // VIEW course with assignments
 // exports.viewCourseWithAssignments = async (req, res) => {
 //   const courseId = req.params.id;
@@ -752,7 +801,9 @@ exports.viewCourseWithAssignments = async (req, res) => {
 
   try {
     // Get course info
-    const courseRes = await pool.query("SELECT * FROM courses WHERE id = $1", [courseId]);
+    const courseRes = await pool.query("SELECT * FROM courses WHERE id = $1", [
+      courseId,
+    ]);
     const course = courseRes.rows[0];
     if (!course) return res.status(404).send("Course not found");
 
@@ -789,13 +840,14 @@ exports.viewCourseWithAssignments = async (req, res) => {
       selectedModuleId,
       activeTab,
       role: req.session.user?.role || "admin",
+      page: 1,
+      totalPages: 1,
     });
   } catch (err) {
     console.error("Error loading assignments:", err);
     res.status(500).send("Server error");
   }
 };
-
 
 // exports.createAssignment = async (req, res) => {
 //   const { title, instructions, lesson_id, module_id, course_id } = req.body;
@@ -864,13 +916,12 @@ exports.viewCourseWithAssignments = async (req, res) => {
 //   }
 // };
 
-
 // Helper to detect AJAX/fetch requests
 function isAjax(req) {
   return (
     req.xhr ||
-    req.headers['x-requested-with'] === 'XMLHttpRequest' ||
-    (req.headers.accept && req.headers.accept.includes('application/json'))
+    req.headers["x-requested-with"] === "XMLHttpRequest" ||
+    (req.headers.accept && req.headers.accept.includes("application/json"))
   );
 }
 
@@ -973,8 +1024,6 @@ exports.deleteAssignment = async (req, res) => {
   }
 };
 
-
-
 // -------------------- PROJECTS --------------------
 exports.createProject = async (req, res) => {
   const { title, description, course_id } = req.body;
@@ -1054,6 +1103,8 @@ exports.getSingleCourse = async (req, res) => {
     project: project.rows,
     activeTab: req.query.tab || "details",
     role: req.session.user?.role || "admin", // ✅ ensure role is passed
+    page: 1,
+    totalPages: 1,
   });
 };
 
@@ -1260,6 +1311,8 @@ exports.viewSingleCourse = async (req, res) => {
       quizzes: quizzes.rows,
       activeTab: req.query.tab || "details",
       role: req.session.user?.role || "admin", // ✅ ensure role is passed
+      page: 1,
+      totalPages: 1,
     });
   } catch (err) {
     console.error("Error loading course:", err);
@@ -1267,11 +1320,12 @@ exports.viewSingleCourse = async (req, res) => {
   }
 };
 
-
-
 async function ensureQuizForLesson(lessonId) {
   // Find or create a row in `quizzes`
-  const q = await pool.query(`SELECT id FROM quizzes WHERE lesson_id = $1 LIMIT 1`, [lessonId]);
+  const q = await pool.query(
+    `SELECT id FROM quizzes WHERE lesson_id = $1 LIMIT 1`,
+    [lessonId]
+  );
   if (q.rows[0]) return q.rows[0].id;
   const created = await pool.query(
     `INSERT INTO quizzes (lesson_id, created_at) VALUES ($1, NOW()) RETURNING id`,
@@ -1443,14 +1497,16 @@ Return ONLY JSON in this format:
 Difficulty: ${difficulty}
 Lesson Title: ${lq.rows[0].title}
 Lesson Content: ${lq.rows[0].content || ""}
-`
+`,
     };
 
     const raw = await askTutor(prompt);
     let items = JSON.parse(raw);
 
     if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: "AI did not return valid questions." });
+      return res
+        .status(400)
+        .json({ error: "AI did not return valid questions." });
     }
 
     // ✅ Just send preview JSON
@@ -1460,7 +1516,6 @@ Lesson Content: ${lq.rows[0].content || ""}
     res.status(500).json({ error: "Failed to preview quiz." });
   }
 };
-
 
 exports.saveAIQuizForLesson = async (req, res) => {
   try {
@@ -1500,7 +1555,6 @@ exports.saveAIQuizForLesson = async (req, res) => {
   }
 };
 
-
 exports.searchContent = async (req, res) => {
   const { q } = req.query;
   try {
@@ -1528,5 +1582,3 @@ exports.searchContent = async (req, res) => {
     res.status(500).send("Server Error");
   }
 };
-
-

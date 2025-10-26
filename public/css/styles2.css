@@ -2352,6 +2352,30 @@ canvas {
       background: #0056b3;
   }
 
+  .pagination {
+      text-align: center;
+      margin: 20px 0;
+  }
+
+  .page-link {
+      display: inline-block;
+      margin: 0 5px;
+      padding: 8px 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      text-decoration: none;
+      color: #333;
+  }
+
+  .page-link:hover {
+      background: #eee;
+  }
+
+  .page-link.active {
+      background: #007bff;
+      color: white;
+      border-color: #007bff;
+  }
 /* Tablet screens (≤1024px) */
 @media (max-width: 1024px) {
     .slide-box {

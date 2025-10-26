@@ -36,8 +36,8 @@
 
       <% if (activeTab === 'details') { %> <%- include('../partials/courseDetails',
       { course }) %> <% } else if (activeTab === 'modules') { %> <%-
-      include('../partials/modules', { modules, quizzes, lessons, course, assignments: moduleAssignments }) %> <% } else if (activeTab ===
-      'lessons') { %> <%- include('../partials/lessons', { lessons, modules }) %>
+      include('../partials/modules', { modules, quizzes, lessons, course, assignments: moduleAssignments }) %> <% } else if (activeTab === 'lessons') { %>
+  <%- include('../partials/lessons', { lessons, modules, selectedModuleId, page: page || 1, totalPages: totalPages || 0 }) %>
       <% } else if (activeTab === 'assignment') { %> <%-
       include('../partials/courseAssignment', { assignments: moduleAssignments }) %> <% } else if
       (activeTab === 'project') { %> <%- include('../partials/courseProject', {

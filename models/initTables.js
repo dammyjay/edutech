@@ -106,7 +106,8 @@ async function createTables() {
         amount INTEGER DEFAULT 0,
         created_by TEXT DEFAULT 'admin',
         instructor_id INT REFERENCES users(id), 
-        created_at TIMESTAMP DEFAULT NOW()
+        created_at TIMESTAMP DEFAULT NOW(),
+        curriculum_url TEXT
       );`
     );
 

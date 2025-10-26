@@ -1,4 +1,5 @@
 const express = require("express");
+const pool = require("../models/db");
 const router = express.Router();
 // const parser = require("../middlewares/upload");
 // const upload = require("../middlewares/upload");
@@ -92,16 +93,104 @@ router.post("/pathways/delete/:id", adminController.deletePathway);
 
 // Courses
 router.get("/courses", adminController.showCourses);
-router.post(
-  "/courses",
-  upload.single("thumbnail"),
-  adminController.createCourse
-);
-router.post(
-  "/courses/edit/:id",
-  upload.single("thumbnail"),
-  adminController.editCourse
-);
+
+// router.post(
+//   "/courses",
+//   upload.single("thumbnail"),
+//   adminController.createCourse
+// );
+
+// router.post(
+//   "/courses/edit/:id",
+//   upload.single("thumbnail"),
+//   adminController.editCourse
+// );
+
+// existing create route
+router.post("/courses", upload.fields([
+  { name: "thumbnail", maxCount: 1 },
+  { name: "curriculum", maxCount: 1 }
+]), adminController.createCourse);
+
+// existing edit route
+router.post("/courses/edit/:id", upload.fields([
+  { name: "thumbnail", maxCount: 1 },
+  { name: "curriculum", maxCount: 1 }
+]), adminController.editCourse);
+
+
+// 📘 View Course Curriculum (with proxy streaming support)
+router.get("/courses/:id/curriculum", async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    console.log("📘 Loading curriculum for course ID:", courseId);
+
+    const result = await pool.query("SELECT * FROM courses WHERE id = $1", [
+      courseId,
+    ]);
+    if (result.rows.length === 0) {
+      console.log("❌ Course not found");
+      return res.status(404).send("Course not found");
+    }
+
+    const course = result.rows[0];
+    console.log("✅ Course found:", course.title);
+    console.log("📄 Curriculum URL:", course.curriculum_url);
+
+    if (!course.curriculum_url) {
+      return res
+        .status(404)
+        .send("No curriculum file uploaded for this course.");
+    }
+
+    // 🔹 Add a proxy link for embedding (resolves Cloudinary access issues)
+    const proxyUrl = `/courses/${course.id}/curriculum/file`;
+
+    // Pass proxy URL to the EJS view
+    res.render("courseCurriculum", {
+      course,
+      proxyUrl,
+      fullProxyUrl: `${req.protocol}://${req.get("host")}${proxyUrl}`,
+    });
+  } catch (err) {
+    console.error("❌ Error loading curriculum:", err);
+    res.status(500).send("Error loading curriculum: " + err.message);
+  }
+});
+
+// ✅ Add this route below the one above (to actually serve the file)
+router.get("/courses/:id/curriculum/file", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      "SELECT curriculum_url FROM courses WHERE id=$1",
+      [id]
+    );
+    if (!result.rows.length) return res.status(404).send("Course not found");
+
+    const { curriculum_url } = result.rows[0];
+    if (!curriculum_url) return res.status(404).send("No curriculum uploaded");
+
+    const response = await fetch(curriculum_url);
+    if (!response.ok) return res.status(500).send("Unable to fetch file");
+
+    res.setHeader(
+      "Content-Type",
+      response.headers.get("content-type") || "application/octet-stream"
+    );
+    res.setHeader("Content-Disposition", "inline; filename=curriculum");
+
+    response.body.pipe(res);
+  } catch (err) {
+    console.error("Proxy error:", err);
+    res.status(500).send("Error loading curriculum");
+  }
+});
+
+
+
+
+
 router.post("/courses/delete/:id", adminController.deleteCourse);
 
 router.get("/pathways/:id/courses", adminController.showCoursesByPathway);

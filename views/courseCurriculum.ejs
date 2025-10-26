@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title><%= course.title %> — Curriculum</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/styles2.css" />
+  <link rel="icon" type="image/x-icon" href="/images/JKT logo.png" />
+  <style>
+    body {
+      background: #f4f6f9;
+      font-family: "Poppins", sans-serif;
+      padding: 30px;
+      color: #333;
+    }
+
+    .curriculum-box {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+      padding: 25px;
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .header h2 {
+      font-size: 1.8em;
+      color: #2c3e50;
+    }
+
+    .btn-back {
+      background: #6c757d;
+      color: #fff;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      transition: 0.3s;
+    }
+
+    .btn-back:hover {
+      background: #495057;
+    }
+
+    .thumb {
+      width: 220px;
+      height: 140px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1px solid #eee;
+      margin-bottom: 15px;
+    }
+
+    .course-info {
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .viewer-frame {
+      width: 100%;
+      height: 600px;
+      border: none;
+      border-radius: 8px;
+      background: #fafafa;
+      margin-top: 10px;
+    }
+
+    .actions {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-view, .btn-download {
+      padding: 10px 14px;
+      border-radius: 6px;
+      color: #fff;
+      text-decoration: none;
+      transition: 0.3s;
+    }
+
+    .btn-view { background: #007bff; }
+    .btn-download { background: #28a745; }
+    .btn-view:hover, .btn-download:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+  <div class="curriculum-box">
+    <div class="header">
+      <h2><%= course.title %> — Curriculum</h2>
+      <a href="/student/dashboard" class="btn-back">← Back</a>
+    </div>
+
+    <% if (course.thumbnail_url) { %>
+      <img src="<%= course.thumbnail_url %>" alt="Thumbnail" class="thumb">
+    <% } %>
+
+    <div class="course-info">
+      <p><strong>Level:</strong> <%= course.level %></p>
+      <p><%- course.description %></p>
+    </div>
+<% if (course.curriculum_url) { %>
+  <% 
+    const fileUrl = course.curriculum_url;
+    const mime = course.curriculum_mime || "";
+  %>
+
+  <% if (mime.includes("pdf")) { %>
+    <!-- ✅ PDF -->
+    <iframe class="viewer-frame" src="<%= fileUrl %>"></iframe>
+
+  <% } else if (mime.includes("word") || mime.includes("doc")) { %>
+    <!-- ✅ DOC/DOCX -->
+    <iframe
+      class="viewer-frame"
+      src="https://view.officeapps.live.com/op/embed.aspx?src=<%= encodeURIComponent(fileUrl) %>">
+    </iframe>
+
+  <% } else { %>
+    <p>❌ Unsupported file format. Please download below.</p>
+  <% } %>
+
+  <div class="actions">
+    <a href="<%= fileUrl %>" target="_blank" class="btn-view">📄 Open in New Tab</a>
+    <a href="<%= fileUrl %>" download class="btn-download">⬇️ Download File</a>
+  </div>
+<% } else { %>
+  <p><em>No curriculum file uploaded yet.</em></p>
+<% } %>
+
+
+  </div>
+</body>
+</html>

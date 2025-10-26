@@ -75,6 +75,12 @@
                 <% }) %>
             </select><br /><br>
 
+            <label>Curriculum File (PDF or DOCX)</label>
+            <% if (course.curriculum_url) { %>
+              <p>📎 <a href="<%= course.curriculum_url %>" target="_blank">View current curriculum</a></p>
+            <% } %>
+            <input type="file" name="curriculum" accept=".pdf,.doc,.docx">
+
             <label for="">Sort Number</label>
             <input type="number" name="sort_order" value="<%= course.sort_order %>" /><br />
 
@@ -170,6 +176,10 @@
           <% }) %></select
         ><br />
       </div>
+
+      <label>Curriculum File (PDF/DOCX)</label>
+      <input type="file" name="curriculum" accept=".pdf,.doc,.docx" /><br />
+
 
       <input type="number" name="sort_order" placeholder="Sort Order" /><br />
       <input type="file" name="thumbnail" /><br />

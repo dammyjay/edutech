@@ -16,7 +16,11 @@
 
   <button type="submit">Update Course</button>
 </form> -->
-<button class="btn-create" onclick="openEditModal('course')">✏️ Edit Course</button>
+
+<!-- ----------------------------------------------------------------- -->
+
+
+<!-- <button class="btn-create" onclick="openEditModal('course')">✏️ Edit Course</button>
 
 <div id="editModal-course" class="modal">
   <div class="modal-content">
@@ -52,6 +56,45 @@
       <button type="submit">Save Changes</button>
     </form>
   </div>
+</div> -->
+
+<button class="btn-create" onclick="openEditModal('course')">✏️ Edit Course</button>
+
+<div id="editModal-course" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeEditModal('course')">&times;</span>
+    <h3>Edit Course</h3>
+
+    <form action="/admin/courses/<%= course.id %>/edit" method="POST" enctype="multipart/form-data">
+      <label>Title</label>
+      <input type="text" name="title" value="<%= course.title %>" required>
+
+      <label>Description</label>
+      <textarea id="content" name="description"><%= course.description %></textarea>
+
+      <label>Thumbnail</label>
+      <img src="<%= course.thumbnail_url %>" alt="" style="width:100px; height:100px; object-fit:contain;">
+      <input type="file" name="thumbnail" accept="image/*">
+
+      <label>Curriculum File (PDF or DOCX)</label>
+      <% if (course.curriculum_url) { %>
+        <p>📎 <a href="<%= course.curriculum_url %>" target="_blank">View current curriculum</a></p>
+      <% } %>
+      <input type="file" name="curriculum" accept=".pdf,.doc,.docx">
+
+      <label>Level</label>
+      <select name="level">
+        <option value="Beginner" <%= course.level === "Beginner" ? "selected" : "" %>>Beginner</option>
+        <option value="Intermediate" <%= course.level === "Intermediate" ? "selected" : "" %>>Intermediate</option>
+        <option value="Advanced" <%= course.level === "Advanced" ? "selected" : "" %>>Advanced</option>
+      </select>
+
+      <label>Amount (₦)</label>
+      <input type="number" name="amount" value="<%= course.amount || 0 %>" step="0.01">
+
+      <button type="submit" class="btn-save">💾 Save Changes</button>
+    </form>
+  </div>
 </div>
 
 
@@ -66,6 +109,16 @@
   <p><strong>Price: </strong> ₦ <%= course.amount %></p>
   
 </div>
+
+<% if (course.curriculum_url) { %>
+    <a href="/admin/courses/<%= course.id %>/curriculum" class="btn-view">
+  📘 View / Download Curriculum
+</a>
+
+<% } else { %>
+  <p>No curriculum file uploaded.</p>
+<% } %>
+
 
 <script>
   function openEditModal(id) {

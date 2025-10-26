@@ -17,7 +17,8 @@
 
 <div class="article-grid">
   <% lessons.forEach(lesson => { %>
-    <div class="article-card" data-course-id="<%= course.id %>" data-lesson-id="<%= lesson.id %>">
+    <!-- <div class="article-card" data-course-id="<%= course.id %>" data-lesson-id="<%= lesson.id %>"> -->
+      <div class="article-card" data-course-id="<%= lesson.course_id %>" data-lesson-id="<%= lesson.id %>">
       <h3><%= lesson.title %></h3>
       <p><strong>Module:</strong> <%= lesson.module_title %></p>
       <% if (lesson.video_url) { %>
@@ -69,6 +70,25 @@
     
   <% }) %>
 </div>
+
+<div class="pagination">
+  <% if (page > 1) { %>
+    <a href="?module=<%= selectedModuleId %>&page=<%= page - 1 %>" class="page-link">Prev</a>
+  <% } %>
+
+  <% for (let i = 1; i <= totalPages; i++) { %>
+    <a href="?module=<%= selectedModuleId %>&page=<%= i %>" 
+       class="page-link <%= page === i ? 'active' : '' %>">
+       <%= i %>
+    </a>
+  <% } %>
+
+  <% if (page < totalPages) { %>
+    <a href="?module=<%= selectedModuleId %>&page=<%= page + 1 %>" class="page-link">Next</a>
+  <% } %>
+</div>
+
+
 
 
 <!-- CREATE LESSON MODAL -->
