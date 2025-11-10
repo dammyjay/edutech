@@ -826,18 +826,46 @@ exports.updateXP = async (req, res) => {
 };
 
 // POST: Award Badge
+// exports.awardBadge = async (req, res) => {
+//   const userId = req.user.id;
+//   const { badge_name } = req.body;
+
+//   try {
+//     await pool.query(
+//       `
+//       INSERT INTO user_badges (user_id, badge_name)
+//       VALUES ($1, $2)
+//       ON CONFLICT DO NOTHING
+//     `,
+//       [userId, badge_name]
+//     );
+
+//     res.json({ message: "Badge awarded successfully" });
+//   } catch (err) {
+//     console.error("Badge awarding error:", err.message);
+//     res.status(500).json({ error: "Server error awarding badge" });
+//   }
+// };
+
 exports.awardBadge = async (req, res) => {
   const userId = req.user.id;
-  const { badge_name } = req.body;
+  const { badge_name, module_id } = req.body; // pass module_id from frontend
 
   try {
+    // ✅ Get badge image from module
+    const moduleRes = await pool.query(
+      `SELECT badge_image FROM modules WHERE id=$1`,
+      [module_id]
+    );
+    const badgeImage = moduleRes.rows[0]?.badge_image || null;
+
     await pool.query(
       `
-      INSERT INTO user_badges (user_id, badge_name)
-      VALUES ($1, $2)
+      INSERT INTO user_badges (user_id, badge_name, module_id, badge_image, awarded_at)
+      VALUES ($1, $2, $3, $4, NOW())
       ON CONFLICT DO NOTHING
-    `,
-      [userId, badge_name]
+      `,
+      [userId, badge_name, module_id, badgeImage]
     );
 
     res.json({ message: "Badge awarded successfully" });
@@ -846,6 +874,7 @@ exports.awardBadge = async (req, res) => {
     res.status(500).json({ error: "Server error awarding badge" });
   }
 };
+
 
 // POST: Mark lesson complete, award XP, and check for badge
 exports.completeLesson = async (req, res) => {
@@ -1664,6 +1693,52 @@ Return only valid JSON in this format:
         [studentId]
       );
     }
+
+    // Get module ID and badge image for the lesson
+    const moduleRes = await pool.query(
+      `SELECT id, badge_image FROM modules 
+   WHERE id = (SELECT module_id FROM lessons WHERE id=$1)`,
+      [lessonId]
+    );
+    const moduleId = moduleRes.rows[0]?.id;
+    const badgeImage = moduleRes.rows[0]?.badge_image || null;
+
+    // Award badges with module_id and badge_image
+    if (completionRate >= 20) {
+      await pool.query(
+        `INSERT INTO user_badges (user_id, badge_name, module_id, badge_image, awarded_at)
+     VALUES ($1, 'Beginner', $2, $3, NOW()) 
+     ON CONFLICT DO NOTHING`,
+        [studentId, moduleId, badgeImage]
+      );
+    }
+    if (completionRate >= 50) {
+      await pool.query(
+        `INSERT INTO user_badges (user_id, badge_name, module_id, badge_image, awarded_at)
+     VALUES ($1, 'Intermediate', $2, $3, NOW()) 
+     ON CONFLICT DO NOTHING`,
+        [studentId, moduleId, badgeImage]
+      );
+    }
+
+    if (completionRate >= 80) {
+      await pool.query(
+        `INSERT INTO user_badges (user_id, badge_name, module_id, badge_image, awarded_at)
+     VALUES ($1, 'Advance', $2, $3, NOW()) 
+     ON CONFLICT DO NOTHING`,
+        [studentId, moduleId, badgeImage]
+      );
+    }
+
+    if (completionRate >= 100) {
+      await pool.query(
+        `INSERT INTO user_badges (user_id, badge_name, module_id, badge_image, awarded_at)
+     VALUES ($1, 'Master', $2, $3, NOW()) 
+     ON CONFLICT DO NOTHING`,
+        [studentId, moduleId, badgeImage]
+      );
+    }
+    // ... same for Advanced and Master
 
     // ✅ Respond to frontend
     res.json({

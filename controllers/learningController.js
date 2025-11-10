@@ -174,7 +174,8 @@ exports.createModule = async (req, res) => {
       [title, description, objectives, learning_outcomes, thumbnailUrl, badgeUrl, order_number, course_id]
     );
 
-    res.redirect("/admin/courses/" + course_id);
+    // res.redirect("/admin/courses/" + course_id);
+    res.redirect(`/admin/courses/${course_id}?tab=modules`);
   } catch (error) {
     console.error("Error creating module:", error);
     res.status(500).send("Server error");
@@ -214,7 +215,8 @@ exports.editModule = async (req, res) => {
       [title, description, objectives, learning_outcomes, thumbnailUrl, badgeUrl, order_number, id]
     );
 
-    res.redirect("/admin/courses/" + oldModule.rows[0].course_id);
+    // res.redirect("/admin/courses/" + oldModule.rows[0].course_id);
+    res.redirect(`/admin/courses/${oldModule.rows[0].course_id}?tab=modules`);
   } catch (error) {
     console.error("Error editing module:", error);
     res.status(500).send("Server error");

@@ -376,7 +376,9 @@ async function createTables() {
         user_id INTEGER REFERENCES users2(id) ON DELETE CASCADE,
         badge_name TEXT NOT NULL,
         awarded_at TIMESTAMP DEFAULT NOW(),
-        UNIQUE(user_id, badge_name)
+        UNIQUE(user_id, badge_name),
+        module_id INTEGER REFERENCES modules(id) ON DELETE CASCADE,
+        badge_image TEXT
       );
       `
     );

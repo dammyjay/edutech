@@ -159,7 +159,7 @@
   </div>
 
   <!-- 🎖️ Badges Section -->
-  <div class="badges-section">
+  <!-- <div class="badges-section">
     <h3>🎖️ Badges Earned</h3>
     <% if (badges && badges.length > 0) { %>
       <div class="badges-grid">
@@ -181,7 +181,37 @@
     <% } else { %>
       <p class="no-badges">No badges earned yet. Keep learning! 🚀</p>
     <% } %>
-  </div>
+  </div> -->
+  <div class="badges-section">
+  <h3>🎖️ Badges Earned</h3>
+
+  <% if (badges && badges.length > 0) { %>
+    <div class="badges-grid">
+      <% badges.forEach(b => { %>
+        <div class="badge-card">
+          <!-- Show badge image if exists -->
+          <% if (b.badge_image) { %>
+            <img src="<%= b.badge_image %>" alt="<%= b.badge_name %>" class="badge-img" />
+          <% } else { %>
+            <div class="badge-placeholder">🎖️</div>
+          <% } %>
+
+          <p class="badge-name"><%= b.badge_name %></p>
+          <p class="badge-date">Awarded: <%= new Date(b.awarded_at).toLocaleDateString() %></p>
+
+          <!-- Optional: show module title that earned this badge -->
+          <% if (b.module_title) { %>
+            <p class="badge-module">Module: <%= b.module_title %></p>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <p class="no-badges">No badges earned yet. Keep learning! 🚀</p>
+  <% } %>
+</div>
+
+
 </div>
 
 
