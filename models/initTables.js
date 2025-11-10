@@ -257,7 +257,8 @@ async function createTables() {
         content TEXT,
         video_url TEXT,
         created_at TIMESTAMP DEFAULT NOW(),
-        order_number INTEGER
+        order_number INTEGER,
+        lesson_file_url TEXT
       );
       `
     );

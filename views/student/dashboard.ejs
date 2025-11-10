@@ -106,45 +106,84 @@
   <% if (section === 'profile') { %>
     <!-- 👤 PROFILE SECTION -->
     <div class="profile-container">
-      <h2>👤 My Profile</h2>
+  <h2>👤 My Profile</h2>
 
-      <div class="profile-card">
-        <img src="<%= profilePic || '/images/profile male.png' %>" class="profile-pic-large" />
-        <p><strong>Full Name:</strong> <%= student.fullname %></p>
-        <p><strong>Gender:</strong> <%= student.gender %></p>
-        <p><strong>Date of Birth:</strong> <%= student.dob ? student.dob.toISOString().split('T')[0] : 'N/A' %></p>
-        <p style="color: rgb(0, 0, 0);">💰 Wallet: ₦<%= walletBalance.toLocaleString() %></p>
-        <button class="btn-create" onclick="openEditModal('profile')">✏️ Edit Profile</button>
-      </div>
+  <div class="profile-card">
+    <img src="<%= profilePic || '/images/profile male.png' %>" class="profile-pic-large" />
+    <p><strong>Full Name:</strong> <%= student.fullname %></p>
+    <p><strong>Gender:</strong> <%= student.gender %></p>
+    <p><strong>Date of Birth:</strong> <%= student.dob ? student.dob.toISOString().split('T')[0] : 'N/A' %></p>
+    <p style="color: rgb(0, 0, 0);">💰 Wallet: ₦<%= walletBalance.toLocaleString() %></p>
+    <button class="btn-create" onclick="openEditModal('profile')">✏️ Edit Profile</button>
+  </div>
 
-      <!-- EDIT MODAL -->
-      <div id="editModal-profile" class="modal">
-        <div class="modal-content">
-          <span class="close" onclick="closeEditModal('profile')">&times;</span>
-          <h3>Edit My Profile</h3>
-          <form action="/student/profile/edit" method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="existingPic" value="<%= profilePic %>" />
-            
-            <label>Full Name</label>
-            <input type="text" name="fullname" value="<%= student.fullname %>" required />
-
-            <label>Gender</label>
-            <select name="gender" required>
-              <option value="Male" <%= student.gender === 'Male' ? 'selected' : '' %>>Male</option>
-              <option value="Female" <%= student.gender === 'Female' ? 'selected' : '' %>>Female</option>
-            </select>
-
-            <label>Date of Birth</label>
-            <input type="date" name="dob" value="<%= student.dob ? student.dob.toISOString().split('T')[0] : '' %>" required />
-
-            <label>Profile Picture</label>
-            <input type="file" name="profilePic" />
-
-            <button type="submit">Save Changes</button>
-          </form>
-        </div>
-      </div>
+  <!-- 🏅 Achievements -->
+  <h3>🏅 Achievements</h3>
+  <div class="achievements">
+    <div class="achievement-item">
+      <h4>🪙 XP Points</h4>
+      <p><%= student.xp || 0 %> points</p>
     </div>
+
+    <div class="achievement-item">
+      <h4>📘 Courses Completed</h4>
+      <p><%= completedCourses || 0 %></p>
+    </div>
+
+    <div class="achievement-item">
+      <h4>📜 Certificates</h4>
+      <p><%= certificatesCount || 0 %></p>
+    </div>
+  </div>
+
+  <!-- 📜 Certificates Section -->
+  <div class="certificates-section">
+    <h3>📜 My Certificates</h3>
+    <% if (certificates && certificates.length > 0) { %>
+      <div class="certificates-grid">
+        <% certificates.forEach(c => { %>
+          <div class="certificate-card">
+            <h4><%= c.course_title %></h4>
+            <p>Issued: <%= new Date(c.issued_date).toLocaleDateString() %></p>
+            <% if (c.certificate_url) { %>
+              <a href="<%= c.certificate_url %>" target="_blank" class="btn-view">🔗 View Certificate</a>
+            <% } else { %>
+              <p>No link available</p>
+            <% } %>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <p class="no-certificates">No certificates yet. Complete courses to earn yours! 🎓</p>
+    <% } %>
+  </div>
+
+  <!-- 🎖️ Badges Section -->
+  <div class="badges-section">
+    <h3>🎖️ Badges Earned</h3>
+    <% if (badges && badges.length > 0) { %>
+      <div class="badges-grid">
+        <% badges.forEach(b => { %>
+          <div class="badge-card">
+            <div class="badge-icon">
+              <% if (b.badge_name === 'Beginner') { %> 🥉
+              <% } else if (b.badge_name === 'Intermediate') { %> 🥈
+              <% } else if (b.badge_name === 'Advanced') { %> 🥇
+              <% } else if (b.badge_name === 'Master') { %> 👑
+              <% } else { %> 🎖️
+              <% } %>
+            </div>
+            <p class="badge-name"><%= b.badge_name %></p>
+            <p class="badge-date">Awarded: <%= new Date(b.awarded_at).toLocaleDateString() %></p>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <p class="no-badges">No badges earned yet. Keep learning! 🚀</p>
+    <% } %>
+  </div>
+</div>
+
 
   <% } else if (section === 'classroom' && classroom) { %>
   <h2>👥 Your Classmates in <%= classroom.name %></h2>
@@ -439,15 +478,70 @@
         <h4>🗂️ Completed Projects</h4>
         <p><%= completedProjects %></p>
       </div>
-      <div class="stat-box light-yellow">
+      <div class="stat-box light-yellow badge-box" onclick="openBadgeModal()">
         <h4>🏅 Badges Earned</h4>
         <p><%= badges.length %></p>
+        <small style="cursor:pointer;">View All ➜</small>
       </div>
       <div class="stat-box light-grey">
         <h4>📜 Certificates</h4>
         <p><%= certificatesCount %></p>
       </div>
     </section>
+
+    <!-- <section class="badges-section">
+      <h3>🏅 Your Badges</h3>
+      <% if (badges && badges.length > 0) { %>
+        <div class="badges-grid">
+          <% badges.forEach(b => { %>
+            <div class="badge-card">
+              <div class="badge-icon">
+                <% if (b.badge_name === 'Beginner') { %> 🥉
+                <% } else if (b.badge_name === 'Intermediate') { %> 🥈
+                <% } else if (b.badge_name === 'Advanced') { %> 🥇
+                <% } else if (b.badge_name === 'Master') { %> 👑
+                <% } else { %> 🎖️
+                <% } %>
+              </div>
+              <p class="badge-name"><%= b.badge_name %></p>
+              <p class="badge-date">Awarded: <%= new Date(b.awarded_at).toLocaleDateString() %></p>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p>You haven’t earned any badges yet. Keep learning! 🚀</p>
+      <% } %>
+    </section> -->
+
+    <!-- BADGE MODAL -->
+<div id="badgeModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeBadgeModal()">&times;</span>
+    <h3>🏅 Your Badges</h3>
+
+    <% if (badges && badges.length > 0) { %>
+      <div class="badges-grid">
+        <% badges.forEach(b => { %>
+          <div class="badge-card">
+            <div class="badge-icon">
+              <% if (b.badge_name === 'Beginner') { %> 🥉
+              <% } else if (b.badge_name === 'Intermediate') { %> 🥈
+              <% } else if (b.badge_name === 'Advanced') { %> 🥇
+              <% } else if (b.badge_name === 'Master') { %> 👑
+              <% } else { %> 🎖️
+              <% } %>
+            </div>
+            <p class="badge-name"><%= b.badge_name %></p>
+            <p class="badge-date">Awarded: <%= new Date(b.awarded_at).toLocaleDateString() %></p>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <p>You haven’t earned any badges yet. Keep learning! 🚀</p>
+    <% } %>
+  </div>
+</div>
+
 
     <div class="analytics-wrapper">
       <div class="analytics-filters">
@@ -793,6 +887,20 @@ async function loadChatMessages(teacherId) {
 .chat-input input { flex:1; padding:6px 10px; }
 .close-chat { position:absolute; top:8px; right:10px; cursor:pointer; font-size:20px; }
 </style>
+
+<!-- Badge modal -->
+<script>
+  function openBadgeModal() {
+    document.getElementById("badgeModal").style.display = "block";
+  }
+  function closeBadgeModal() {
+    document.getElementById("badgeModal").style.display = "none";
+  }
+  window.onclick = function(event) {
+    const modal = document.getElementById("badgeModal");
+    if (event.target === modal) modal.style.display = "none";
+  };
+</script>
 
 
 <!-- Script for engagement char -->

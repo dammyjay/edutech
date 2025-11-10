@@ -1350,6 +1350,7 @@ exports.getLessonQuiz = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 exports.submitLessonQuiz = async (req, res) => {
   try {
     const { lessonId, answers } = req.body;
@@ -1682,7 +1683,6 @@ Return only valid JSON in this format:
     res.status(500).json({ success: false, message: "Failed to submit quiz." });
   }
 };
-
 
 exports.getMyQuizzes = async (req, res) => {
   try {

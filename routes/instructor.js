@@ -5,7 +5,8 @@ const { ensureInstructorOrAdmin } = require("../middlewares/auth");
 const learningController = require("../controllers/learningController");
 const adminController = require("../controllers/adminController");
 const instructorController = require("../controllers/instructorController");
-const upload = require("../middlewares/upload");
+// const upload = require("../middlewares/upload");
+const { upload, lessonUpload } = require("../middlewares/upload");
 
 router.post("/login", adminController.login);
 // Instructor dashboard

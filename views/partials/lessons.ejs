@@ -1,3 +1,5 @@
+<!-- <pre><%= JSON.stringify(course, null, 2) %></pre> -->
+
 <div class="lesson-header">
   <form method="GET" action="">
     <input type="hidden" name="tab" value="lessons">
@@ -122,6 +124,40 @@
     </div>
   </form>
 </div>
+
+<!-- <div id="lessonModal" class="modal">
+  <form method="POST" action="/admin/lessons/create" enctype="multipart/form-data" class="modal-content">
+    <h2>Create Lesson</h2>
+    <input type="hidden" name="course_id" value="<%= course.id %>">
+
+    <label>Module</label>
+    <select name="module_id" required>
+      <% modules.forEach(mod => { %>
+        <option value="<%= mod.id %>"><%= mod.title %></option>
+      <% }) %>
+    </select>
+
+    <label>Title</label>
+    <input type="text" name="title" required>
+
+    <label>Order Number</label>
+    <input type="number" name="order_number" min="1" required>
+
+    <label>Upload Lesson File (PDF/DOCX)</label>
+    <input type="file" name="lessonFile" accept=".pdf,.doc,.docx">
+
+    <label>Video Link (optional)</label>
+    <input type="url" name="video_url">
+
+    <label>Content (optional - for text lessons)</label>
+    <textarea name="content" id="createLessonContent"></textarea>
+
+    <div class="modal-actions">
+      <button type="submit">Save</button>
+      <button type="button" onclick="closeLessonModal()">Cancel</button>
+    </div>
+  </form>
+</div> -->
 
 
 <!-- EDIT LESSON MODAL -->

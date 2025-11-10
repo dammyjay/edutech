@@ -1,6 +1,8 @@
 const express = require("express");
 const pool = require("../models/db");
 const router = express.Router();
+const { upload, lessonUpload } = require("../middlewares/upload");
+
 // const parser = require("../middlewares/upload");
 // const upload = require("../middlewares/upload");
 const { ensureAdmin } = require("../middlewares/auth");
@@ -29,7 +31,7 @@ const {
 
 const multer = require("multer");
 // const upload = multer({ dest: 'uploads/' }); // temp local storage
-const upload = require("../middlewares/upload");
+// const upload = require("../middlewares/upload");
 
 router.get("/login", adminController.showLogin);
 router.post("/login", adminController.login);
@@ -189,8 +191,6 @@ router.get("/courses/:id/curriculum/file", async (req, res) => {
 
 
 
-
-
 router.post("/courses/delete/:id", adminController.deleteCourse);
 
 router.get("/pathways/:id/courses", adminController.showCoursesByPathway);
@@ -202,20 +202,46 @@ router.post(
 router.get("/courses/:id", learningController.viewSingleCourse);
 router.post("/admin/courses/:id/edit", learningController.updateCourse);
 
+// router.post(
+//   "/modules/create",
+//   upload.single("thumbnail"),
+//   learningController.createModule
+// );
+// router.post(
+//   "/modules/edit/:id",
+//   upload.single("thumbnail"),
+//   learningController.editModule
+// );
+
+// For multiple files (thumbnail + badge)
 router.post(
   "/modules/create",
-  upload.single("thumbnail"),
+  upload.fields([
+    { name: "thumbnail", maxCount: 1 },
+    { name: "badge_image", maxCount: 1 },
+  ]),
   learningController.createModule
 );
+
 router.post(
   "/modules/edit/:id",
-  upload.single("thumbnail"),
+  upload.fields([
+    { name: "thumbnail", maxCount: 1 },
+    { name: "badge_image", maxCount: 1 },
+  ]),
   learningController.editModule
 );
+
 router.post("/modules/delete/:id", learningController.deleteModule);
 
 
 router.post("/lessons/create", upload.none(), learningController.createLesson);
+
+// router.post(
+//   "/lessons/create",
+//   lessonUpload.single("lessonFile"), // ⬅ must match the input name
+//   learningController.createLesson
+// );
 router.post("/lessons/:id/edit", upload.none(), learningController.editLesson);
 router.post("/lessons/:id/delete", learningController.deleteLesson);
 router.get("/lessons/:id/json", learningController.getLessonJSON);

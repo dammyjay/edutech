@@ -21,44 +21,85 @@ exports.updateCourse = async (req, res) => {
 };
 
 // -------------------- MODULES --------------------
-exports.createModule = async (req, res) => {
-  const {
-    title,
-    course_id,
-    description,
-    objectives,
-    learning_outcomes,
-    order_number,
-  } = req.body;
-  let thumbnail = null;
+// exports.createModule = async (req, res) => {
+//   const {
+//     title,
+//     course_id,
+//     description,
+//     objectives,
+//     learning_outcomes,
+//     order_number,
+//   } = req.body;
+//   let thumbnail = null;
 
-  if (req.file) {
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: "modules",
-    });
-    thumbnail = result.secure_url;
-    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-  }
+//   if (req.file) {
+//     const result = await cloudinary.uploader.upload(req.file.path, {
+//       folder: "modules",
+//     });
+//     thumbnail = result.secure_url;
+//     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+//   }
 
-  try {
-    await pool.query(
-      "INSERT INTO modules (title, course_id, description, objectives, learning_outcomes, thumbnail, order_number) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-      [
-        title,
-        course_id,
-        description,
-        objectives,
-        learning_outcomes,
-        thumbnail,
-        order_number,
-      ]
-    );
-    res.redirect(`/admin/courses/${course_id}?tab=modules`);
-  } catch (err) {
-    console.error("Error creating module:", err);
-    res.status(500).send("Server error");
-  }
-};
+//   try {
+//     await pool.query(
+//       "INSERT INTO modules (title, course_id, description, objectives, learning_outcomes, thumbnail, order_number) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+//       [
+//         title,
+//         course_id,
+//         description,
+//         objectives,
+//         learning_outcomes,
+//         thumbnail,
+//         order_number,
+//       ]
+//     );
+//     res.redirect(`/admin/courses/${course_id}?tab=modules`);
+//   } catch (err) {
+//     console.error("Error creating module:", err);
+//     res.status(500).send("Server error");
+//   }
+// };
+// // exports.editModule = async (req, res) => {
+// //   const { title, description, objectives, learning_outcomes, order_number } =
+// //     req.body;
+// //   const { id } = req.params;
+
+// //   let thumbnail = null;
+// //   if (req.file) {
+// //     const result = await cloudinary.uploader.upload(req.file.path, {
+// //       folder: "modules",
+// //     });
+// //     thumbnail = result.secure_url;
+// //     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+// //   }
+
+// //   // Fetch old thumbnail if no new one
+// //   const oldModule = await pool.query(
+// //     "SELECT thumbnail FROM modules WHERE id = $1",
+// //     [id]
+// //   );
+// //   const updatedThumbnail = thumbnail || oldModule.rows[0].thumbnail;
+
+// //   await pool.query(
+// //     "UPDATE modules SET title=$1, description=$2, objectives=$3, learning_outcomes=$4, thumbnail=$5, order_number=$6 WHERE id=$7",
+// //     [
+// //       title,
+// //       description,
+// //       objectives,
+// //       learning_outcomes,
+// //       updatedThumbnail,
+// //       order_number,
+// //       id,
+// //     ]
+// //   );
+
+// //   const result = await pool.query(
+// //     "SELECT course_id FROM modules WHERE id = $1",
+// //     [id]
+// //   );
+// //   res.redirect(`/admin/courses/${result.rows[0].course_id}?tab=modules`);
+// // };
+
 // exports.editModule = async (req, res) => {
 //   const { title, description, objectives, learning_outcomes, order_number } =
 //     req.body;
@@ -100,45 +141,85 @@ exports.createModule = async (req, res) => {
 //   res.redirect(`/admin/courses/${result.rows[0].course_id}?tab=modules`);
 // };
 
-exports.editModule = async (req, res) => {
-  const { title, description, objectives, learning_outcomes, order_number } =
-    req.body;
-  const { id } = req.params;
+// CREATE MODULE
+exports.createModule = async (req, res) => {
+  try {
+    const { title, description, objectives, learning_outcomes, order_number, course_id } = req.body;
 
-  let thumbnail = null;
-  if (req.file) {
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: "modules",
-    });
-    thumbnail = result.secure_url;
-    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    let thumbnailUrl = null;
+    let badgeUrl = null;
+
+    // Upload thumbnail if provided
+    if (req.files && req.files.thumbnail && req.files.thumbnail[0]) {
+      const thumb = await cloudinary.uploader.upload(req.files.thumbnail[0].path, {
+        folder: "modules",
+      });
+      thumbnailUrl = thumb.secure_url;
+      if (fs.existsSync(req.files.thumbnail[0].path)) fs.unlinkSync(req.files.thumbnail[0].path);
+    }
+
+    // Upload badge image if provided
+    if (req.files && req.files.badge_image && req.files.badge_image[0]) {
+      const badge = await cloudinary.uploader.upload(req.files.badge_image[0].path, {
+        folder: "badges",
+      });
+      badgeUrl = badge.secure_url;
+      if (fs.existsSync(req.files.badge_image[0].path)) fs.unlinkSync(req.files.badge_image[0].path);
+    }
+
+    await pool.query(
+      `INSERT INTO modules 
+       (title, description, objectives, learning_outcomes, thumbnail, badge_image, order_number, course_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [title, description, objectives, learning_outcomes, thumbnailUrl, badgeUrl, order_number, course_id]
+    );
+
+    res.redirect("/admin/courses/" + course_id);
+  } catch (error) {
+    console.error("Error creating module:", error);
+    res.status(500).send("Server error");
+  }
+};
+
+// EDIT MODULE
+exports.editModule = async (req, res) => {
+  try {
+    const { title, description, objectives, learning_outcomes, order_number } = req.body;
+    const { id } = req.params;
+
+    // Fetch existing module to get current images
+    const oldModule = await pool.query("SELECT thumbnail, badge_image, course_id FROM modules WHERE id=$1", [id]);
+    if (!oldModule.rows[0]) return res.status(404).send("Module not found");
+
+    let thumbnailUrl = oldModule.rows[0].thumbnail;
+    let badgeUrl = oldModule.rows[0].badge_image;
+
+    // Upload new thumbnail if provided
+    if (req.files && req.files.thumbnail && req.files.thumbnail[0]) {
+      const thumb = await cloudinary.uploader.upload(req.files.thumbnail[0].path, { folder: "modules" });
+      thumbnailUrl = thumb.secure_url;
+      if (fs.existsSync(req.files.thumbnail[0].path)) fs.unlinkSync(req.files.thumbnail[0].path);
+    }
+
+    // Upload new badge if provided
+    if (req.files && req.files.badge_image && req.files.badge_image[0]) {
+      const badge = await cloudinary.uploader.upload(req.files.badge_image[0].path, { folder: "badges" });
+      badgeUrl = badge.secure_url;
+      if (fs.existsSync(req.files.badge_image[0].path)) fs.unlinkSync(req.files.badge_image[0].path);
+    }
+
+    await pool.query(
+      `UPDATE modules SET title=$1, description=$2, objectives=$3, learning_outcomes=$4,
+       thumbnail=$5, badge_image=$6, order_number=$7 WHERE id=$8`,
+      [title, description, objectives, learning_outcomes, thumbnailUrl, badgeUrl, order_number, id]
+    );
+
+    res.redirect("/admin/courses/" + oldModule.rows[0].course_id);
+  } catch (error) {
+    console.error("Error editing module:", error);
+    res.status(500).send("Server error");
   }
 
-  // Fetch old thumbnail if no new one
-  const oldModule = await pool.query(
-    "SELECT thumbnail FROM modules WHERE id = $1",
-    [id]
-  );
-  const updatedThumbnail = thumbnail || oldModule.rows[0].thumbnail;
-
-  await pool.query(
-    "UPDATE modules SET title=$1, description=$2, objectives=$3, learning_outcomes=$4, thumbnail=$5, order_number=$6 WHERE id=$7",
-    [
-      title,
-      description,
-      objectives,
-      learning_outcomes,
-      updatedThumbnail,
-      order_number,
-      id,
-    ]
-  );
-
-  const result = await pool.query(
-    "SELECT course_id FROM modules WHERE id = $1",
-    [id]
-  );
-  res.redirect(`/admin/courses/${result.rows[0].course_id}?tab=modules`);
 };
 
 exports.deleteModule = async (req, res) => {
@@ -402,6 +483,44 @@ exports.createLesson = async (req, res) => {
     res.status(500).send("Error creating lesson");
   }
 };
+
+
+// exports.createLesson = async (req, res) => {
+//   try {
+//     const { title, content, module_id, course_id, video_url, order_number } =
+//       req.body;
+//     let lesson_file_url = null;
+
+//     console.log("📝 Lesson Create Request:", req.body);
+//     console.log("🎯 Course ID received:", course_id); // Should now log a number/string
+
+//     if (req.file) {
+//       console.log("📂 Uploading lesson file:", req.file.originalname);
+//       const result = await cloudinary.uploader.upload(req.file.path, {
+//         folder: "lessons/files",
+//         resource_type: "raw",
+//         use_filename: true,
+//         unique_filename: false,
+//       });
+//       lesson_file_url = result.secure_url;
+//       if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+//     }
+
+//     await pool.query(
+//       `INSERT INTO lessons (title, content, module_id, video_url, order_number, lesson_file_url)
+//        VALUES ($1, $2, $3, $4, $5, $6)`,
+//       [title, content, module_id, video_url, order_number, lesson_file_url]
+//     );
+
+//     console.log("✅ Redirecting to course:", course_id);
+//     res.redirect(`/admin/courses/${course_id}?tab=lessons`);
+//   } catch (err) {
+//     console.error("❌ Create Lesson Error:", err);
+//     res.status(500).send("Error creating lesson: " + err.message);
+//   }
+// };
+
+
 
 // EDIT LESSON
 // exports.editLesson = async (req, res) => {

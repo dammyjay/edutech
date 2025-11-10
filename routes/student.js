@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 // const upload = multer({ dest: 'uploads/' }); // temp local storage
-const upload = require("../middlewares/upload");
+// const upload = require("../middlewares/upload");
+const { upload, lessonUpload } = require("../middlewares/upload");
 
 const studentController = require("../controllers/studentController");
 

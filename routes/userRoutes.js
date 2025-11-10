@@ -2,7 +2,8 @@ const express = require("express");
 const pool = require("../models/db");
 const router = express.Router();
 const userController = require("../controllers/userController");
-const upload = require("../middlewares/upload");
+// const upload = require("../middlewares/upload");
+const { upload, lessonUpload } = require("../middlewares/upload");
 const { ensureParent } = require("../middlewares/auth");
 
 // router.post("/signup", upload.single("profile_picture"), userController.signup);
