@@ -108,17 +108,38 @@ router.get("/courses", adminController.showCourses);
 //   adminController.editCourse
 // );
 
-// existing create route
-router.post("/courses", upload.fields([
-  { name: "thumbnail", maxCount: 1 },
-  { name: "curriculum", maxCount: 1 }
-]), adminController.createCourse);
+// // existing create route
+// router.post("/courses", upload.fields([
+//   { name: "thumbnail", maxCount: 1 },
+//   { name: "curriculum", maxCount: 1 }
+// ]), adminController.createCourse);
 
-// existing edit route
-router.post("/courses/edit/:id", upload.fields([
-  { name: "thumbnail", maxCount: 1 },
-  { name: "curriculum", maxCount: 1 }
-]), adminController.editCourse);
+// // existing edit route
+// router.post("/courses/edit/:id", upload.fields([
+//   { name: "thumbnail", maxCount: 1 },
+//   { name: "curriculum", maxCount: 1 }
+// ]), adminController.editCourse);
+
+router.post(
+  "/courses",
+  upload.fields([
+    { name: "thumbnail", maxCount: 1 },
+    { name: "curriculum", maxCount: 1 },
+    { name: "certificate", maxCount: 1 },
+  ]),
+  adminController.createCourse
+);
+
+router.post(
+  "/courses/edit/:id",
+  upload.fields([
+    { name: "thumbnail", maxCount: 1 },
+    { name: "curriculum", maxCount: 1 },
+    { name: "certificate", maxCount: 1 },
+  ]),
+  adminController.editCourse
+);
+
 
 
 // 📘 View Course Curriculum (with proxy streaming support)
@@ -200,7 +221,18 @@ router.post(
   adminController.createCourseUnderPathway
 );
 router.get("/courses/:id", learningController.viewSingleCourse);
-router.post("/admin/courses/:id/edit", learningController.updateCourse);
+// router.post("/admin/courses/:id/edit", learningController.updateCourse);
+
+router.post(
+  "/courses/:id/edit",
+  upload.fields([
+    { name: "thumbnail", maxCount: 1 },
+    { name: "curriculum", maxCount: 1 },
+    { name: "certificate", maxCount: 1 },
+  ]),
+  learningController.updateCourse
+);
+
 
 // router.post(
 //   "/modules/create",
@@ -300,7 +332,12 @@ router.post(
 router.post("/assignments/:id/delete", learningController.deleteAssignment);
 
 // Projects
-router.post("/admin/courses/:id/project", learningController.createProject);
+// router.post("/admin/courses/:id/project", learningController.createProject);
+router.post("/courses/:id/project", learningController.createProject);
+router.post("/projects/edit/:id", learningController.editProject);
+router.post("/projects/delete/:id", learningController.deleteProject);
+
+
 
 router.get("/benefits", adminController.showBenefits);
 router.post("/benefits", upload.single("icon"), adminController.createBenefit);

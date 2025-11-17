@@ -1,18 +1,150 @@
-<h3>Course Capstone Project</h3>
 
-<form action="/admin/projects/create" method="POST">
-  <input type="hidden" name="course_id" value="<%= course.id %>" />
-  <input type="text" name="title" placeholder="Project Title" required />
-  <textarea name="description" placeholder="Project Instructions"></textarea>
-  <button type="submit">Create Project</button>
+
+<h3>🎓 Course Capstone Project</h3>
+
+<!-- 🟢 CREATE FORM -->
+<form action="/admin/courses/<%= course.id %>/project" method="POST">
+  <label>Project Title</label>
+  <input type="text" name="title" required>
+
+  <label>Project Description</label>
+  <textarea id="projectContent" name="description"></textarea>
+
+  <button type="submit" class="btn-save">➕ Add Project</button>
 </form>
 
-<% if (projects) { %>
-  <p>📌 <strong><%= projects.title %></strong></p>
-  <p><%= projects.description %></p>
-  <form action="/admin/projects/delete/<%= projects.id %>" method="POST">
-    <button type="submit">Delete Project</button>
-  </form>
+<hr>
+
+<!-- 🟢 PROJECT LIST -->
+<% if (projects && projects.length > 0) { %>
+  <% projects.forEach(project => { %>
+    <div class="project-card">
+      <p>📌 <strong><%= project.title %></strong></p>
+      <div class="project-desc"><%- project.description %></div>
+
+      <div class="project-actions">
+        <button class="btn-edit" onclick="openEditModal(<%= project.id %>)">✏️ Edit</button>
+        <form action="/admin/projects/delete/<%= project.id %>" method="POST" style="display:inline;">
+          <input type="hidden" name="course_id" value="<%= course.id %>">
+          <button type="submit" class="btn-delete">🗑 Delete</button>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- 🟢 EDIT MODAL -->
+    <div id="editModal-<%= project.id %>" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeEditModal(<%= project.id %>)">&times;</span>
+        <h3>Edit Project</h3>
+
+        <form action="/admin/projects/edit/<%= project.id %>" method="POST">
+          <input type="hidden" name="course_id" value="<%= course.id %>">
+
+          <label>Project Title</label>
+          <input type="text" name="title" value="<%= project.title %>" required>
+
+          <label>Project Description</label>
+          <textarea id="editContent-<%= project.id %>" name="description"><%= project.description %></textarea>
+
+          <button type="submit" class="btn-save">💾 Save Changes</button>
+        </form>
+      </div>
+    </div>
+  <% }) %>
 <% } else { %>
-  <p>No project created yet.</p>
+  <p>No project found for this course yet.</p>
 <% } %>
+
+<!-- ✅ CKEditor 4 Script -->
+<script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
+
+<script>
+  // 🟢 Initialize CKEditor for new project form
+  CKEDITOR.replace("projectContent", {
+    height: 200,
+    toolbar: [
+      { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'RemoveFormat'] },
+      { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight'] },
+      { name: 'links', items: ['Link', 'Unlink'] },
+      { name: 'insert', items: ['Image', 'Table', 'HorizontalRule'] },
+      { name: 'styles', items: ['Format'] },
+      { name: 'tools', items: ['Maximize'] }
+    ]
+  });
+
+  // 🟢 Initialize CKEditor for each edit modal dynamically
+  <% if (projects && projects.length > 0) { %>
+    <% projects.forEach(project => { %>
+      CKEDITOR.replace("editContent-<%= project.id %>", {
+        height: 200,
+        toolbar: [
+          { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'RemoveFormat'] },
+          { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight'] },
+          { name: 'links', items: ['Link', 'Unlink'] },
+          { name: 'insert', items: ['Image', 'Table', 'HorizontalRule'] },
+          { name: 'styles', items: ['Format'] },
+          { name: 'tools', items: ['Maximize'] }
+        ]
+      });
+    <% }) %>
+  <% } %>
+
+  // 🟢 Modal open/close functions
+  function openEditModal(id) {
+    document.getElementById("editModal-" + id).style.display = "block";
+  }
+
+  function closeEditModal(id) {
+    document.getElementById("editModal-" + id).style.display = "none";
+  }
+</script>
+
+<!-- ✅ Styling -->
+<style>
+  .project-card {
+    background: #fff;
+    border: 1px solid #eee;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  .project-actions {
+    margin-top: 10px;
+  }
+  .btn-edit, .btn-delete, .btn-save {
+    background-color: #f3b63f;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-right: 6px;
+  }
+  .btn-delete {
+    background-color: #d9534f;
+  }
+  .btn-edit:hover, .btn-delete:hover {
+    opacity: 0.8;
+  }
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.4);
+  }
+  .modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 20px;
+    width: 60%;
+    border-radius: 10px;
+  }
+  .close {
+    float: right;
+    cursor: pointer;
+    font-size: 20px;
+  }
+</style>

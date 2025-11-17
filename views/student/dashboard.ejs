@@ -451,6 +451,22 @@
       </div>
     <% }) %>
   <% }) %>
+
+<h3>🏁 Final Project</h3>
+<% enrolledCourses.forEach(course => { %>
+  <% if (courseFinalUnlocked[course.id]) { %>
+    <% const projects = courseProjects[course.id] || []; %>
+    <% projects.forEach(project => { %>
+      <button onclick="loadProject(<%= project.id %>)">
+        🎯 <%= project.title %>
+      </button>
+    <% }) %>
+  <% } else { %>
+    <p style="opacity:0.5;">🔒 Complete all modules to unlock the final project for <%= course.title %></p>
+  <% } %>
+<% }) %>
+
+
 </aside>
 
 
@@ -460,6 +476,54 @@
   <p>Select a lesson to start learning.</p>
 
 </div>
+<!-- Project Area (hidden by default) -->
+<div id="projectArea" style="display:none; padding: 15px;">
+  <% enrolledCourses.forEach(course => { %>
+    <h3>🏁 Projects for <%= course.title %></h3>
+
+    <% const projects = courseProjects[course.id] || []; %>
+
+    <% if (projects.length > 0) { %>
+      <% projects.forEach(project => { %>
+        <div class="project-card" style="padding: 15px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px;">
+          <h4>🎯 <%= project.title %></h4>
+          <p><%= project.description || "Complete this project after finishing all modules." %></p>
+          <% if (project.due_date) { %>
+            <p>⏰ Due: <%= new Date(project.due_date).toLocaleDateString() %></p>
+          <% } %>
+
+          <% 
+            // Check if student has submitted this project
+            const submission = projectSubmissions[project.id] || projectSubmissions[course.id];
+          %>
+
+          <% if (submission) { %>
+            <p>✅ You submitted this project on <%= new Date(submission.submitted_at).toLocaleDateString() %></p>
+            <a href="<%= submission.file_url %>" target="_blank">View Submission</a>
+          <% } else { %>
+            <form id="projectForm-<%= project.id %>" enctype="multipart/form-data" method="POST" action="/student/projects/submit">
+              <input type="hidden" name="courseId" value="<%= course.id %>">
+              <input type="hidden" name="projectId" value="<%= project.id %>">
+
+              <label>Upload Project File:</label>
+              <input type="file" name="projectFile" required />
+
+              <label>Notes (optional):</label>
+              <textarea name="notes" placeholder="Add any notes about your project"></textarea>
+
+              <button type="submit" class="btn-submit">Submit Project</button>
+            </form>
+          <% } %>
+        </div>
+      <% }) %>
+    <% } else { %>
+      <p>No projects available for this course yet.</p>
+    <% } %>
+
+  <% }) %>
+</div>
+
+
 
   <!-- AI TUTOR BOX -->
   <div id="ai-tutor" class="ai-tutor" style="display:none;">
@@ -1184,6 +1248,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function loadLessonPart(lessonId, part) {
+    showLoading();
     fetch(`/student/lessons/${lessonId}`)
       .then(res => res.json())
       .then(lesson => {
@@ -1218,6 +1283,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           document.getElementById("lessonMainArea").innerHTML = html;
           document.getElementById("ai-tutor").style.display = "none";
+          hideLoading();
           return;
         }
 
@@ -1523,7 +1589,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (window.showLessonSuggestions) {
       window.showLessonSuggestions(suggestions);
     }
-
+    hideLoading();
     return;
   }
 
@@ -1531,17 +1597,20 @@ document.addEventListener("DOMContentLoaded", () => {
         if (part === "quiz") {
           loadQuizInline(lessonId);
           document.getElementById("ai-tutor").style.display = "none";
+          hideLoading();
           return;
         }
       })
       .catch(err => {
         console.error("Error loading lesson:", err);
         document.getElementById("lessonMainArea").innerHTML = "<p>⚠️ Failed to load lesson.</p>";
+        hideLoading();
       });
   }
 
 
   function loadQuizInMain(lessonId) {
+    showLoading();
     fetch(`/student/lessons/${lessonId}/quiz`)
       .then(res => res.json())
       .then(data => {
@@ -1559,11 +1628,16 @@ document.addEventListener("DOMContentLoaded", () => {
           html += `<button type="submit">Submit Quiz</button></form>`;
         }
         document.getElementById("lessonMainArea").innerHTML = html;
+      })
+      .catch(err => {
+        hideLoading(); // ❗ Hide even on error
+        console.error(err);
       });
   }
 
 
   async function loadAssignment(assignmentId) {
+    showLoading();
     try {
       const res = await fetch(`/student/assignments/${assignmentId}`);
       if (!res.ok) {
@@ -1629,6 +1703,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("submitAssignmentForm")
           .addEventListener("submit", async (e) => {
             e.preventDefault();
+            showLoading();  // 🟡 Loader during submission
             const formData = new FormData(e.target);
 
             const res2 = await fetch(`/student/assignments/${assignmentId}/submit`, {
@@ -1637,6 +1712,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             const result = await res2.json();
+             hideLoading(); // 🟢 Hide once submitted
 
             if (result.success) {
               const criteriaHTML = result.criteria
@@ -1667,6 +1743,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
     } catch (err) {
+      hideLoading();
       console.error("Error loading assignment:", err);
       alert("Could not load assignment");
     }
@@ -1688,6 +1765,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   async function loadPastSubmissions() {
+    showLoading();
     try {
       const res = await fetch("/student/assignments/mine");
       const data = await res.json();
@@ -1739,6 +1817,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function reviewSubmission(subId) {
+    showLoading();
     try {
       const res = await fetch(`/student/assignments/submission/${subId}`);
       const data = await res.json();
@@ -1825,6 +1904,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   function loadQuizInline(lessonId) {
+    showLoading();
     fetch(`/student/lessons/${lessonId}/quiz`)
       .then(res => res.json())
       .then(data => {
@@ -1897,11 +1977,13 @@ document.addEventListener("DOMContentLoaded", () => {
         quizHTML += `<button type="submit">Submit Quiz</button></form>`;
         container.innerHTML = `<div id="quiz-area-${lessonId}">${quizHTML}</div>`;
       })
+      
       .catch(err => {
         console.error("❌ loadQuizInline error:", err);
         document.getElementById("lessonMainArea").innerHTML =
           "<p>Error loading quiz.</p>";
       });
+
   }
 
 

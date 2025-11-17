@@ -856,88 +856,6 @@ exports.showCourses = async (req, res) => {
 
 
 
-exports.createCourse = async (req, res) => {
-  console.log("📘 Creating course with:", req.body);
-  const { title, description, level, career_pathway_id, sort_order, amount } =
-    req.body;
-
-  let thumbnail_url = null;
-  let curriculum_url = null;
-  let curriculum_mime = null;
-  let curriculum_name = null;
-
-  try {
-    // ✅ Upload thumbnail (image only)
-    if (req.files?.thumbnail?.[0]) {
-      const thumbPath = req.files.thumbnail[0].path;
-      const thumbResult = await cloudinary.uploader.upload(thumbPath, {
-        folder: "courses/thumbnails",
-        resource_type: "image",
-        use_filename: true,
-        unique_filename: false,
-      });
-
-      thumbnail_url = thumbResult.secure_url;
-      if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
-    }
-
-    // ✅ Upload curriculum (PDF/DOC/DOCX)
-    if (req.files?.curriculum?.[0]) {
-      const file = req.files.curriculum[0];
-      const filePath = file.path;
-
-      const fileResult = await cloudinary.uploader.upload(filePath, {
-        folder: "courses/curriculums",
-        resource_type: "raw",
-        use_filename: true,
-        unique_filename: false,
-      });
-
-      curriculum_url = fileResult.secure_url;
-      curriculum_mime = file.mimetype; // ✅ save file type (e.g., application/pdf)
-      curriculum_name = file.originalname; // ✅ save original filename
-
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    }
-
-    // ✅ Insert into DB
-    await pool.query(
-      `INSERT INTO courses (
-        title, description, level, career_pathway_id,
-        thumbnail_url, curriculum_url, sort_order,
-        amount, created_by, instructor_id,
-        curriculum_mime, curriculum_name
-      )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-      [
-        title,
-        description,
-        level,
-        career_pathway_id || null,
-        thumbnail_url,
-        curriculum_url,
-        sort_order || 0,
-        amount || 0,
-        req.user.role === "instructor" ? "instructor" : "admin",
-        req.user.role === "instructor" ? req.user.id : null,
-        curriculum_mime,
-        curriculum_name,
-      ]
-    );
-
-    await logActivityForUser(req, "Course Created", `Course title: ${title}`);
-    console.log("✅ Course created successfully.");
-
-    res.redirect(`/admin/pathways/${career_pathway_id}/courses`);
-  } catch (err) {
-    console.error("❌ Error creating course:", err);
-    res
-      .status(500)
-      .send("Error creating course: " + (err.message || "unknown"));
-  }
-};
-
-
 // exports.createCourse = async (req, res) => {
 //   console.log("📘 Creating course with:", req.body);
 //   const { title, description, level, career_pathway_id, sort_order, amount } =
@@ -945,6 +863,8 @@ exports.createCourse = async (req, res) => {
 
 //   let thumbnail_url = null;
 //   let curriculum_url = null;
+//   let curriculum_mime = null;
+//   let curriculum_name = null;
 
 //   try {
 //     // ✅ Upload thumbnail (image only)
@@ -961,22 +881,22 @@ exports.createCourse = async (req, res) => {
 //       if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
 //     }
 
-//     // ✅ Upload curriculum (PDF, DOC, DOCX)
+//     // ✅ Upload curriculum (PDF/DOC/DOCX)
 //     if (req.files?.curriculum?.[0]) {
 //       const file = req.files.curriculum[0];
 //       const filePath = file.path;
-//       const originalName = file.originalname; // keep file name and extension
 
 //       const fileResult = await cloudinary.uploader.upload(filePath, {
 //         folder: "courses/curriculums",
-//         resource_type: "raw", // ensures Cloudinary doesn’t alter it
-//         public_id: path.parse(originalName).name, // keep the name (without extension)
-//         format: path.extname(originalName).substring(1), // keep the file extension
+//         resource_type: "raw",
 //         use_filename: true,
 //         unique_filename: false,
 //       });
 
 //       curriculum_url = fileResult.secure_url;
+//       curriculum_mime = file.mimetype; // ✅ save file type (e.g., application/pdf)
+//       curriculum_name = file.originalname; // ✅ save original filename
+
 //       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 //     }
 
@@ -985,8 +905,10 @@ exports.createCourse = async (req, res) => {
 //       `INSERT INTO courses (
 //         title, description, level, career_pathway_id,
 //         thumbnail_url, curriculum_url, sort_order,
-//         amount, created_by, instructor_id
-//       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+//         amount, created_by, instructor_id,
+//         curriculum_mime, curriculum_name
+//       )
+//       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
 //       [
 //         title,
 //         description,
@@ -998,6 +920,8 @@ exports.createCourse = async (req, res) => {
 //         amount || 0,
 //         req.user.role === "instructor" ? "instructor" : "admin",
 //         req.user.role === "instructor" ? req.user.id : null,
+//         curriculum_mime,
+//         curriculum_name,
 //       ]
 //     );
 
@@ -1013,54 +937,145 @@ exports.createCourse = async (req, res) => {
 //   }
 // };
 
+// exports.editCourse = async (req, res) => {
+//   const { id } = req.params;
+//   const { title, description, level, career_pathway_id, sort_order, amount } =
+//     req.body;
 
-exports.editCourse = async (req, res) => {
-  const { id } = req.params;
+//   let thumbnail_url = null;
+//   let curriculum_url = null;
+
+//   try {
+//     // Upload new thumbnail
+//     if (req.files?.thumbnail?.[0]) {
+//       const thumb = await cloudinary.uploader.upload(
+//         req.files.thumbnail[0].path,
+//         {
+//           folder: "courses/thumbnails",
+//         }
+//       );
+//       thumbnail_url = thumb.secure_url;
+//       if (fs.existsSync(req.files.thumbnail[0].path))
+//         fs.unlinkSync(req.files.thumbnail[0].path);
+//     }
+
+//     // Upload new curriculum
+//     if (req.files?.curriculum?.[0]) {
+//       const curr = await cloudinary.uploader.upload(
+//         req.files.curriculum[0].path,
+//         {
+//           folder: "courses/curriculums",
+//           resource_type: "auto",
+//         }
+//       );
+//       curriculum_url = curr.secure_url;
+//       if (fs.existsSync(req.files.curriculum[0].path))
+//         fs.unlinkSync(req.files.curriculum[0].path);
+//     }
+
+//     await pool.query(
+//       `UPDATE courses SET
+//         title=$1,
+//         description=$2,
+//         level=$3,
+//         career_pathway_id=$4,
+//         thumbnail_url=COALESCE($5, thumbnail_url),
+//         curriculum_url=COALESCE($6, curriculum_url),
+//         sort_order=$7,
+//         amount=$8
+//       WHERE id=$9`,
+//       [
+//         title,
+//         description,
+//         level,
+//         career_pathway_id || null,
+//         thumbnail_url,
+//         curriculum_url,
+//         sort_order || 0,
+//         amount || 0,
+//         id,
+//       ]
+//     );
+
+//     await logActivityForUser(req, "Course Edit", `Edited course ID: ${id}`);
+//     res.redirect("/admin/courses");
+//   } catch (err) {
+//     console.error("Error editing course:", err);
+//     res.status(500).send("Server error editing course");
+//   }
+// };
+
+
+// ✅ CREATE COURSE
+exports.createCourse = async (req, res) => {
+  console.log("📘 Creating course with:", req.body);
   const { title, description, level, career_pathway_id, sort_order, amount } =
     req.body;
 
   let thumbnail_url = null;
   let curriculum_url = null;
+  let curriculum_mime = null;
+  let curriculum_name = null;
+  let certificate_url = null;
+  let certificate_mime = null;
+  let certificate_name = null;
 
   try {
-    // Upload new thumbnail
+    // ✅ Upload thumbnail (image)
     if (req.files?.thumbnail?.[0]) {
-      const thumb = await cloudinary.uploader.upload(
-        req.files.thumbnail[0].path,
-        {
-          folder: "courses/thumbnails",
-        }
-      );
-      thumbnail_url = thumb.secure_url;
-      if (fs.existsSync(req.files.thumbnail[0].path))
-        fs.unlinkSync(req.files.thumbnail[0].path);
+      const thumbPath = req.files.thumbnail[0].path;
+      const thumbResult = await cloudinary.uploader.upload(thumbPath, {
+        folder: "courses/thumbnails",
+        resource_type: "image",
+        use_filename: true,
+        unique_filename: false,
+      });
+      thumbnail_url = thumbResult.secure_url;
+      if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
     }
 
-    // Upload new curriculum
+    // ✅ Upload curriculum (PDF/DOC/DOCX)
     if (req.files?.curriculum?.[0]) {
-      const curr = await cloudinary.uploader.upload(
-        req.files.curriculum[0].path,
-        {
-          folder: "courses/curriculums",
-          resource_type: "auto",
-        }
-      );
-      curriculum_url = curr.secure_url;
-      if (fs.existsSync(req.files.curriculum[0].path))
-        fs.unlinkSync(req.files.curriculum[0].path);
+      const file = req.files.curriculum[0];
+      const filePath = file.path;
+      const fileResult = await cloudinary.uploader.upload(filePath, {
+        folder: "courses/curriculums",
+        resource_type: "raw",
+        use_filename: true,
+        unique_filename: false,
+      });
+      curriculum_url = fileResult.secure_url;
+      curriculum_mime = file.mimetype;
+      curriculum_name = file.originalname;
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
 
+    // ✅ Upload certificate (PDF or Image)
+    if (req.files?.certificate?.[0]) {
+      const cert = req.files.certificate[0];
+      const certPath = cert.path;
+      const certResult = await cloudinary.uploader.upload(certPath, {
+        folder: "courses/certificates",
+        resource_type: "auto",
+        use_filename: true,
+        unique_filename: false,
+      });
+      certificate_url = certResult.secure_url;
+      certificate_mime = cert.mimetype;
+      certificate_name = cert.originalname;
+      if (fs.existsSync(certPath)) fs.unlinkSync(certPath);
+    }
+
+    // ✅ Insert into DB
     await pool.query(
-      `UPDATE courses SET 
-        title=$1,
-        description=$2,
-        level=$3,
-        career_pathway_id=$4,
-        thumbnail_url=COALESCE($5, thumbnail_url),
-        curriculum_url=COALESCE($6, curriculum_url),
-        sort_order=$7,
-        amount=$8
-      WHERE id=$9`,
+      `INSERT INTO courses (
+        title, description, level, career_pathway_id,
+        thumbnail_url, curriculum_url, sort_order,
+        amount, created_by, instructor_id,
+        curriculum_mime, curriculum_name,
+        certificate_url, certificate_mime, certificate_name
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
       [
         title,
         description,
@@ -1070,15 +1085,103 @@ exports.editCourse = async (req, res) => {
         curriculum_url,
         sort_order || 0,
         amount || 0,
+        req.user.role === "instructor" ? "instructor" : "admin",
+        req.user.role === "instructor" ? req.user.id : null,
+        curriculum_mime,
+        curriculum_name,
+        certificate_url,
+        certificate_mime,
+        certificate_name,
+      ]
+    );
+
+    await logActivityForUser(req, "Course Created", `Course title: ${title}`);
+    console.log("✅ Course created successfully.");
+
+    res.redirect(`/admin/pathways/${career_pathway_id}/courses`);
+  } catch (err) {
+    console.error("❌ Error creating course:", err);
+    res
+      .status(500)
+      .send("Error creating course: " + (err.message || "unknown"));
+  }
+};
+
+// ✅ EDIT COURSE
+
+exports.editCourse = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, level, amount } = req.body;
+
+    let thumbnailUrl = null;
+    let curriculumUrl = null;
+    let certificateUrl = null;
+
+    // Get existing course data
+    const existingCourse = await pool.query(
+      "SELECT * FROM courses WHERE id = $1",
+      [id]
+    );
+
+    if (existingCourse.rows.length === 0) {
+      return res.status(404).send("Course not found");
+    }
+
+    const course = existingCourse.rows[0];
+
+    // Upload new files if provided
+    if (req.files?.thumbnail) {
+      const uploadedThumb = await cloudinary.uploader.upload(
+        req.files.thumbnail[0].path
+      );
+      thumbnailUrl = uploadedThumb.secure_url;
+    } else {
+      thumbnailUrl = course.thumbnail_url;
+    }
+
+    if (req.files?.curriculum) {
+      const uploadedCurr = await cloudinary.uploader.upload(
+        req.files.curriculum[0].path,
+        { resource_type: "auto" }
+      );
+      curriculumUrl = uploadedCurr.secure_url;
+    } else {
+      curriculumUrl = course.curriculum_url;
+    }
+
+    if (req.files?.certificate) {
+      const uploadedCert = await cloudinary.uploader.upload(
+        req.files.certificate[0].path,
+        { resource_type: "auto" }
+      );
+      certificateUrl = uploadedCert.secure_url;
+    } else {
+      certificateUrl = course.certificate_url;
+    }
+
+    // Update the course
+    await pool.query(
+      `UPDATE courses
+       SET title=$1, description=$2, level=$3, amount=$4,
+           thumbnail_url=$5, curriculum_url=$6, certificate_url=$7
+       WHERE id=$8`,
+      [
+        title,
+        description,
+        level,
+        amount,
+        thumbnailUrl,
+        curriculumUrl,
+        certificateUrl,
         id,
       ]
     );
 
-    await logActivityForUser(req, "Course Edit", `Edited course ID: ${id}`);
-    res.redirect("/admin/courses");
-  } catch (err) {
-    console.error("Error editing course:", err);
-    res.status(500).send("Server error editing course");
+    res.redirect("back");
+  } catch (error) {
+    console.error("❌ Error editing course:", error);
+    res.status(500).send("Server error while editing course");
   }
 };
 

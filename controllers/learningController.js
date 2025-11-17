@@ -4,21 +4,90 @@ const fs = require("fs");
 // controllers/learningController.js
 const { askTutor } = require("../utils/ai");
 
+// exports.updateCourse = async (req, res) => {
+//   const { id } = req.params;
+//   const { title, description, level, amount } = req.body;
+
+//   try {
+//     await pool.query(
+//       "UPDATE courses SET title = $1, description = $2, level = $3, amount = $4 WHERE id = $5",
+//       [title, description, level, amount, id]
+//     );
+//     res.redirect(`/admin/courses/${id}?tab=details`);
+//   } catch (err) {
+//     console.error("Error updating course:", err);
+//     res.status(500).send("Server Error");
+//   }
+// };
+
 exports.updateCourse = async (req, res) => {
   const { id } = req.params;
   const { title, description, level, amount } = req.body;
 
   try {
+    // 🟢 Get existing course data
+    const existing = await pool.query("SELECT * FROM courses WHERE id = $1", [
+      id,
+    ]);
+    if (existing.rows.length === 0) {
+      return res.status(404).send("Course not found");
+    }
+
+    const course = existing.rows[0];
+    let thumbnailUrl = course.thumbnail_url;
+    let curriculumUrl = course.curriculum_url;
+    let certificateUrl = course.certificate_url;
+
+    // 🟢 Upload new files if provided
+    if (req.files?.thumbnail) {
+      const uploadedThumb = await cloudinary.uploader.upload(
+        req.files.thumbnail[0].path
+      );
+      thumbnailUrl = uploadedThumb.secure_url;
+    }
+
+    if (req.files?.curriculum) {
+      const uploadedCurr = await cloudinary.uploader.upload(
+        req.files.curriculum[0].path,
+        { resource_type: "auto" }
+      );
+      curriculumUrl = uploadedCurr.secure_url;
+    }
+
+    if (req.files?.certificate) {
+      const uploadedCert = await cloudinary.uploader.upload(
+        req.files.certificate[0].path,
+        { resource_type: "auto" }
+      );
+      certificateUrl = uploadedCert.secure_url;
+    }
+
+    // 🟢 Update database
     await pool.query(
-      "UPDATE courses SET title = $1, description = $2, level = $3, amount = $4 WHERE id = $5",
-      [title, description, level, amount, id]
+      `UPDATE courses 
+       SET title = $1, description = $2, level = $3, amount = $4,
+           thumbnail_url = $5, curriculum_url = $6, certificate_url = $7
+       WHERE id = $8`,
+      [
+        title,
+        description,
+        level,
+        amount,
+        thumbnailUrl,
+        curriculumUrl,
+        certificateUrl,
+        id,
+      ]
     );
+
+    // 🟢 Redirect to course details tab
     res.redirect(`/admin/courses/${id}?tab=details`);
   } catch (err) {
-    console.error("Error updating course:", err);
+    console.error("❌ Error updating course:", err);
     res.status(500).send("Server Error");
   }
 };
+
 
 // -------------------- MODULES --------------------
 // exports.createModule = async (req, res) => {
@@ -1146,45 +1215,110 @@ exports.deleteAssignment = async (req, res) => {
 };
 
 // -------------------- PROJECTS --------------------
-exports.createProject = async (req, res) => {
-  const { title, description, course_id } = req.body;
-  try {
-    await pool.query(
-      "INSERT INTO projects (title, description, course_id) VALUES ($1, $2, $3)",
-      [title, description, course_id]
-    );
-    res.redirect("back");
-  } catch (err) {
-    console.error("Error creating project:", err);
-    res.status(500).send("Server error");
-  }
-};
+// exports.createProject = async (req, res) => {
+//   const { title, description, course_id } = req.body;
+//   try {
+//     await pool.query(
+//       "INSERT INTO projects (title, description, course_id) VALUES ($1, $2, $3)",
+//       [title, description, course_id]
+//     );
+//     res.redirect("back");
+//   } catch (err) {
+//     console.error("Error creating project:", err);
+//     res.status(500).send("Server error");
+//   }
+// };
 
-exports.editProject = async (req, res) => {
-  const { id } = req.params;
+// exports.editProject = async (req, res) => {
+//   const { id } = req.params;
+//   const { title, description } = req.body;
+//   try {
+//     await pool.query(
+//       "UPDATE projects SET title = $1, description = $2 WHERE id = $3",
+//       [title, description, id]
+//     );
+//     res.redirect("back");
+//   } catch (err) {
+//     console.error("Error editing project:", err);
+//     res.status(500).send("Server error");
+//   }
+// };
+
+exports.createProject = async (req, res) => {
+  const { id } = req.params; // ✅ from URL (not body)
   const { title, description } = req.body;
+
   try {
     await pool.query(
-      "UPDATE projects SET title = $1, description = $2 WHERE id = $3",
+      "INSERT INTO course_projects (title, description, course_id) VALUES ($1, $2, $3)",
       [title, description, id]
     );
-    res.redirect("back");
+
+    res.redirect(`/admin/courses/${id}?tab=project`);
   } catch (err) {
-    console.error("Error editing project:", err);
+    console.error("❌ Error creating project:", err);
     res.status(500).send("Server error");
   }
 };
 
-exports.deleteProject = async (req, res) => {
-  const { id } = req.params;
+
+// exports.editProject = async (req, res) => {
+//   const { id } = req.params;
+//   const { title, description, course_id } = req.body;
+
+//   try {
+//     await pool.query(
+//       "UPDATE course_projects SET title = $1, description = $2 WHERE id = $3",
+//       [title, description, id]
+//     );
+
+//     res.redirect(`/admin/courses/${course_id}?tab=project`);
+//   } catch (err) {
+//     console.error("❌ Error editing project:", err);
+//     res.status(500).send("Server error");
+//   }
+// };
+
+// editProject
+exports.editProject = async (req, res) => {
+  const { id } = req.params; // project id
+  const { title, description, course_id } = req.body; // send course_id hidden input
   try {
-    await pool.query("DELETE FROM projects WHERE id = $1", [id]);
-    res.redirect("back");
+    await pool.query(
+      "UPDATE course_projects SET title = $1, description = $2 WHERE id = $3",
+      [title, description, id]
+    );
+    res.redirect(`/admin/courses/${course_id}?tab=project`);
   } catch (err) {
-    console.error("Error deleting project:", err);
+    console.error("❌ Error editing project:", err);
     res.status(500).send("Server error");
   }
 };
+
+// deleteProject
+exports.deleteProject = async (req, res) => {
+  const { id } = req.params;
+  const { course_id } = req.body; // send hidden input in delete form
+  try {
+    await pool.query("DELETE FROM course_projects WHERE id = $1", [id]);
+    res.redirect(`/admin/courses/${course_id}?tab=project`);
+  } catch (err) {
+    console.error("❌ Error deleting project:", err);
+    res.status(500).send("Server error");
+  }
+};
+
+
+// exports.deleteProject = async (req, res) => {
+//   const { id } = req.params;
+//   try {
+//     await pool.query("DELETE FROM projects WHERE id = $1", [id]);
+//     res.redirect("back");
+//   } catch (err) {
+//     console.error("Error deleting project:", err);
+//     res.status(500).send("Server error");
+//   }
+// };
 
 // SINGLE COURSE PAGE
 exports.getSingleCourse = async (req, res) => {

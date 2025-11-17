@@ -92,6 +92,13 @@
       <label>Amount (₦)</label>
       <input type="number" name="amount" value="<%= course.amount || 0 %>" step="0.01">
 
+      <label>Certificate Template (PDF or Image)</label>
+      <% if (course.certificate_url) { %>
+        <p>🎓 <a href="<%= course.certificate_url %>" target="_blank">View current certificate</a></p>
+      <% } %>
+      <input type="file" name="certificate" accept=".pdf,.png,.jpg,.jpeg">
+
+
       <button type="submit" class="btn-save">💾 Save Changes</button>
     </form>
   </div>
@@ -107,6 +114,18 @@
   <p><strong>Created At:</strong> <%= course.created_at.toDateString() %></p>
   <p><strong>sort number</strong> <%= course.sort_order %></p>
   <p><strong>Price: </strong> ₦ <%= course.amount %></p>
+
+  <% if (course.certificate_url) { %>
+  <p><strong>Certificate Template:</strong></p>
+  <% if (course.certificate_url.endsWith('.pdf')) { %>
+    <a href="<%= course.certificate_url %>" target="_blank">📄 View Certificate PDF</a>
+  <% } else { %>
+    <img src="<%= course.certificate_url %>" style="max-width:300px; border-radius:8px;">
+  <% } %>
+  <% } else { %>
+    <p>No certificate file uploaded.</p>
+  <% } %>
+
   
 </div>
 

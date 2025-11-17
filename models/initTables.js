@@ -657,6 +657,19 @@ async function createTables() {
       );
 
       `);
+    
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS project_submissions (
+        id SERIAL PRIMARY KEY,
+        student_id INT REFERENCES students(id),
+        course_id INT REFERENCES courses(id),
+        file_url TEXT NOT NULL,
+        notes TEXT,
+        submitted_at TIMESTAMP NOT NULL,
+        UNIQUE(student_id, course_id)
+      );
+
+      `);
 
     console.log("✅ All tables are updated and ready.");
   } catch (err) {

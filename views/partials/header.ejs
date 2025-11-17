@@ -10,6 +10,23 @@
     <link rel="icon" type="image/x-icon" href="/public/images/JKT logo bg.png" />
 </head>
 <body>
+    <!-- Loading Spinner Overlay -->
+<div id="loadingOverlay">
+  <div class="spin">
+    <img src="/images/JKT logo.png" alt="">
+  </div>
+</div>
+
+<script>
+    function showLoading() {
+  document.getElementById("loadingOverlay").style.display = "flex";
+}
+
+function hideLoading() {
+  document.getElementById("loadingOverlay").style.display = "none";
+}
+
+</script>
     
 </body>
 </html>

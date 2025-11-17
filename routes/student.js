@@ -116,5 +116,11 @@ router.get("/chat/messages/:receiverId", studentController.getChatMessages);
 router.post("/chat/markRead/:receiverId", studentController.markMessagesAsRead);
 
 
+router.post(
+  "/projects/submit",
+  upload.single("projectFile"),
+  studentController.submitProject
+);
+
 
 module.exports = router;
