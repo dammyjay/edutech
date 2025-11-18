@@ -1664,40 +1664,57 @@ exports.submitLessonQuiz = async (req, res) => {
     const percent = Math.round((score / questions.length) * 100);
 
     // ✅ AI Prompt WITH lesson content
+//     const feedbackPrompt = `
+// You are an AI tutor. Use the following LESSON CONTENT to explain quiz answers:
+
+// "${lesson.content}"
+
+// Now here is a student's quiz attempt for the lesson "${lesson.title}":
+
+// ${reviewData
+//   .map(
+//     (r) => `
+// QuestionId: ${r.id}
+// Question: ${r.question}
+// Student answered: ${r.yourAnswer || "No answer"}
+// Correct answer: ${r.correctAnswer}
+// Result: ${r.isCorrect ? "✅ Correct" : "❌ Wrong"}
+// `
+//   )
+//   .join("\n\n")}
+
+// TASK:
+// For EACH question (correct OR wrong):
+// - Use the QuestionId from above in the JSON.
+// - If correct → give a short reinforcement explanation.
+// - If wrong → explain why their answer is incorrect AND what the correct answer means.
+// - Base explanations on the LESSON CONTENT.
+// - Be supportive.
+
+// OUTPUT:
+// Return only valid JSON in this format:
+// [
+//   { "questionId": 12, "feedback": "..." },
+//   { "questionId": 15, "feedback": "..." }
+// ]
+    // `;
+    
     const feedbackPrompt = `
-You are an AI tutor. Use the following LESSON CONTENT to explain quiz answers:
+You are an AI tutor. Give short, simple feedback for each quiz question.
 
-"${lesson.content}"
+Do NOT restate the lesson.  
+Do NOT repeat the questions in detail.  
+Do NOT write short explanations.
 
-Now here is a student's quiz attempt for the lesson "${lesson.title}":
-
-${reviewData
-  .map(
-    (r) => `
-QuestionId: ${r.id}
-Question: ${r.question}
-Student answered: ${r.yourAnswer || "No answer"}
-Correct answer: ${r.correctAnswer}
-Result: ${r.isCorrect ? "✅ Correct" : "❌ Wrong"}
-`
-  )
-  .join("\n\n")}
-
-TASK:
-For EACH question (correct OR wrong):
-- Use the QuestionId from above in the JSON.
-- If correct → give a short reinforcement explanation.
-- If wrong → explain why their answer is incorrect AND what the correct answer means.
-- Base explanations on the LESSON CONTENT.
-- Be supportive.
-
-OUTPUT:
-Return only valid JSON in this format:
+For each item, return JSON like this:
 [
-  { "questionId": 12, "feedback": "..." },
-  { "questionId": 15, "feedback": "..." }
+  { "questionId": 1, "feedback": "…" }
 ]
+
+Student quiz review:
+${JSON.stringify(reviewData, null, 2)}
 `;
+
 
     let perQuestionFeedback = [];
     try {
@@ -2651,8 +2668,6 @@ exports.markMessagesAsRead = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
-
 
 exports.submitProject = async (req, res) => {
   try {

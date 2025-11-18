@@ -797,7 +797,7 @@
   }
 
   /* FLOATING ICON */
-  .ai-float {
+  /* .ai-float {
     position: fixed;
     bottom: 24px;
     right: 24px;
@@ -806,7 +806,7 @@
     border-radius: 50%;
     width: 56px;
     height: 56px;
-    display: none; /* hidden by default */
+    display: none;
     justify-content: center;
     align-items: center;
     font-size: 26px;
@@ -816,6 +816,43 @@
     transition: all 0.3s ease;
   }
 
+  .ai-float:hover {
+    transform: scale(1.05);
+    background: #1e4ed8;
+  } */
+
+  @keyframes breathing {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+@keyframes colorPulse {
+  0% { background: #2563eb; }
+  50% { background: #1e4ed8; }
+  100% { background: #2563eb; }
+}
+
+.ai-float {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #2563eb;
+  color: #fff;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  font-size: 26px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  cursor: pointer;
+  z-index: 9998;
+  animation: breathing 2s ease-in-out infinite,
+    colorPulse 3s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
   .ai-float:hover {
     transform: scale(1.05);
     background: #1e4ed8;
@@ -1578,7 +1615,9 @@ document.addEventListener("DOMContentLoaded", () => {
       noteBtn.classList.remove("active");
     };
 
-    document.getElementById("ai-tutor").style.display = "flex";
+    // document.getElementById("ai-tutor").style.display = "flex";
+    document.getElementById("ai-tutor").style.display = "none";
+    document.getElementById("ai-float").style.display = "flex";
 
     // ✅ Suggest questions
     const suggestions = [
@@ -1987,69 +2026,159 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
+  // function submitQuizInline(e, lessonId) {
+  //   e.preventDefault();
+  //    showLoading(); // ⬅️ Start loading animation
+
+  //   const formData = new FormData(e.target);
+  //   const answers = {};
+  //   for (let [key, value] of formData.entries()) {
+  //     answers[key] = value;
+  //   }
+
+  //   fetch(`/student/lessons/${lessonId}/quiz/submit`, {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({
+  //       lessonId: lessonId,  // ✅ backend uses this to lookup quizId
+  //       answers: answers
+  //     })
+  //   })
+  //     .then(res => res.json())
+  //     .then(result => {
+  //       const quizContainer = document.getElementById(`quiz-area-${lessonId}`) || document.getElementById("lessonMainArea");
+
+  //       if (!result.success) {
+  //         quizContainer.innerHTML = `<p class="error">❌ Quiz submission failed. ${result.message || ""}</p>`;
+  //         return;
+  //       }
+
+  //       // Save review data globally
+  //       window.quizReviewData = result.reviewData;
+  //       window.currentReviewLesson = lessonId;
+
+  //       quizContainer.innerHTML = `
+  //         <h3>Quiz Results</h3>
+  //         <p><strong>Score:</strong> ${result.score}%</p>
+  //         <p><strong>Status:</strong> ${result.passed ? "✅ Passed" : "❌ Failed"}</p>
+  //         <div class="ai-feedback"><strong>🤖 AI Feedback Summary:</strong> ${result.feedback}</div>
+  //         <hr>
+  //         <h3>Detailed Review</h3>
+  //         <div id="quiz-review-${lessonId}"></div>
+  //         <button onclick="loadLessonPart(${lessonId}, 'content')">⬅ Back to Lesson</button>
+  //       `;
+
+  //       reviewQuizInline(lessonId); // show detailed review
+  //       // 🚀 If passed, unlock the next lesson in the UI
+  //       if (result.passed) {
+  //         const nextLessonBtn = document.querySelector(
+  //           `#lesson-btn-${lessonId + 1}` // adjust if your button IDs differ
+  //         );
+  //         if (nextLessonBtn) {
+  //           nextLessonBtn.removeAttribute("disabled");
+  //           nextLessonBtn.style.opacity = "1";
+  //           nextLessonBtn.style.cursor = "pointer";
+  //         }
+  //       }
+  //       if (result.feedback) {
+  //         pushMsg("AI Quiz Feedback: " + result.feedback, "bot");
+  //       }
+  //     })
+  //     .catch(err => {
+  //       hideLoading(); // ⬅️ Stop animation even on error
+  //       console.error("❌ Error submitting quiz:", err);
+  //       const quizContainer = document.getElementById(`quiz-area-${lessonId}`) || document.getElementById("lessonMainArea");
+  //       quizContainer.innerHTML = `<p class="error">Error submitting quiz. Please try again.</p>`;
+  //     });
+  // }
+
   function submitQuizInline(e, lessonId) {
-    e.preventDefault();
+  e.preventDefault();
+  showLoading(); // ⬅️ Start loading animation
 
-    const formData = new FormData(e.target);
-    const answers = {};
-    for (let [key, value] of formData.entries()) {
-      answers[key] = value;
-    }
-
-    fetch(`/student/lessons/${lessonId}/quiz/submit`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        lessonId: lessonId,  // ✅ backend uses this to lookup quizId
-        answers: answers
-      })
-    })
-      .then(res => res.json())
-      .then(result => {
-        const quizContainer = document.getElementById(`quiz-area-${lessonId}`) || document.getElementById("lessonMainArea");
-
-        if (!result.success) {
-          quizContainer.innerHTML = `<p class="error">❌ Quiz submission failed. ${result.message || ""}</p>`;
-          return;
-        }
-
-        // Save review data globally
-        window.quizReviewData = result.reviewData;
-        window.currentReviewLesson = lessonId;
-
-        quizContainer.innerHTML = `
-          <h3>Quiz Results</h3>
-          <p><strong>Score:</strong> ${result.score}%</p>
-          <p><strong>Status:</strong> ${result.passed ? "✅ Passed" : "❌ Failed"}</p>
-          <div class="ai-feedback"><strong>🤖 AI Feedback Summary:</strong> ${result.feedback}</div>
-          <hr>
-          <h3>Detailed Review</h3>
-          <div id="quiz-review-${lessonId}"></div>
-          <button onclick="loadLessonPart(${lessonId}, 'content')">⬅ Back to Lesson</button>
-        `;
-
-        reviewQuizInline(lessonId); // show detailed review
-        // 🚀 If passed, unlock the next lesson in the UI
-        if (result.passed) {
-          const nextLessonBtn = document.querySelector(
-            `#lesson-btn-${lessonId + 1}` // adjust if your button IDs differ
-          );
-          if (nextLessonBtn) {
-            nextLessonBtn.removeAttribute("disabled");
-            nextLessonBtn.style.opacity = "1";
-            nextLessonBtn.style.cursor = "pointer";
-          }
-        }
-        if (result.feedback) {
-          pushMsg("AI Quiz Feedback: " + result.feedback, "bot");
-        }
-      })
-      .catch(err => {
-        console.error("❌ Error submitting quiz:", err);
-        const quizContainer = document.getElementById(`quiz-area-${lessonId}`) || document.getElementById("lessonMainArea");
-        quizContainer.innerHTML = `<p class="error">Error submitting quiz. Please try again.</p>`;
-      });
+  const formData = new FormData(e.target);
+  const answers = {};
+  for (let [key, value] of formData.entries()) {
+    answers[key] = value;
   }
+
+  fetch(`/student/lessons/${lessonId}/quiz/submit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      lessonId: lessonId,
+      answers: answers
+    })
+  })
+    .then(res => {
+      if (!res.ok) {
+        throw new Error("Server did not respond correctly.");
+      }
+      return res.json();
+    })
+    .then(result => {
+      // ⭐ Small delay ensures backend finishes grading before displaying
+      return new Promise(resolve => setTimeout(() => resolve(result), 300));
+    })
+    .then(result => {
+      hideLoading(); // ⬅️ Stop loading animation
+
+      const quizContainer =
+        document.getElementById(`quiz-area-${lessonId}`) ||
+        document.getElementById("lessonMainArea");
+
+      if (!result.success) {
+        quizContainer.innerHTML =
+          `<p class="error">❌ Quiz submission failed. ${result.message || ""}</p>`;
+        return;
+      }
+
+      // Save review data globally
+      window.quizReviewData = result.reviewData;
+      window.currentReviewLesson = lessonId;
+
+      quizContainer.innerHTML = `
+        <h3>Quiz Results</h3>
+        <p><strong>Score:</strong> ${result.score}%</p>
+        <p><strong>Status:</strong> ${result.passed ? "✅ Passed" : "❌ Failed"}</p>
+        <div class="ai-feedback"><strong>🤖 AI Feedback Summary:</strong> ${result.feedback}</div>
+        <hr>
+        <h3>Detailed Review</h3>
+        <div id="quiz-review-${lessonId}"></div>
+        <button onclick="loadLessonPart(${lessonId}, 'content')">⬅ Back to Lesson</button>
+      `;
+
+      reviewQuizInline(lessonId);
+
+      // 🚀 Unlock next lesson if passed
+      if (result.passed) {
+        const nextLessonBtn = document.querySelector(
+          `#lesson-btn-${lessonId + 1}`
+        );
+
+        if (nextLessonBtn) {
+          nextLessonBtn.removeAttribute("disabled");
+          nextLessonBtn.style.opacity = "1";
+          nextLessonBtn.style.cursor = "pointer";
+        }
+      }
+
+      if (result.feedback) {
+        pushMsg("AI Quiz Feedback: " + result.feedback, "bot");
+      }
+    })
+    .catch(err => {
+      hideLoading(); // ⬅️ Make sure spinner stops
+      console.error("❌ Error submitting quiz:", err);
+
+      const quizContainer =
+        document.getElementById(`quiz-area-${lessonId}`) ||
+        document.getElementById("lessonMainArea");
+
+      quizContainer.innerHTML =
+        `<p class="error">Error submitting quiz. Please try again.</p>`;
+    });
+}
 
 
   function reviewQuizInline(lessonId) {
