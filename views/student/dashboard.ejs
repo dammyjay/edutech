@@ -1713,6 +1713,8 @@ document.addEventListener("DOMContentLoaded", () => {
             <div><strong>Comments:</strong><p>${data.submission.ai_feedback ?? "Pending"}</p></div>
           </div>
         `;
+        hideLoading();
+        return;
       } else {
         // ✅ Show form if not yet submitted
         lessonMain.innerHTML = `
@@ -1730,18 +1732,32 @@ document.addEventListener("DOMContentLoaded", () => {
             <form id="submitAssignmentForm" enctype="multipart/form-data">
               <input type="hidden" name="assignmentId" value="${assignmentId}" />
               <label>Description:</label><br>
-              <textarea name="description" placeholder="Write your answer..." required></textarea><br><br>
+              <textarea id="assignmentDescription" name="description" placeholder="Write your answer..." required></textarea><br><br>
               <label>Upload File (optional):</label>
               <input type="file" name="file"><br><br>
               <button type="submit">Submit Assignment</button>
             </form>
           </div>
         `;
+        // 🟢 Initialize CKEditor for assignment submission
+        setTimeout(() => {
+          if (CKEDITOR.instances.assignmentDescription) {
+            CKEDITOR.instances.assignmentDescription.destroy(true);
+          }
+          CKEDITOR.replace("assignmentDescription");
+        }, 50);
+
+
+        hideLoading();
 
         // ✅ Attach submit handler
         document.getElementById("submitAssignmentForm")
           .addEventListener("submit", async (e) => {
             e.preventDefault();
+            // ⭐ VERY IMPORTANT — Update CKEditor content into textarea
+            if (CKEDITOR.instances.assignmentDescription) {
+              CKEDITOR.instances.assignmentDescription.updateElement();
+            }
             showLoading();  // 🟡 Loader during submission
             const formData = new FormData(e.target);
 
@@ -1907,6 +1923,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 </script>
+
+<script src="https://cdn.ckeditor.com/4.22.1/full/ckeditor.js"></script>
 
 
 <script>
@@ -2091,6 +2109,8 @@ document.addEventListener("DOMContentLoaded", () => {
   //       quizContainer.innerHTML = `<p class="error">Error submitting quiz. Please try again.</p>`;
   //     });
   // }
+
+  
 
   function submitQuizInline(e, lessonId) {
   e.preventDefault();
