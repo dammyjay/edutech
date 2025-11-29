@@ -1,7 +1,7 @@
 // app.js
 const express = require("express");
 const session = require("express-session");
-const pgSession = require('connect-pg-simple')(session);
+const pgSession = require("connect-pg-simple")(session);
 const bodyParser = require("body-parser");
 const path = require("path");
 const createTables = require("./models/initTables");
@@ -9,13 +9,13 @@ const createTables = require("./models/initTables");
 const runNewsletterScheduler = require("./cron/newsletterScheduler");
 const runDevotionalScheduler = require("./cron/cronJobs");
 require("dotenv").config(); // Load .env variables
-const pool = require('./models/db'); // adjust path based on your folder structure
+const pool = require("./models/db"); // adjust path based on your folder structure
 const methodOverride = require("method-override");
-
-
 
 const app = express();
 const layout = require("express-ejs-layouts");
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
 
 
 // app.use(express.json());
@@ -23,7 +23,6 @@ const layout = require("express-ejs-layouts");
 
 app.use(express.json({ limit: "100mb" }));
 app.use(express.urlencoded({ extended: true, limit: "100mb" }));
-
 
 // Set EJS as view engine
 app.set("view engine", "ejs");

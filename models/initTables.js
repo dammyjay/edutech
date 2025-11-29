@@ -200,6 +200,24 @@ async function createTables() {
       );
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS feedback (
+        id SERIAL PRIMARY KEY,
+        user_type TEXT NOT NULL,   -- parent, teacher, organization, etc
+        name TEXT NOT NULL,
+        email TEXT,
+        school_name TEXT,           -- only for school owners / teachers
+        student_class TEXT,         -- only for parents/students
+        organization_name TEXT,     -- only for organization
+        rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+        category TEXT,
+        message TEXT NOT NULL,
+        extra JSONB,                -- flexible for future custom questions
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      
+     `);
+
     // table for faqs
     await pool.query(`
       CREATE TABLE IF NOT EXISTS faqs (

@@ -36,6 +36,38 @@ const multer = require("multer");
 router.get("/login", adminController.showLogin);
 router.post("/login", adminController.login);
 router.get("/dashboard", adminController.dashboard);
+// function ensureAdmin(req, res, next) {
+//   if (!req.session.user || req.session.user.role !== "admin") {
+//     return res.status(401).json({ error: "Unauthorized" });
+//   }
+//   next();
+// }
+
+// router.get("/stats/overview", ensureAdmin, adminApi.overview);
+// router.get("/stats/users", ensureAdmin, adminApi.users);
+// router.get("/stats/courses", ensureAdmin, adminApi.courses);
+// router.get("/stats/progress", ensureAdmin, adminApi.progress);
+// router.get("/stats/quizzes", ensureAdmin, adminApi.quizzes);
+// router.get("/stats/finance", ensureAdmin, adminApi.finance);
+// router.get("/stats/feedback", ensureAdmin, adminApi.feedback);
+// router.get("/stats/activity", ensureAdmin, adminApi.activity);
+
+router.get("/analytics/export", adminController.exportAnalyticsPDF);
+router.get("/analytics", adminController.analyticsPage);
+router.get("/stats/overview", adminController.overview);
+router.get("/stats/users", adminController.users);
+router.get("/stats/courses", adminController.courses);
+router.get("/stats/progress",adminController.progress);
+router.get("/stats/quizzes", adminController.quizzes);
+router.get("/stats/finance", adminController.finance);
+router.get("/stats/feedback", adminController.feedback);
+router.get("/stats/activity", adminController.activity);
+router.get(
+  "/stats/event-payments/details",
+  adminController.eventPaymentDetails
+);
+
+router.get("/feedback", adminController.viewFeedback);
 router.get("/logout", adminController.logout);
 
 router.get("/forgot-password", adminController.showForgotPasswordForm);

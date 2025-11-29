@@ -1007,6 +1007,7 @@ async function loadChatMessages(teacherId) {
 
 </script>
 
+<!-- styling for AI tutor -->
 <style>
 .chat-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.5); z-index:1000; }
 .chat-content { background:#fff; border-radius:8px; width:400px; max-width:90%; margin:80px auto; padding:15px; position:relative; }
@@ -1158,6 +1159,8 @@ async function loadChatMessages(teacherId) {
 <!-- Lesson and quiz script -->
  
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const sendBtn = document.getElementById("ai-send");
@@ -1252,7 +1255,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
-
+<!-- script for loading lesson content and assignment loading and submission review -->
 <script>
   function toggleModule(moduleId) {
     const el = document.getElementById(`module-${moduleId}`);
@@ -1927,6 +1930,7 @@ document.addEventListener("DOMContentLoaded", () => {
 <script src="https://cdn.ckeditor.com/4.22.1/full/ckeditor.js"></script>
 
 
+<!-- script for loading, submiting reviewing quiz -->
 <script>
   function toggleModule(moduleId) {
     const el = document.getElementById(`module-${moduleId}`);
@@ -2109,7 +2113,6 @@ document.addEventListener("DOMContentLoaded", () => {
   //       quizContainer.innerHTML = `<p class="error">Error submitting quiz. Please try again.</p>`;
   //     });
   // }
-
   
 
   function submitQuizInline(e, lessonId) {
@@ -2345,6 +2348,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </script>
 
+<!-- Script for AI tutor -->
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const aiTutor = document.getElementById("ai-tutor");

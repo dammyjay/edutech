@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Admin Analytics</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* small local styles — integrate into your style.css later */
+    .analytics-container { width: 95%; margin: 20px auto; }
+    .cards { display:flex; gap:16px; flex-wrap:wrap; }
+    .card { background:#fff; padding:16px; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,0.08); flex:1 1 220px; min-width:180px; }
+    .charts { display:flex; gap:16px; margin-top:16px; flex-wrap:wrap; }
+    .chart-card { flex:1 1 480px; background:#fff; padding:16px; border-radius:8px; }
+    .table-responsive { margin-top:20px; }
+    .filter-row { display:flex; gap:10px; align-items:center; margin-bottom:12px; }
+    .activity-feed { max-height:360px; overflow:auto; background:#fff; padding:12px; border-radius:8px; }
+  </style>
+</head>
+<body>
+  <%- include('../partials/adminHeader', { info: info, currentPage: 'analytics' }) %>
+<!-- <button id="downloadPDF">Download PDF</button> -->
+ <button id="exportPdfBtn">Export PDF</button>
+
+
+  <div class="analytics-container">
+    <h1>Admin Analytics</h1>
+
+    <div class="filter-row">
+      <label>Range:
+        <select id="rangeSelect">
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+        </select>
+      </label>
+
+      <label style="margin-left:8px;">School:
+        <select id="schoolFilter"><option value="">All Schools</option></select>
+      </label>
+
+      <button id="refreshBtn">Refresh</button>
+    </div>
+
+    <!-- top cards -->
+    <div class="cards" id="topCards">
+      <div class="card"><h4>Total users</h4><h2 id="cardTotalUsers">—</h2></div>
+      <div class="card"><h4>Active (24h)</h4><h2 id="cardDAU">—</h2></div>
+      <div class="card"><h4>New (7d)</h4><h2 id="cardNew7">—</h2></div>
+      <div class="card"><h4>Total Courses</h4><h2 id="cardCourses">—</h2></div>
+      <div class="card"><h4>Avg Quiz Score</h4><h2 id="cardAvgQuiz">—</h2></div>
+      <div class="card"><h4>Total Revenue</h4><h2 id="cardTotalRevenue">—</h2></div>
+        <div class="card"><h4>Revenue (30d)</h4><h2 id="cardRevenue30d">—</h2></div>
+    </div>
+
+    <div class="charts">
+      <div class="chart-card">
+        <h4>Users by Role</h4>
+        <canvas id="rolesChart" height="150"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <h4>Top Courses (Enrollments)</h4>
+        <canvas id="topCoursesChart" height="150"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <h4>Quiz Pass/Fail</h4>
+        <canvas id="quizPassFailChart" height="150"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <h4>Recent Activity</h4>
+        <div class="activity-feed" id="activityFeed"></div>
+      </div>
+
+      <div class="chart-card">
+            <h4>Revenue Trend (Last 30d)</h4>
+            <canvas id="revenueChart" height="150"></canvas>
+        </div>
+    </div>
+
+    <!-- table for course details -->
+    <div class="table-responsive" id="coursesTableWrap"></div>
+    <div class="table-responsive" id="schoolPaymentsTableWrap"></div>
+    <div class="table-responsive" id="eventPaymentsTableWrap">
+        <h3>
+        Event Payments 
+        <button onclick="loadEventPaymentDetails()">View Details</button>
+        </h3>
+        <div id="eventPaymentDetails"></div>
+
+    </div>
+
+  </div>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+
+<script>
+  async function fetchJSON(path) {
+    const res = await fetch(path, {credentials: 'same-origin'});
+    if (!res.ok) throw new Error('Failed '+path);
+    return res.json();
+  }
+
+  let rolesChart, topCoursesChart, quizChart, revenueChart;
+
+  async function loadOverview() {
+    const data = await fetchJSON('/admin/stats/overview');
+    document.getElementById('cardTotalUsers').innerText = data.totalUsers;
+    document.getElementById('cardDAU').innerText = data.dau;
+    document.getElementById('cardNew7').innerText = data.newUsers.new_7d;
+  }
+
+    async function loadFinance() {
+    const data = await fetchJSON('/admin/stats/finance');
+
+    // Update cards
+    document.getElementById('cardTotalRevenue').innerText = data.revenue.total_revenue;
+    document.getElementById('cardRevenue30d').innerText = data.revenue.revenue_30d;
+
+    // Revenue Chart (simple example: last 30d vs earlier)
+    const labels = ['Last 30d', 'Earlier'];
+    const values = [
+        parseFloat(data.revenue.revenue_30d),
+        parseFloat(data.revenue.total_revenue) - parseFloat(data.revenue.revenue_30d)
+    ];
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    if (revenueChart) revenueChart.destroy();
+    revenueChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Revenue', data: values, backgroundColor: '#4caf50' }] }
+    });
+
+    // Optional: school payments table
+    const schoolWrap = document.getElementById('schoolPaymentsTableWrap');
+    let html = '<h3>School Payments</h3><table class="user-table"><thead><tr><th>Status</th><th>Count</th></tr></thead><tbody>';
+    data.schoolPayments.forEach(p => {
+        html += `<tr><td>${p.status}</td><td>${p.count}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    schoolWrap.innerHTML = html;
+
+    // Optional: event payments table
+    const eventWrap = document.getElementById('eventPaymentsTableWrap');
+    html = '<h3>Event Payments</h3><table class="user-table"><thead><tr><th>Status</th><th>Count</th><th>Total Collected</th></tr></thead><tbody>';
+    data.eventPayments.forEach(p => {
+        html += `<tr><td>${p.payment_status}</td><td>${p.count}</td><td>${p.total_collected}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    eventWrap.innerHTML = html;
+    }
+
+  async function loadUsers() {
+    const data = await fetchJSON('/admin/stats/users');
+    // roles chart
+    const labels = data.byRole.map(r => r.role);
+    const values = data.byRole.map(r => r.count);
+    const ctx = document.getElementById('rolesChart').getContext('2d');
+    if (rolesChart) rolesChart.destroy();
+    rolesChart = new Chart(ctx, {
+      type: 'pie',
+      data: { labels, datasets: [{ data: values }] }
+    });
+  }
+
+//   async function loadCourses() {
+//     const data = await fetchJSON('/admin/stats/courses');
+//     document.getElementById('cardCourses').innerText = data.counts.total_courses;
+
+//     // top courses chart
+//     const labels = data.topCourses.map(c => c.title);
+//     const values = data.topCourses.map(c => c.enrollments);
+//     const ctx = document.getElementById('topCoursesChart').getContext('2d');
+//     if (topCoursesChart) topCoursesChart.destroy();
+//     topCoursesChart = new Chart(ctx, {
+//       type: 'bar',
+//       data: { labels, datasets: [{ label: 'Enrollments', data: values }] },
+//       options: { indexAxis: 'y' }
+//     });
+
+//     // courses table
+//     const wrap = document.getElementById('coursesTableWrap');
+//     let html = '<h3>Top Courses</h3><table class="user-table"><thead><tr><th>Course</th><th>Enrollments</th><th>Avg Progress</th></tr></thead><tbody>';
+//     data.topCourses.forEach(c => {
+//       html += `<tr><td>${c.title}</td><td>${c.enrollments}</td><td>${c.avg_progress}%</td></tr>`;
+//     });
+//     html += '</tbody></table>';
+//     wrap.innerHTML = html;
+//   }
+
+async function loadCourses() {
+  const data = await fetchJSON('/admin/stats/courses');
+  document.getElementById('cardCourses').innerText = data.counts.total_courses;
+
+  // Extract values
+  const labels = data.topCourses.map(c => c.title);
+  const individual = data.topCourses.map(c => c.individual_enrollments);
+  const school = data.topCourses.map(c => c.school_enrollments);
+
+  // Draw stacked bar chart
+  const ctx = document.getElementById('topCoursesChart').getContext('2d');
+  if (topCoursesChart) topCoursesChart.destroy();
+  topCoursesChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Individual Students', data: individual, backgroundColor: '#42A5F5' },
+        { label: 'School Students', data: school, backgroundColor: '#66BB6A' }
+      ]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { position: 'top' } },
+      scales: { x: { stacked: true }, y: { stacked: true } }
+    }
+  });
+
+  // Courses Table (with both student types)
+  const wrap = document.getElementById('coursesTableWrap');
+  let html = `
+    <h3>Top Courses</h3>
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>Course</th>
+            <th>Total Lessons</th>
+            <th>Avg Completed Lessons</th>
+            <th>Individual Students</th>
+            <th>School Students</th>
+            <th>Total Enrollments</th>
+            <th>Avg Progress</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  data.topCourses.forEach(c => {
+    html += `
+    <tr>
+        <td>${c.title}</td>
+        <td>${c.total_lessons}</td>
+        <td>${c.avg_completed_lessons}</td>
+        <td>${c.individual_enrollments}</td>
+        <td>${c.school_enrollments}</td>
+        <td>${c.total_enrollments}</td>
+        <td>${c.avg_progress}%</td>
+    </tr>
+    `;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+  async function loadQuizzes() {
+    const data = await fetchJSON('/admin/stats/quizzes');
+    document.getElementById('cardAvgQuiz').innerText = data.summary.avg_score || '—';
+    const labels = data.passFail.map(r => r.passed ? 'Passed' : 'Failed');
+    const values = data.passFail.map(r => r.count);
+    const ctx = document.getElementById('quizPassFailChart').getContext('2d');
+    if (quizChart) quizChart.destroy();
+    quizChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data: values }] }
+    });
+  }
+
+  async function loadActivity() {
+    const data = await fetchJSON('/admin/stats/activity');
+    const feed = document.getElementById('activityFeed');
+    feed.innerHTML = data.feed.map(it => `<div style="border-bottom:1px solid #eee;padding:6px 0;"><small style="color:#666">${new Date(it.created_at).toLocaleString()}</small><div><strong>${it.role || 'User'}</strong>: ${it.action}</div><div style="color:#333">${it.details || ''}</div></div>`).join('');
+  }
+
+  async function loadEventPaymentDetails() {
+  const data = await fetchJSON("/admin/stats/event-payments/details");
+
+  let html = `
+    <h4>Event Payment Details</h4>
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Email</th>
+          <th>Event</th>
+          <th>Status</th>
+          <th>Amount</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  data.forEach(row => {
+    html += `
+      <tr>
+        <td>${row.fullname}</td>
+        <td>${row.email}</td>
+        <td>${row.event_title}</td>
+        <td>${row.payment_status}</td>
+        <td>${row.amount}</td>
+        <td>${new Date(row.created_at).toLocaleString()}</td>
+      </tr>
+    `;
+  });
+
+  html += "</tbody></table>";
+
+  document.getElementById("eventPaymentDetails").innerHTML = html;
+}
+
+
+  async function refreshAll() {
+    try {
+      document.getElementById('refreshBtn').disabled = true;
+      await Promise.all([ loadOverview(), loadUsers(), loadCourses(), loadQuizzes(), loadActivity(), loadFinance() ]);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to load analytics: ' + err.message);
+    } finally {
+      document.getElementById('refreshBtn').disabled = false;
+    }
+  }
+
+  document.getElementById('refreshBtn').addEventListener('click', refreshAll);
+
+  // initial load
+  refreshAll();
+
+//   document.getElementById("downloadPDF").addEventListener("click", () => {
+//   const element = document.body;
+//   html2pdf().from(element).save("admin-analytics.pdf");
+// });
+
+document.getElementById("exportPdfBtn").addEventListener("click", () => {
+  // Open PDF in a new tab
+  window.open("/admin/analytics/export", "_blank");
+});
+
+// document.getElementById("exportPdfBtn").addEventListener("click", async () => {
+//   const res = await fetch("/admin/analytics/export");
+//   if (!res.ok) return alert("Failed to generate PDF");
+
+//   const blob = await res.blob();
+//   const url = window.URL.createObjectURL(blob);
+//   const a = document.createElement("a");
+//   a.href = url;
+//   a.download = "analytics-report.pdf";
+//   document.body.appendChild(a);
+//   a.click();
+//   a.remove();
+// });
+
+
+</script>
+</body>
+</html>

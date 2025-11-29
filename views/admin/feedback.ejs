@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Feedback List</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+  <%- include('../partials/adminHeader', { info: info, currentPage: 'feedback' }) %>
+
+  <h1>Feedback Submitted</h1>
+
+  <table class="user-table" style="width: 90%; margin-top: 20px;">
+    <thead>
+      <tr>
+        <th>User Type</th>
+        <th>Full Name</th>
+        <th>Email</th>
+        <th>Subject</th>
+        <th>Rating</th>
+        <th>Date</th>
+        <th>View</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% feedback.forEach(item => { %>
+      <tr>
+        <td><%= item.user_type %></td>
+        <td><%= item.fullname || 'N/A' %></td>
+        <td><%= item.email || 'N/A' %></td>
+        <td><%= item.subject || 'No subject' %></td>
+        <td><%= item.rating || '—' %></td>
+        <td><%= item.created_at.toDateString() %></td>
+        <td>
+          <button class="btn-edit" style="background:black;color:white;"
+            onclick='openFeedbackModal(<%- JSON.stringify(item) %>)'>👁️</button>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+  <!-- FEEDBACK MODAL -->
+  <div id="feedbackModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:600px; margin:auto; background:white; padding:20px; border-radius:10px;">
+      <span onclick="closeFeedbackModal()" style="float:right; cursor:pointer;">&times;</span>
+
+      <h2>Feedback Details</h2>
+      <p><strong>User Type:</strong> <span id="fbType"></span></p>
+      <p><strong>Name:</strong> <span id="fbName"></span></p>
+      <p><strong>Email:</strong> <span id="fbEmail"></span></p>
+      <p><strong>Phone:</strong> <span id="fbPhone"></span></p>
+      <p><strong>Subject:</strong> <span id="fbSubject"></span></p>
+      <p><strong>Rating:</strong> <span id="fbRating"></span></p>
+      <p><strong>Message:</strong></p>
+      <p id="fbMessage" style="white-space:pre-wrap; background:#f0f0f0; padding:10px;border-radius:6px;"></p>
+    </div>
+  </div>
+
+  <script>
+    function openFeedbackModal(fb) {
+      document.getElementById("fbType").textContent = fb.user_type;
+      document.getElementById("fbName").textContent = fb.fullname || "N/A";
+      document.getElementById("fbEmail").textContent = fb.email || "N/A";
+      document.getElementById("fbPhone").textContent = fb.phone || "N/A";
+      document.getElementById("fbSubject").textContent = fb.subject || "—";
+      document.getElementById("fbRating").textContent = fb.rating || "—";
+      document.getElementById("fbMessage").textContent = fb.message;
+
+      document.getElementById("feedbackModal").style.display = "block";
+    }
+
+    function closeFeedbackModal() {
+      document.getElementById("feedbackModal").style.display = "none";
+    }
+  </script>
+</body>
+</html>

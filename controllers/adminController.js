@@ -254,6 +254,22 @@ exports.logout = (req, res) => {
   res.redirect("/admin/login");
 };
 
+// inside controllers/adminController.js
+exports.analyticsPage = async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'admin') {
+    return res.redirect('/admin/login');
+  }
+  try {
+    const infoResult = await pool.query("SELECT * FROM company_info ORDER BY id DESC LIMIT 1");
+    const info = infoResult.rows[0] || {};
+    res.render('admin/analytics', { info, user: req.session.user ,role: 'admin' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server Error');
+  }
+};
+
+
 exports.dashboard = async (req, res) => {
   // if (!req.session.admin) return res.redirect('/admin/login');
   if (!req.session.user || req.session.user.role !== "admin") {
@@ -332,6 +348,427 @@ exports.dashboard = async (req, res) => {
     res.status(500).send("Server Error");
   }
 };
+
+// exports.exportAnalyticsPDF = async (req, res) => {
+//   try {
+//     const browser = await puppeteer.launch({
+//       headless: "new",
+//       args: ["--no-sandbox", "--disable-setuid-sandbox"],
+//     });
+
+//     const page = await browser.newPage();
+
+//     // Use request host for the live URL
+//     const url = `${req.protocol}://${req.get("host")}/admin/analytics`;
+//     await page.goto(url, { waitUntil: "networkidle0" });
+
+//     const pdf = await page.pdf({
+//       format: "A4",
+//       printBackground: true,
+//       margin: { top: "20px", bottom: "20px" },
+//     });
+
+//     await browser.close();
+
+//     res.set({
+//       "Content-Type": "application/pdf",
+//       "Content-Disposition": "attachment; filename=analytics-report.pdf",
+//       "Content-Length": pdf.length,
+//     });
+//     res.send(pdf);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).send("Could not generate PDF");
+//   }
+// };
+
+exports.exportAnalyticsPDF = async (req, res) => {
+  try {
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+
+    const page = await browser.newPage();
+
+    const url = `${req.protocol}://${req.get("host")}/admin/analytics`;
+    console.log("Loading URL:", url);
+
+    if (req.cookies && req.cookies["connect.sid"]) {
+      await page.setCookie({
+        name: "connect.sid",
+        value: req.cookies["connect.sid"],
+        domain: new URL(url).hostname,
+        path: "/",
+        httpOnly: true,
+        secure: req.secure,
+      });
+    }
+
+    await page.goto(url, { waitUntil: "networkidle0", timeout: 60000 });
+
+    const pdf = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "20px", bottom: "20px" },
+    });
+
+    await browser.close();
+
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": "attachment; filename=analytics-report.pdf",
+      "Content-Length": pdf.length,
+    });
+    res.send(pdf);
+  } catch (err) {
+    console.error("PDF generation error:", err);
+    res.status(500).send("Could not generate PDF");
+  }
+};
+
+
+exports.overview = async (req, res) => {
+  try {
+    const total = await pool.query('SELECT COUNT(*)::int AS total_users FROM users2');
+    const roles = await pool.query('SELECT role, COUNT(*)::int AS count FROM users2 GROUP BY role');
+    const newbies = await pool.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '1 day')::int AS new_24h,
+        COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::int AS new_7d,
+        COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::int AS new_30d
+      FROM users2;
+    `);
+    const dau = await pool.query("SELECT COUNT(DISTINCT user_id)::int AS dau FROM activities WHERE created_at >= NOW() - INTERVAL '1 day'");
+
+    res.json({
+      totalUsers: total.rows[0].total_users,
+      roles: roles.rows,
+      newUsers: newbies.rows[0],
+      dau: dau.rows[0].dau
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+exports.users = async (req, res) => {
+  try {
+    const byRole = await pool.query("SELECT role, COUNT(*)::int AS count FROM users2 GROUP BY role");
+    const active = await pool.query("SELECT COUNT(*)::int AS active_48h FROM activities WHERE created_at >= NOW() - INTERVAL '48 hours'");
+    const inactive = await pool.query("SELECT COUNT(*)::int AS inactive_30d FROM users2 WHERE id NOT IN (SELECT DISTINCT user_id FROM activities WHERE created_at >= NOW() - INTERVAL '30 days')");
+
+    res.json({ byRole: byRole.rows, active: active.rows[0].active_48h, inactive: inactive.rows[0].inactive_30d });
+  } catch (err) { console.error(err); res.status(500).json({error:'Server error'}); }
+};
+
+
+// exports.courses = async (req, res) => {
+//   try {
+//     // --- BASIC COUNTS ---
+//     const counts = await pool.query(`
+//       SELECT
+//         (SELECT COUNT(*) FROM courses) AS total_courses,
+//         (SELECT COUNT(*) FROM modules) AS total_modules,
+//         (SELECT COUNT(*) FROM lessons) AS total_lessons;
+//     `);
+
+//     // --- TOP COURSES ---
+//     const topCourses = await pool.query(`
+//       SELECT
+//         c.id,
+//         c.title,
+
+//         -- Individual enrollments
+//         COALESCE(indiv.count, 0) AS individual_enrollments,
+//         COALESCE(indiv.avg_progress, 0)::numeric(6,2) AS avg_progress,
+
+//         -- School-based enrollments
+//         COALESCE(school.count, 0) AS school_enrollments,
+
+//         -- Total enrollments = individual + school
+//         COALESCE(indiv.count, 0) + COALESCE(school.count, 0) AS total_enrollments
+
+//       FROM courses c
+
+//       -- INDIVIDUAL ENROLLMENTS (course_enrollments)
+//       LEFT JOIN (
+//         SELECT
+//           course_id,
+//           COUNT(*)::int AS count,
+//           COALESCE(AVG(progress), 0) AS avg_progress
+//         FROM course_enrollments
+//         GROUP BY course_id
+//       ) indiv ON indiv.course_id = c.id
+
+//       -- SCHOOL ENROLLMENTS
+//       LEFT JOIN (
+//         SELECT
+//           sc.course_id,
+//           COUNT(us.user_id)::int AS count
+//         FROM school_courses sc
+//         JOIN schools s ON s.id = sc.school_id
+        
+//         -- link to actual users in that school
+//         JOIN user_school us
+//             ON us.school_id = sc.school_id
+//            AND us.role_in_school = 'student'
+//            AND us.approved = true
+
+//         GROUP BY sc.course_id
+//       ) school ON school.course_id = c.id
+
+//       ORDER BY total_enrollments DESC
+//       LIMIT 10;
+//     `);
+
+//     res.json({
+//       counts: counts.rows[0],
+//       topCourses: topCourses.rows,
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Server error" });
+//   }
+// };
+
+exports.courses = async (req, res) => {
+  try {
+    const counts = await pool.query(`
+      SELECT
+        (SELECT COUNT(*) FROM courses) AS total_courses,
+        (SELECT COUNT(*) FROM modules) AS total_modules,
+        (SELECT COUNT(*) FROM lessons) AS total_lessons;
+    `);
+
+    const topCourses = await pool.query(`
+      WITH lesson_count AS (
+        SELECT 
+          c.id AS course_id,
+          COUNT(l.id)::int AS total_lessons
+        FROM courses c
+        LEFT JOIN modules m ON m.course_id = c.id
+        LEFT JOIN lessons l ON l.module_id = m.id
+        GROUP BY c.id
+      ),
+
+      completed_lessons AS (
+        SELECT 
+          m.course_id,
+          ulp.user_id,
+          COUNT(ulp.lesson_id)::int AS completed_lessons
+        FROM user_lesson_progress ulp
+        JOIN lessons l ON l.id = ulp.lesson_id
+        JOIN modules m ON m.id = l.module_id
+        GROUP BY m.course_id, ulp.user_id
+      ),
+
+      avg_completion AS (
+        SELECT 
+          course_id,
+          AVG(completed_lessons)::numeric(6,2) AS avg_completed_lessons
+        FROM completed_lessons
+        GROUP BY course_id
+      )
+
+      SELECT
+        c.id,
+        c.title,
+
+        lc.total_lessons,
+
+        -- INDIVIDUAL ENROLLMENTS
+        COALESCE(indiv.count, 0) AS individual_enrollments,
+
+        -- SCHOOL ENROLLMENTS
+        COALESCE(school.count, 0) AS school_enrollments,
+
+        -- TOTAL ENROLLMENTS
+        COALESCE(indiv.count,0) + COALESCE(school.count,0) AS total_enrollments,
+
+        -- AVERAGE COMPLETED LESSONS (REAL DATA)
+        COALESCE(ac.avg_completed_lessons, 0)::numeric(6,2) AS avg_completed_lessons,
+
+        -- AVG PROGRESS (%) = completed / total lessons × 100
+        CASE 
+          WHEN lc.total_lessons > 0 THEN
+            ROUND((COALESCE(ac.avg_completed_lessons, 0) / lc.total_lessons) * 100, 2)
+          ELSE 0
+        END AS avg_progress
+
+      FROM courses c
+
+      LEFT JOIN lesson_count lc ON lc.course_id = c.id
+      LEFT JOIN avg_completion ac ON ac.course_id = c.id
+
+      -- INDIVIDUAL ENROLLMENTS
+      LEFT JOIN (
+        SELECT course_id, COUNT(*)::int AS count
+        FROM course_enrollments
+        GROUP BY course_id
+      ) indiv ON indiv.course_id = c.id
+
+      -- SCHOOL ENROLLMENTS
+      LEFT JOIN (
+        SELECT 
+          sc.course_id,
+          COUNT(us.user_id)::int AS count
+        FROM school_courses sc
+        JOIN user_school us 
+              ON us.school_id = sc.school_id
+             AND us.role_in_school = 'student'
+             AND us.approved = true
+        GROUP BY sc.course_id
+      ) school ON school.course_id = c.id
+
+      ORDER BY total_enrollments DESC
+      LIMIT 10;
+    `);
+
+    res.json({
+      counts: counts.rows[0],
+      topCourses: topCourses.rows,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
+exports.progress = async (req, res) => {
+  try {
+    const lessonsToday = await pool.query("SELECT COUNT(*)::int AS lessons_completed_today FROM user_lesson_progress WHERE completed_at >= CURRENT_DATE");
+    const moduleComps = await pool.query("SELECT COUNT(*)::int AS module_completions FROM unlocked_modules");
+    const courseProgress = await pool.query(`
+      SELECT COUNT(*) FILTER (WHERE progress >= 100)::int AS courses_completed,
+             COUNT(*)::int AS total_enrollments
+      FROM course_enrollments;
+    `);
+
+    res.json({
+      lessonsCompletedToday: lessonsToday.rows[0].lessons_completed_today,
+      moduleCompletions: moduleComps.rows[0].module_completions,
+      courseProgress: courseProgress.rows[0]
+    });
+  } catch (err) { console.error(err); res.status(500).json({error:'Server error'}); }
+};
+
+exports.quizzes = async (req, res) => {
+  try {
+    const q = await pool.query(`
+      SELECT
+        (SELECT COUNT(*) FROM quizzes)::int AS total_quizzes,
+        (SELECT COUNT(*) FROM quiz_submissions)::int AS total_quiz_submissions,
+        (SELECT COALESCE(AVG(score),0) FROM quiz_submissions)::numeric(6,2) AS avg_score;
+    `);
+    const passFail = await pool.query("SELECT passed, COUNT(*)::int AS count FROM quiz_submissions GROUP BY passed");
+
+    res.json({ summary: q.rows[0], passFail: passFail.rows });
+  } catch (err) { console.error(err); res.status(500).json({error:'Server error'}); }
+};
+
+
+exports.finance = async (req, res) => {
+  try {
+    // Total revenue
+    const revenue = await pool.query(`
+      SELECT 
+        COALESCE(SUM(amount),0)::numeric(12,2) AS total_revenue,
+        COALESCE(SUM(amount) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days'),0)::numeric(12,2) AS revenue_30d
+      FROM transactions;
+    `);
+
+    // School payments by status
+    const schoolPayments = await pool.query(`
+      SELECT status, COUNT(*)::int AS count
+      FROM school_payments
+      GROUP BY status
+    `);
+
+    // Event payments by status
+    const eventPayments = await pool.query(`
+      SELECT payment_status, COUNT(*)::int AS count, 
+             COALESCE(SUM(amount_paid),0)::numeric(12,2) AS total_collected
+      FROM event_registrations
+      GROUP BY payment_status
+    `);
+
+    res.json({
+      revenue: revenue.rows[0],
+      schoolPayments: schoolPayments.rows,
+      eventPayments: eventPayments.rows,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+exports.eventPaymentDetails = async (req, res) => {
+  const q = await pool.query(`
+     SELECT ep.id, ep.payment_status, ep.amount,
+            ep.created_at,
+            u.fullname, u.email,
+            ev.title AS event_title
+     FROM event_payments ep
+     JOIN users2 u ON u.id = ep.user_id
+     JOIN events ev ON ev.id = ep.event_id
+     ORDER BY ep.created_at DESC
+  `);
+
+  res.json(q.rows);
+};
+
+
+exports.feedback = async (req, res) => {
+  try {
+    const feedbackSummary = await pool.query("SELECT COUNT(*)::int AS total_feedback, AVG(rating)::numeric(4,2) AS avg_rating FROM feedback");
+    const byType = await pool.query("SELECT user_type, COUNT(*)::int AS count FROM feedback GROUP BY user_type");
+    res.json({ summary: feedbackSummary.rows[0], byType: byType.rows });
+  } catch (err) { console.error(err); res.status(500).json({error:'Server error'}); }
+};
+
+exports.activity = async (req, res) => {
+  try {
+    const feed = await pool.query(`
+      SELECT id, user_id, role, action, details, created_at
+      FROM activities
+      ORDER BY created_at DESC
+      LIMIT 50
+    `);
+    res.json({ feed: feed.rows });
+  } catch (err) { console.error(err); res.status(500).json({error:'Server error'}); }
+};
+
+
+exports.viewFeedback = async (req, res) => {
+  if (!req.session.user || req.session.user.role !== "admin") {
+    return res.redirect("/admin/login");
+  }
+
+  try {
+    const infoResult = await pool.query(
+      "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
+    );
+
+    const feedbackResult = await pool.query(
+      "SELECT * FROM feedback ORDER BY created_at DESC"
+    );
+
+    res.render("admin/feedback", {
+      info: infoResult.rows[0],
+      feedback: feedbackResult.rows,
+      user: req.session.user,
+      role: "admin",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error loading feedback");
+  }
+};
+
 
 exports.instructorDashboard = async (req, res) => {
   try {
@@ -720,293 +1157,6 @@ exports.showCourses = async (req, res) => {
   });
 };
 
-// exports.createCourse = async (req, res) => {
-//   console.log("Creating course with:", req.body);
-//   const { title, description, level, career_pathway_id, sort_order, amount } =
-//     req.body;
-
-//   let thumbnail_url = null;
-//   let curriculum_url = null;
-
-//   try {
-//     // ✅ Upload thumbnail (image only)
-//     if (req.files?.thumbnail?.[0]) {
-//       const thumbPath = req.files.thumbnail[0].path;
-
-//       const result = await cloudinary.uploader.upload(thumbPath, {
-//         folder: "courses/thumbnails",
-//         resource_type: "image",
-//       });
-
-//       thumbnail_url = result.secure_url;
-//       if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
-//     }
-
-//     // ✅ Upload curriculum (PDF/DOCX as raw)
-//     if (req.files?.curriculum?.[0]) {
-//       const curriculumPath = req.files.curriculum[0].path;
-
-//       const fileResult = await cloudinary.uploader.upload(curriculumPath, {
-//         folder: "courses/curriculums",
-//         resource_type: "raw", // ✅ ensures PDF/DOCX stay intact
-//         use_filename: true,
-//         unique_filename: false,
-//       });
-
-//       curriculum_url = fileResult.secure_url;
-//       if (fs.existsSync(curriculumPath)) fs.unlinkSync(curriculumPath);
-//     }
-
-//     // ✅ Insert course record into DB
-//     await pool.query(
-//       `INSERT INTO courses (
-//         title, description, level, career_pathway_id,
-//         thumbnail_url, curriculum_url, sort_order,
-//         amount, created_by, instructor_id
-//       )
-//       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-//       [
-//         title,
-//         description,
-//         level,
-//         career_pathway_id || null,
-//         thumbnail_url,
-//         curriculum_url,
-//         sort_order || 0,
-//         amount || 0,
-//         req.user.role === "instructor" ? "instructor" : "admin",
-//         req.user.role === "instructor" ? req.user.id : null,
-//       ]
-//     );
-
-//     await logActivityForUser(req, "Course Created", `Course title: ${title}`);
-
-//     // ✅ Redirect to pathway courses page
-//     res.redirect(`/admin/pathways/${career_pathway_id}/courses`);
-//   } catch (err) {
-//     console.error("Error creating course:", err);
-//     res
-//       .status(500)
-//       .send("Error creating course: " + (err.message || "unknown"));
-//   }
-// };
-
-
-
-// exports.editCourse = async (req, res) => {
-//   const { id } = req.params;
-//   const { title, description, level, career_pathway_id, sort_order, amount } =
-//     req.body;
-
-//   let thumbnail_url = null;
-
-//   if (req.file) {
-//     const result = await cloudinary.uploader.upload(req.file.path, {
-//       folder: "courses",
-//     });
-//     thumbnail_url = result.secure_url;
-//     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-//   }
-
-//   try {
-//     // 🔒 Check if instructor owns the course
-//     let checkQuery = `SELECT * FROM courses WHERE id = $1`;
-//     let checkParams = [id];
-
-//     const courseResult = await pool.query(checkQuery, checkParams);
-//     const course = courseResult.rows[0];
-
-//     if (!course) {
-//       return res.status(404).send("Course not found.");
-//     }
-
-//     if (
-//       req.user.role === "instructor" &&
-//       course.instructor_id !== req.user.id
-//     ) {
-//       return res.status(403).send("You are not allowed to edit this course.");
-//     }
-
-//     // ✅ Update course
-//     await pool.query(
-//       `UPDATE courses
-//        SET title = $1, description = $2, level = $3, career_pathway_id = $4,
-//            thumbnail_url = $5, sort_order = $6, amount = $7
-//        WHERE id = $8`,
-//       [
-//         title,
-//         description,
-//         level,
-//         career_pathway_id,
-//         thumbnail_url,
-//         sort_order,
-//         amount,
-//         id,
-//       ]
-//     );
-
-//     res.redirect("/admin/courses");
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send("Server error.");
-//   }
-// };
-
-// 🟦 Edit Course + Upload Curriculum
-
-
-
-// exports.createCourse = async (req, res) => {
-//   console.log("📘 Creating course with:", req.body);
-//   const { title, description, level, career_pathway_id, sort_order, amount } =
-//     req.body;
-
-//   let thumbnail_url = null;
-//   let curriculum_url = null;
-//   let curriculum_mime = null;
-//   let curriculum_name = null;
-
-//   try {
-//     // ✅ Upload thumbnail (image only)
-//     if (req.files?.thumbnail?.[0]) {
-//       const thumbPath = req.files.thumbnail[0].path;
-//       const thumbResult = await cloudinary.uploader.upload(thumbPath, {
-//         folder: "courses/thumbnails",
-//         resource_type: "image",
-//         use_filename: true,
-//         unique_filename: false,
-//       });
-
-//       thumbnail_url = thumbResult.secure_url;
-//       if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
-//     }
-
-//     // ✅ Upload curriculum (PDF/DOC/DOCX)
-//     if (req.files?.curriculum?.[0]) {
-//       const file = req.files.curriculum[0];
-//       const filePath = file.path;
-
-//       const fileResult = await cloudinary.uploader.upload(filePath, {
-//         folder: "courses/curriculums",
-//         resource_type: "raw",
-//         use_filename: true,
-//         unique_filename: false,
-//       });
-
-//       curriculum_url = fileResult.secure_url;
-//       curriculum_mime = file.mimetype; // ✅ save file type (e.g., application/pdf)
-//       curriculum_name = file.originalname; // ✅ save original filename
-
-//       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-//     }
-
-//     // ✅ Insert into DB
-//     await pool.query(
-//       `INSERT INTO courses (
-//         title, description, level, career_pathway_id,
-//         thumbnail_url, curriculum_url, sort_order,
-//         amount, created_by, instructor_id,
-//         curriculum_mime, curriculum_name
-//       )
-//       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-//       [
-//         title,
-//         description,
-//         level,
-//         career_pathway_id || null,
-//         thumbnail_url,
-//         curriculum_url,
-//         sort_order || 0,
-//         amount || 0,
-//         req.user.role === "instructor" ? "instructor" : "admin",
-//         req.user.role === "instructor" ? req.user.id : null,
-//         curriculum_mime,
-//         curriculum_name,
-//       ]
-//     );
-
-//     await logActivityForUser(req, "Course Created", `Course title: ${title}`);
-//     console.log("✅ Course created successfully.");
-
-//     res.redirect(`/admin/pathways/${career_pathway_id}/courses`);
-//   } catch (err) {
-//     console.error("❌ Error creating course:", err);
-//     res
-//       .status(500)
-//       .send("Error creating course: " + (err.message || "unknown"));
-//   }
-// };
-
-// exports.editCourse = async (req, res) => {
-//   const { id } = req.params;
-//   const { title, description, level, career_pathway_id, sort_order, amount } =
-//     req.body;
-
-//   let thumbnail_url = null;
-//   let curriculum_url = null;
-
-//   try {
-//     // Upload new thumbnail
-//     if (req.files?.thumbnail?.[0]) {
-//       const thumb = await cloudinary.uploader.upload(
-//         req.files.thumbnail[0].path,
-//         {
-//           folder: "courses/thumbnails",
-//         }
-//       );
-//       thumbnail_url = thumb.secure_url;
-//       if (fs.existsSync(req.files.thumbnail[0].path))
-//         fs.unlinkSync(req.files.thumbnail[0].path);
-//     }
-
-//     // Upload new curriculum
-//     if (req.files?.curriculum?.[0]) {
-//       const curr = await cloudinary.uploader.upload(
-//         req.files.curriculum[0].path,
-//         {
-//           folder: "courses/curriculums",
-//           resource_type: "auto",
-//         }
-//       );
-//       curriculum_url = curr.secure_url;
-//       if (fs.existsSync(req.files.curriculum[0].path))
-//         fs.unlinkSync(req.files.curriculum[0].path);
-//     }
-
-//     await pool.query(
-//       `UPDATE courses SET
-//         title=$1,
-//         description=$2,
-//         level=$3,
-//         career_pathway_id=$4,
-//         thumbnail_url=COALESCE($5, thumbnail_url),
-//         curriculum_url=COALESCE($6, curriculum_url),
-//         sort_order=$7,
-//         amount=$8
-//       WHERE id=$9`,
-//       [
-//         title,
-//         description,
-//         level,
-//         career_pathway_id || null,
-//         thumbnail_url,
-//         curriculum_url,
-//         sort_order || 0,
-//         amount || 0,
-//         id,
-//       ]
-//     );
-
-//     await logActivityForUser(req, "Course Edit", `Edited course ID: ${id}`);
-//     res.redirect("/admin/courses");
-//   } catch (err) {
-//     console.error("Error editing course:", err);
-//     res.status(500).send("Server error editing course");
-//   }
-// };
-
-
-// ✅ CREATE COURSE
 exports.createCourse = async (req, res) => {
   console.log("📘 Creating course with:", req.body);
   const { title, description, level, career_pathway_id, sort_order, amount } =
@@ -1486,6 +1636,7 @@ exports.viewEventRegistrations = async (req, res) => {
       currentPage: parseInt(page),
       totalPages,
       search,
+      role: req.session.user?.role || "admin",
     });
   } catch (err) {
     console.error("Error loading registrations:", err.message);

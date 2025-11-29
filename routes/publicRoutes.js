@@ -278,6 +278,71 @@ router.get("/testimonies", async (req, res) => {
   });
 });
 
+// Show feedback form
+router.get("/feedback", async (req, res) => {
+  const infoResult = await pool.query(
+    "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
+  );
+
+  const user = req.session.user;
+  let walletBalance = 0;
+  if (user) {
+    const wallet = await pool.query(
+      "SELECT wallet_balance2 FROM users2 WHERE email = $1",
+      [user.email]
+    );
+    walletBalance = wallet.rows[0]?.wallet_balance2 || 0;
+  }
+  res.render("feedback", {
+    info: infoResult.rows[0] || {},
+    title: "Feedback",
+    activePage: "feedback",
+    isLoggedIn: !!req.session.user,
+    subscribed: req.query.subscribed,
+    users: user,
+    walletBalance,
+    subscribed: req.query.subscribed,
+    paid: req.query.paid,
+  });
+});
+
+router.post("/feedback", async (req, res) => {
+  const {
+    user_type,
+    name,
+    email,
+    school_name,
+    student_class,
+    organization_name,
+    rating,
+    category,
+    message,
+  } = req.body;
+
+  const extra = req.body.extra ? JSON.parse(req.body.extra) : {};
+
+  await pool.query(
+    `INSERT INTO feedback 
+    (user_type, name, email, school_name, student_class, organization_name, rating, category, message, extra) 
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+    [
+      user_type,
+      name,
+      email || null,
+      school_name || null,
+      student_class || null,
+      organization_name || null,
+      rating,
+      category || null,
+      message,
+      extra,
+    ]
+  );
+
+  res.redirect("/feedback?success=1");
+});
+
+
 router.get("/make-payment", async (req, res) => {
   if (!req.session.user || !req.session.user.email) {
     return res.redirect("/admin/login"); // Redirect if not logged in
