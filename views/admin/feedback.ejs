@@ -57,6 +57,27 @@
         margin-bottom:12px;
       }
 
+    .publish-btn {
+      background: #28a745;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .publish-btn.unpublish {
+      background: #6c757d;
+    }
+
+    .delete-btn {
+      background: #d9534f;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+
     @media screen {
       .filter {
         display: flex;
@@ -170,6 +191,7 @@
       <p><strong>Sentiment:</strong> <span id="fbSentiment"></span></p>
       <p><strong>Message:</strong></p>
       <div id="fbMessage" style="padding:10px; background:#f3f3f3; border-radius:6px;"></div>
+      <p><strong>Published:</strong></p> <span id="fbPublished"></span>
     </div>
   </div>
 
@@ -241,7 +263,7 @@ function renderTable(rows){
       <thead>
         <tr>
           <th>Type</th><th>Name</th><th>Email</th><th>Rating</th>
-          <th>Sentiment</th><th>Date</th><th>Action</th>
+          <th>Sentiment</th><th>Feedback</><th>Published</><th>Date</th><th>Action</th>
         </tr>
       </thead>
       <tbody>
@@ -255,8 +277,21 @@ function renderTable(rows){
         <td>${r.email || ""}</td>
         <td>${r.rating || "—"}</td>
         <td>${r.sentiment_label || "—"}</td>
+        <td>${r.message}</td>
+        <td>${r.is_published}</td>
         <td>${new Date(r.created_at).toLocaleString()}</td>
-        <td><button class="view-btn" data-id="${r.id}">View</button></td>
+        <td>
+          <button class="view-btn" data-id="${r.id}">View</button>
+
+          <button class="publish-btn" data-id="${r.id}" data-status="${r.is_published}">
+            ${r.is_published ? "Unpublish" : "Publish"}
+          </button>
+
+          <button class="delete-btn" data-id="${r.id}" style="background:#d9534f;color:white;">
+            Delete
+          </button>
+        </td>
+
       </tr>`;
   });
 
@@ -268,6 +303,38 @@ function renderTable(rows){
     btn.addEventListener("click", () => {
       openFeedbackModal(btn.dataset.id);
     });
+  });
+
+  document.querySelectorAll(".publish-btn").forEach(btn => {
+  btn.addEventListener("click", async () => {
+    const id = btn.dataset.id;
+    const newStatus = btn.dataset.status === "true" ? false : true;
+
+    await fetch(`/admin/feedback/publish/${id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus })
+    });
+
+    loadFeedback(); // refresh table
+  });
+});
+
+document.querySelectorAll(".delete-btn").forEach(btn => {
+  btn.addEventListener("click", async () => {
+    if (!confirm("Are you sure you want to delete this feedback?")) return;
+
+    await fetch(`/admin/feedback/delete/${btn.dataset.id}`, {
+      method: "DELETE"
+    });
+
+    loadFeedback(); // refresh table
+  });
+});
+  window.addEventListener('click', (e)=>{
+    if(e.target === feedbackModal){
+      closeFeedbackModal();
+    }
   });
 }
 
@@ -317,6 +384,7 @@ async function openFeedbackModal(id){
   fbRating.textContent = row.rating || "—";
   fbSentiment.textContent = `${row.sentiment_label} (${row.sentiment_score})`;
   fbMessage.textContent = row.message;
+  fbPublished.textContent = row.is_published ? "Yes" : "No";
 
   feedbackModal.style.display = "block";
 }

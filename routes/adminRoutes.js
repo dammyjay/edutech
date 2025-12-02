@@ -60,6 +60,9 @@ router.get("/feedback/api", adminController.getFeedbackAPI);
 router.get("/feedback/export/csv", adminController.exportFeedbackCSV);
 router.get("/feedback/export/excel", adminController.exportFeedbackExcel);
 router.get("/feedback/detail/:id", adminController.getFeedbackDetail);
+router.post("/feedback/publish/:id", adminController.togglePublish);
+router.delete("/feedback/delete/:id", adminController.deleteFeedback);
+
 
 
 router.get("/logout", adminController.logout);

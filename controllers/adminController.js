@@ -1004,14 +1004,44 @@ exports.getFeedbackDetail = async (req, res) => {
 };
 
 // POST /admin/feedback/publish/:id
-exports.togglePublish = async (req,res) => {
+// exports.togglePublish = async (req,res) => {
+//   try {
+//     const id = parseInt(req.params.id);
+//     const publish = !!req.body.publish;
+//     await pool.query('UPDATE feedback SET is_published = $1 WHERE id = $2', [publish, id]);
+//     res.json({ success: true });
+//   } catch(err) {
+//     console.error(err); res.status(500).json({ success:false });
+//   }
+// };
+
+exports.togglePublish = async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    const publish = !!req.body.publish;
-    await pool.query('UPDATE feedback SET is_published = $1 WHERE id = $2', [publish, id]);
+    const id = req.params.id;
+    const { status } = req.body;
+
+    await pool.query("UPDATE feedback SET is_published=$1 WHERE id=$2", [
+      status,
+      id,
+    ]);
+
     res.json({ success: true });
-  } catch(err) {
-    console.error(err); res.status(500).json({ success:false });
+  } catch (err) {
+    console.error("Publish toggle error:", err);
+    res.status(500).json({ success: false });
+  }
+};
+
+exports.deleteFeedback = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    await pool.query("DELETE FROM feedback WHERE id=$1", [id]);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Delete error:", err);
+    res.status(500).json({ success: false });
   }
 };
 
