@@ -31,7 +31,7 @@ function buildFeedbackThankYouEmail({ name, user_type, rating, message }) {
     ">
       
       <div style="text-align: center;">
-        <img src="https://res.cloudinary.com/dpkreativ/image/upload/v1733220860/jkthub_logo.png" 
+        <img src="https://res.cloudinary.com/db8ek9ro5/image/upload/v1752077995/company_logos/s9jziijrjcasbqmszey9.png" 
              width="100" style="margin-bottom: 15px;" />
         <h2 style="color: #333; margin-bottom: 5px;">Thank You for Your Feedback! ❤️</h2>
         <p style="color: #666; font-size: 14px; margin-top: 0;">
@@ -59,7 +59,7 @@ function buildFeedbackThankYouEmail({ name, user_type, rating, message }) {
       <br>
 
       <div style="text-align: center; margin-top: 25px;">
-        <a href="https://jkthub.com" 
+        <a href="https://acad.jkthub.com" 
           style="
             background: #4a76fd; 
             color: white; 

@@ -15,7 +15,7 @@ function buildFeedbackAdminEmail({
     <div style="max-width:700px; margin:0 auto; background:white; padding:25px; border-radius:10px; border:1px solid #ddd;">
 
       <div style="text-align:center; margin-bottom:20px;">
-        <img src="https://your-domain.com/logo.png" alt="Logo" style="height:55px;">
+        <img src="https://res.cloudinary.com/db8ek9ro5/image/upload/v1752077995/company_logos/s9jziijrjcasbqmszey9.png" alt="Logo" style="height:55px;">
       </div>
 
       <h2 style="color:#222; margin-bottom:10px;">📬 New Feedback Received</h2>
