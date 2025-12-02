@@ -6,6 +6,9 @@ const axios = require("axios");
 const userController = require("../controllers/userController");
 const sendEmail = require("../utils/sendEmail");
 const { feedback } = require("../controllers/adminController");
+const { buildFeedbackThankYouEmail } = require("../utils/emailTemplates"); 
+// const buildFeedbackThankYouEmail = require("../utils/feedbackEmailTemplate");
+const buildFeedbackAdminEmail = require("../utils/feedbackAdminEmail");
 
 router.get("/events/:id", userController.showEvent);
 
@@ -319,6 +322,53 @@ router.get("/feedback", async (req, res) => {
   });
 });
 
+// router.post("/feedback", async (req, res) => {
+//   try {
+//     const {
+//       user_type,
+//       name,
+//       email,
+//       school_name,
+//       student_class,
+//       organization_name,
+//       rating,
+//       category,
+//       message,
+//     } = req.body;
+
+//     const extra = req.body.extra ? JSON.parse(req.body.extra) : {};
+
+//     await pool.query(
+//       `INSERT INTO feedback
+//       (user_type, name, email, school_name, student_class, organization_name, rating, category, message, extra)
+//       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+//       [
+//         user_type,
+//         name,
+//         email || null,
+//         school_name || null,
+//         student_class || null,
+//         organization_name || null,
+//         rating,
+//         category || null,
+//         message,
+//         extra,
+//       ]
+//     );
+
+//     await sendEmail(
+//            email,
+//            "Your OTP Code",
+//            `Your code is: ${otp}`
+//          );
+//     // Return JSON success instead of redirect
+//     res.json({ success: true, message: "Feedback submitted successfully" });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ success: false, error: "Server error" });
+//   }
+// });
+
 router.post("/feedback", async (req, res) => {
   try {
     const {
@@ -353,14 +403,38 @@ router.post("/feedback", async (req, res) => {
       ]
     );
 
-    // Return JSON success instead of redirect
+    if (email) {
+      await sendEmail(
+        email,
+        "Thank You for Your Feedback ❤️",
+        buildFeedbackThankYouEmail({ name, user_type, rating, message })
+      );
+
+      // ADMIN EMAIL — sends instantly when new feedback arrives
+      await sendEmail(
+        process.env.BREVO_FROM, // store admin email in .env
+        "New Feedback Submitted 📥",
+        buildFeedbackAdminEmail({
+          name,
+          user_type,
+          email,
+          school_name,
+          student_class,
+          organization_name,
+          rating,
+          category,
+          message,
+          extra,
+        })
+      );
+    }
+
     res.json({ success: true, message: "Feedback submitted successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: "Server error" });
   }
 });
-
 
 router.get("/make-payment", async (req, res) => {
   if (!req.session.user || !req.session.user.email) {
