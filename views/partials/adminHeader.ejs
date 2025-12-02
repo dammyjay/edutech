@@ -19,10 +19,20 @@
       <!-- <button class="nav-toggle" onclick="toggleNav()">☰</button> -->
        <button id="nav-toggle-btn" class="nav-toggle" onclick="toggleNav()" aria-expanded="false" aria-controls="main-nav">☰</button>
       <nav id="main-nav">
-        <a class="active" href="<%= role === 'admin' ? '/admin/dashboard' : '/instructor/dashboard' %>">
-          Dashboard
-        </a>
-        <a href="/admin/analytics">Analytics</a>
+        <div class="dropdown">
+          <button class="dropbtn" onclick="toggleDropdown('schoolsMenu')">
+              Dashoboard ▾
+            </button>
+            <div class="dropdown-content" id="schoolsMenu">
+              <a class="active" href="<%= role === 'admin' ? '/admin/dashboard' : '/instructor/dashboard' %>">
+                Dashboard
+              </a>
+              <a href="/admin/analytics">Analytics</a>
+              <a href="/admin/feedback">Feedbacks</a>
+            </div>
+        </div>
+        
+        
         <% if (role === 'admin') { %>
           <div class="dropdown">
             <button class="dropbtn" onclick="toggleDropdown('studentsMenu')">
