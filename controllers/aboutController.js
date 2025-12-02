@@ -94,6 +94,9 @@ exports.deleteAboutSection = async (req, res) => {
 
 // // Show about page to users
 exports.getAboutPage = async (req, res) => {
+  if (!req.session.user || req.session.user.role !== "admin") {
+    return res.redirect("/admin/login");
+  }
   const result = await pool.query("SELECT * FROM about_sections ORDER BY id");
   const infoResult = await pool.query(
     "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
@@ -108,11 +111,15 @@ exports.getAboutPage = async (req, res) => {
     paid: req.query.paid,
     walletBalance: 0,
     activePage: "about", // 👈 Pass active page
+    role: 'admin' // 👈 Pass role
   });
 };
 
 // // Show admin edit view
 exports.getEditAboutPage = async (req, res) => {
+  if (!req.session.user || req.session.user.role !== "admin") {
+    return res.redirect("/admin/login");
+  }
   const result = await pool.query("SELECT * FROM about_sections ORDER BY id");
   const infoResult = await pool.query(
     "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
@@ -120,6 +127,8 @@ exports.getEditAboutPage = async (req, res) => {
   res.render("admin/editAbout", {
     sections: result.rows,
     info: infoResult.rows[0] || {},
+    role: "admin",
+    users: req.session.user,
   });
 };
 

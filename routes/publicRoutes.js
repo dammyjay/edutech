@@ -5,6 +5,7 @@ const pool = require("../models/db");
 const axios = require("axios");
 const userController = require("../controllers/userController");
 const sendEmail = require("../utils/sendEmail");
+const { feedback } = require("../controllers/adminController");
 
 router.get("/events/:id", userController.showEvent);
 
@@ -210,6 +211,10 @@ router.get("/testimony", async (req, res) => {
   const testimonyResult = await pool.query(
     "SELECT * FROM testimonies WHERE is_published = true ORDER BY id"
   );
+
+  const q = await pool.query(
+    "SELECT name, message, rating, user_type, created_at FROM feedback WHERE is_published = true ORDER BY created_at DESC LIMIT 50"
+  );
   const user = req.session.user;
     let walletBalance = 0;
     if (user) {
@@ -231,6 +236,7 @@ router.get("/testimony", async (req, res) => {
     walletBalance,
     subscribed: req.query.subscribed,
     paid: req.query.paid,
+    feedbacks: q.rows,
   });
 });
 
@@ -267,6 +273,10 @@ router.get("/testimonies", async (req, res) => {
   const result = await pool.query(
     "SELECT * FROM testimonies WHERE is_published = true ORDER BY created_at DESC"
   );
+
+  const q = await pool.query(
+    "SELECT name, message, rating, user_type, created_at FROM feedback WHERE is_published = true ORDER BY created_at DESC LIMIT 50"
+  );
     const user = req.session.user;
   res.render("testimonies", {
     testimonies: result.rows,
@@ -275,6 +285,7 @@ router.get("/testimonies", async (req, res) => {
     isLoggedIn: !!req.session.user,
     subscribed: req.query.subscribed,
     users: user,
+    feedbacks: q.rows,
   });
 });
 
@@ -283,6 +294,8 @@ router.get("/feedback", async (req, res) => {
   const infoResult = await pool.query(
     "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
   );
+
+  
 
   const user = req.session.user;
   let walletBalance = 0;
@@ -307,39 +320,45 @@ router.get("/feedback", async (req, res) => {
 });
 
 router.post("/feedback", async (req, res) => {
-  const {
-    user_type,
-    name,
-    email,
-    school_name,
-    student_class,
-    organization_name,
-    rating,
-    category,
-    message,
-  } = req.body;
-
-  const extra = req.body.extra ? JSON.parse(req.body.extra) : {};
-
-  await pool.query(
-    `INSERT INTO feedback 
-    (user_type, name, email, school_name, student_class, organization_name, rating, category, message, extra) 
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-    [
+  try {
+    const {
       user_type,
       name,
-      email || null,
-      school_name || null,
-      student_class || null,
-      organization_name || null,
+      email,
+      school_name,
+      student_class,
+      organization_name,
       rating,
-      category || null,
+      category,
       message,
-      extra,
-    ]
-  );
+    } = req.body;
 
-  res.redirect("/feedback?success=1");
+    const extra = req.body.extra ? JSON.parse(req.body.extra) : {};
+
+    await pool.query(
+      `INSERT INTO feedback 
+      (user_type, name, email, school_name, student_class, organization_name, rating, category, message, extra) 
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [
+        user_type,
+        name,
+        email || null,
+        school_name || null,
+        student_class || null,
+        organization_name || null,
+        rating,
+        category || null,
+        message,
+        extra,
+      ]
+    );
+
+    // Return JSON success instead of redirect
+    res.json({ success: true, message: "Feedback submitted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
 });
 
 

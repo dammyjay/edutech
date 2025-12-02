@@ -54,6 +54,20 @@
       </div>
     </section>
 
+  <section class="section">
+    <h1>What our users say</h1>
+    <div class="testimony-grid">
+      <% feedbacks.forEach(t => { %>
+        <div class="testimony-card" style="text-align: left; text-wrap: inherit;">
+          <p><strong><%= t.name %></strong></p>
+          <p><strong><%= t.user_type %></strong></p>
+          <p>Rating: <%= t.rating %> ⭐</p>
+          <blockquote><%= t.message %></blockquote>
+        </div>
+      <% }) %>
+    </div>
+  </section>
+
     <div id="testimonyModal" class="modal" style="display: none;">
       <div class="modal-content">
         <span class="close" onclick="closeTestimonyModal()">&times;</span>

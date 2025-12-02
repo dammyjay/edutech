@@ -3,10 +3,16 @@ const cloudinary = require("../utils/cloudinary");
 const fs = require("fs");
 
 exports.showForm = async (req, res) => {
+  if (!req.session.user || req.session.user.role !== "admin") {
+    return res.redirect("/admin/login");
+  }
   const result = await pool.query("SELECT * FROM company_info LIMIT 1");
   res.render("admin/company", {
     info: result.rows[0],
     title: "company info",
+    info: infoResult.rows[0] || {},
+    role: "admin",
+    users: req.session.user,
   });
 };
 
@@ -68,6 +74,9 @@ exports.saveInfo = async (req, res) => {
 };
 
 exports.showForm = async (req, res) => {
+  if (!req.session.user || req.session.user.role !== "admin") {
+    return res.redirect("/admin/login");
+  }
   try {
     // Get latest company info
     const result = await pool.query(
@@ -75,7 +84,13 @@ exports.showForm = async (req, res) => {
     );
     const info = result.rows[0] || {};
 
-    res.render("admin/company", { info, title: "company info" });
+    res.render("admin/company", {
+      info,
+      title: "company info",
+      info,
+      role: "admin",
+      users: req.session.user,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).send("Server Error");

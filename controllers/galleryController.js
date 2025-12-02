@@ -82,11 +82,16 @@ exports.getGallery = async (req, res) => {
     walletBalance,
     subscribed: req.query.subscribed,
     paid: req.query.paid,
+    info: infoResult.rows[0] || {},
+    role: "admin",
   });
 };
 
 // GET admin gallery dashboard
 exports.getAdminGallery = async (req, res) => {
+  if (!req.session.user || req.session.user.role !== "admin") {
+    return res.redirect("/admin/login");
+  }
   const categories = await pool.query(
     "SELECT * FROM gallery_categories ORDER BY name ASC"
   );
@@ -105,7 +110,10 @@ exports.getAdminGallery = async (req, res) => {
   res.render("admin/gallery", {
     categories: categories.rows,
     images: images.rows,
-    info
+    info,
+    info: infoResult.rows[0] || {},
+    role: "admin",
+    users: req.session.user,
   });
 };
 

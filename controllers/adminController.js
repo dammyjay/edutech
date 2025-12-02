@@ -11,6 +11,40 @@ const puppeteer = require("puppeteer");
 const { logActivityForUser } = require("../utils/activityLogger");
 const path = require("path");
 
+// require at top of file
+const Sentiment = require('sentiment');
+const sw = require('stopword');
+const ExcelJS = require('exceljs');
+
+const sentiment = new Sentiment();
+
+
+// helper: extract keywords (very simple)
+function extractKeywords(text, topN = 25) {
+  if (!text) return [];
+  // normalize & split
+  const words = text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+
+  // remove stopwords
+  const filtered = sw.removeStopwords(words);
+
+  // freq map
+  const freq = {};
+  filtered.forEach(w => {
+    if (w.length <= 2) return;
+    freq[w] = (freq[w] || 0) + 1;
+  });
+
+  // sort and return topN
+  return Object.entries(freq)
+    .sort((a,b) => b[1] - a[1])
+    .slice(0, topN)
+    .map(([word, count]) => ({ word, count }));
+}
 
 // Show forgot password form
 exports.showForgotPasswordForm = (req, res) => {
@@ -349,39 +383,6 @@ exports.dashboard = async (req, res) => {
   }
 };
 
-// exports.exportAnalyticsPDF = async (req, res) => {
-//   try {
-//     const browser = await puppeteer.launch({
-//       headless: "new",
-//       args: ["--no-sandbox", "--disable-setuid-sandbox"],
-//     });
-
-//     const page = await browser.newPage();
-
-//     // Use request host for the live URL
-//     const url = `${req.protocol}://${req.get("host")}/admin/analytics`;
-//     await page.goto(url, { waitUntil: "networkidle0" });
-
-//     const pdf = await page.pdf({
-//       format: "A4",
-//       printBackground: true,
-//       margin: { top: "20px", bottom: "20px" },
-//     });
-
-//     await browser.close();
-
-//     res.set({
-//       "Content-Type": "application/pdf",
-//       "Content-Disposition": "attachment; filename=analytics-report.pdf",
-//       "Content-Length": pdf.length,
-//     });
-//     res.send(pdf);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send("Could not generate PDF");
-//   }
-// };
-
 exports.exportAnalyticsPDF = async (req, res) => {
   try {
     const browser = await puppeteer.launch({
@@ -462,76 +463,6 @@ exports.users = async (req, res) => {
     res.json({ byRole: byRole.rows, active: active.rows[0].active_48h, inactive: inactive.rows[0].inactive_30d });
   } catch (err) { console.error(err); res.status(500).json({error:'Server error'}); }
 };
-
-
-// exports.courses = async (req, res) => {
-//   try {
-//     // --- BASIC COUNTS ---
-//     const counts = await pool.query(`
-//       SELECT
-//         (SELECT COUNT(*) FROM courses) AS total_courses,
-//         (SELECT COUNT(*) FROM modules) AS total_modules,
-//         (SELECT COUNT(*) FROM lessons) AS total_lessons;
-//     `);
-
-//     // --- TOP COURSES ---
-//     const topCourses = await pool.query(`
-//       SELECT
-//         c.id,
-//         c.title,
-
-//         -- Individual enrollments
-//         COALESCE(indiv.count, 0) AS individual_enrollments,
-//         COALESCE(indiv.avg_progress, 0)::numeric(6,2) AS avg_progress,
-
-//         -- School-based enrollments
-//         COALESCE(school.count, 0) AS school_enrollments,
-
-//         -- Total enrollments = individual + school
-//         COALESCE(indiv.count, 0) + COALESCE(school.count, 0) AS total_enrollments
-
-//       FROM courses c
-
-//       -- INDIVIDUAL ENROLLMENTS (course_enrollments)
-//       LEFT JOIN (
-//         SELECT
-//           course_id,
-//           COUNT(*)::int AS count,
-//           COALESCE(AVG(progress), 0) AS avg_progress
-//         FROM course_enrollments
-//         GROUP BY course_id
-//       ) indiv ON indiv.course_id = c.id
-
-//       -- SCHOOL ENROLLMENTS
-//       LEFT JOIN (
-//         SELECT
-//           sc.course_id,
-//           COUNT(us.user_id)::int AS count
-//         FROM school_courses sc
-//         JOIN schools s ON s.id = sc.school_id
-        
-//         -- link to actual users in that school
-//         JOIN user_school us
-//             ON us.school_id = sc.school_id
-//            AND us.role_in_school = 'student'
-//            AND us.approved = true
-
-//         GROUP BY sc.course_id
-//       ) school ON school.course_id = c.id
-
-//       ORDER BY total_enrollments DESC
-//       LIMIT 10;
-//     `);
-
-//     res.json({
-//       counts: counts.rows[0],
-//       topCourses: topCourses.rows,
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Server error" });
-//   }
-// };
 
 exports.courses = async (req, res) => {
   try {
@@ -636,7 +567,6 @@ exports.courses = async (req, res) => {
   }
 };
 
-
 exports.progress = async (req, res) => {
   try {
     const lessonsToday = await pool.query("SELECT COUNT(*)::int AS lessons_completed_today FROM user_lesson_progress WHERE completed_at >= CURRENT_DATE");
@@ -668,7 +598,6 @@ exports.quizzes = async (req, res) => {
     res.json({ summary: q.rows[0], passFail: passFail.rows });
   } catch (err) { console.error(err); res.status(500).json({error:'Server error'}); }
 };
-
 
 exports.finance = async (req, res) => {
   try {
@@ -721,6 +650,9 @@ exports.eventPaymentDetails = async (req, res) => {
   res.json(q.rows);
 };
 
+// exports.showFeedbackForm = (req, res) => {
+//   res.render('feedback'); // feedback.ejs
+// };
 
 exports.feedback = async (req, res) => {
   try {
@@ -742,7 +674,151 @@ exports.activity = async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({error:'Server error'}); }
 };
 
+exports.submitFeedbackAPI = async (req, res) => {
+  try {
+    const {
+      user_type,
+      name,
+      email,
+      message,
+      rating,
+      student_class,
+      school_name,
+      organization_name,
+    } = req.body;
 
+    await pool.query(
+      `INSERT INTO feedback(user_type, fullname, email, message, rating, student_class, school_name, organization_name)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [
+        user_type,
+        name,
+        email,
+        message,
+        rating,
+        student_class || null,
+        school_name || null,
+        organization_name || null,
+      ]
+    );
+
+    return res.json({
+      success: true,
+      message: "Thank you! Your feedback has been submitted successfully.",
+    });
+  } catch (err) {
+    console.error("❌ FEEDBACK ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Could not submit feedback",
+    });
+  }
+};
+
+exports.showFeedbackForm = (req, res) => {
+  res.render("feedback"); // feedback.ejs
+};
+
+// Submit feedback via AJAX
+// exports.submitFeedbackAPI = async (req, res) => {
+//   try {
+//     const {
+//       user_type,
+//       name,
+//       email,
+//       message,
+//       rating,
+//       student_class,
+//       school_name,
+//       organization_name,
+//     } = req.body;
+
+//     await pool.query(
+//       `INSERT INTO feedback(user_type, fullname, email, message, rating, student_class, school_name, organization_name)
+//        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+//       [
+//         user_type,
+//         name,
+//         email,
+//         message,
+//         rating,
+//         student_class || null,
+//         school_name || null,
+//         organization_name || null,
+//       ]
+//     );
+
+//     // Return JSON so frontend can show thank-you
+//     res.json({ success: true, message: "Thank you for your feedback!" });
+
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ success: false, message: "Could not submit feedback" });
+//   }
+// };
+
+exports.submitFeedbackAPI = async (req, res) => {
+  try {
+    const {
+      user_type,
+      name,
+      email,
+      message,
+      rating,
+      student_class,
+      school_name,
+      organization_name,
+      category,
+      extra,
+    } = req.body;
+
+    // sentiment analysis
+    const s = sentiment.analyze((message || "") + " " + (category || ""));
+    const sentiment_score = s.score;
+    let sentiment_label = "neutral";
+    if (sentiment_score > 1) sentiment_label = "positive";
+    if (sentiment_score < -1) sentiment_label = "negative";
+
+    // keywords
+    const keywords = extractKeywords(message || "");
+
+    // insert (include optional sentiment & keywords if the columns exist)
+    await pool.query(
+      `INSERT INTO feedback(user_type, name, email, message, rating, student_class, school_name, organization_name, category, extra, sentiment_label, sentiment_score, keywords, is_published)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+      [
+        user_type,
+        name,
+        email || null,
+        message,
+        rating || null,
+        student_class || null,
+        school_name || null,
+        organization_name || null,
+        category || null,
+        extra || null,
+        sentiment_label,
+        sentiment_score,
+        JSON.stringify(keywords),
+        false, // default unpublished until admin approves
+      ]
+    );
+
+    return res.json({
+      success: true,
+      message: "Thank you! Your feedback has been submitted successfully.",
+    });
+  } catch (err) {
+    console.error("❌ FEEDBACK ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Could not submit feedback",
+    });
+  }
+};
+
+
+// Admin HTML view
 exports.viewFeedback = async (req, res) => {
   if (!req.session.user || req.session.user.role !== "admin") {
     return res.redirect("/admin/login");
@@ -766,6 +842,176 @@ exports.viewFeedback = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send("Error loading feedback");
+  }
+};
+
+// Admin JSON API
+// exports.getFeedbackAPI = async (req, res) => {
+//   try {
+//     const feedbackResult = await pool.query(
+//       "SELECT * FROM feedback ORDER BY created_at DESC"
+//     );
+
+//     const infoResult = await pool.query(
+//       "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
+//     );
+//     res.json({ feedback: feedbackResult.rows, info: infoResult.rows[0] });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Server error" });
+//   }
+// };
+
+// GET /admin/feedback/api
+exports.getFeedbackAPI = async (req, res) => {
+  try {
+    // query params: page, perPage, user_type, rating, dateFrom, dateTo, school, search, published
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const perPage = Math.min(200, parseInt(req.query.perPage) || 20);
+    const offset = (page - 1) * perPage;
+
+    const filters = [];
+    const params = [];
+
+    if (req.query.user_type) {
+      params.push(req.query.user_type);
+      filters.push(`user_type = $${params.length}`);
+    }
+    if (req.query.rating) {
+      params.push(parseInt(req.query.rating));
+      filters.push(`rating = $${params.length}`);
+    }
+    if (req.query.published) {
+      params.push(req.query.published === 'true');
+      filters.push(`is_published = $${params.length}`);
+    }
+    if (req.query.school_name) {
+      params.push(`%${req.query.school_name}%`);
+      filters.push(`school_name ILIKE $${params.length}`);
+    }
+    if (req.query.dateFrom) {
+      params.push(req.query.dateFrom);
+      filters.push(`created_at >= $${params.length}`);
+    }
+    if (req.query.dateTo) {
+      params.push(req.query.dateTo);
+      filters.push(`created_at <= $${params.length}`);
+    }
+    if (req.query.search) {
+      params.push(`%${req.query.search}%`);
+      filters.push(`(name ILIKE $${params.length} OR message ILIKE $${params.length} OR email ILIKE $${params.length})`);
+    }
+
+    const where = filters.length ? 'WHERE ' + filters.join(' AND ') : '';
+
+    // total count
+    const totalQ = await pool.query(`SELECT COUNT(*)::int AS total FROM feedback ${where}`, params);
+    const total = totalQ.rows[0].total;
+
+    // fetch page
+    params.push(perPage, offset);
+    const q = await pool.query(
+      `SELECT id, user_type, name, email, message, rating, school_name, student_class, organization_name, category, created_at, sentiment_label, sentiment_score, keywords, is_published
+       FROM feedback
+       ${where}
+       ORDER BY created_at DESC
+       LIMIT $${params.length-1} OFFSET $${params.length}`,
+      params
+    );
+
+    res.json({ total, page, perPage, rows: q.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+
+// CSV export
+exports.exportFeedbackCSV = async (req, res) => {
+  try {
+    // reuse getFeedbackAPI style filter building or simpler: export all / with same filters
+    // For brevity, keep same query as getFeedbackAPI but without pagination
+    const filters = [];
+    const params = [];
+    if (req.query.user_type) { params.push(req.query.user_type); filters.push(`user_type = $${params.length}`); }
+    if (req.query.published) { params.push(req.query.published === 'true'); filters.push(`is_published = $${params.length}`); }
+    if (req.query.search) { params.push(`%${req.query.search}%`); filters.push(`(name ILIKE $${params.length} OR message ILIKE $${params.length})`); }
+    const where = filters.length ? 'WHERE ' + filters.join(' AND ') : '';
+
+    const q = await pool.query(
+      `SELECT id, user_type, name, email, message, rating, school_name, category, student_class, organization_name, created_at FROM feedback ${where} ORDER BY created_at DESC`,
+      params
+    );
+ 
+    const fields = ['id','user_type','name','email','rating', 'message', 'category','school_name', 'student_class', 'organization_name','created_at'];
+    const parser = new Parser({ fields });
+    const csv = parser.parse(q.rows);
+
+    res.setHeader('Content-disposition', 'attachment; filename=feedback.csv');
+    res.set('Content-Type', 'text/csv');
+    res.status(200).send(csv);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Export failed');
+  }
+};
+
+// Excel export
+exports.exportFeedbackExcel = async (req, res) => {
+  try {
+    const q = await pool.query('SELECT id, user_type, name, email, message, rating, school_name, category, student_class, organization_name, created_at FROM feedback ORDER BY created_at DESC');
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Feedback');
+
+    sheet.columns = [
+      { header: 'ID', key: 'id', width: 8 },
+      { header: 'Type', key: 'user_type', width: 15 },
+      { header: 'Name', key: 'name', width: 25 },
+      { header: 'Email', key: 'email', width: 25 },
+      { header: 'Rating', key: 'rating', width: 10 },
+      { header: 'Category', key: 'category', width: 25 },
+      { header: 'School', key: 'school_name', width: 20 },
+      { header: 'Student class', key: 'student_class', width: 20 },
+      { header: 'Organization', key: 'organization_name', width: 20 },
+      { header: 'Message', key: 'message', width: 60 },
+      { header: 'Date', key: 'created_at', width: 20 }
+    ];
+
+    q.rows.forEach(r => sheet.addRow(r));
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=feedback.xlsx');
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Excel export failed');
+  }
+};
+
+// GET /admin/feedback/detail/:id
+exports.getFeedbackDetail = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const q = await pool.query('SELECT * FROM feedback WHERE id = $1', [id]);
+    if(q.rowCount === 0) return res.status(404).json({ error: 'not found' });
+    return res.json(q.rows[0]);
+  } catch(err) {
+    console.error(err); res.status(500).json({error:'server'});
+  }
+};
+
+// POST /admin/feedback/publish/:id
+exports.togglePublish = async (req,res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const publish = !!req.body.publish;
+    await pool.query('UPDATE feedback SET is_published = $1 WHERE id = $2', [publish, id]);
+    res.json({ success: true });
+  } catch(err) {
+    console.error(err); res.status(500).json({ success:false });
   }
 };
 
@@ -1447,6 +1693,9 @@ exports.createCourseUnderPathway = async (req, res) => {
 };
 
 exports.showBenefits = async (req, res) => {
+  if (!req.session.user || req.session.user.role !== "admin") {
+    return res.redirect("/admin/login");
+  }
   const infoResult = await pool.query(
     "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
   );
@@ -1458,6 +1707,8 @@ exports.showBenefits = async (req, res) => {
     info,
     benefits: benefitsResult.rows,
     search: req.query.search || "",
+    role: "admin",
+    users: req.session.user,
   });
 };
 
@@ -1591,6 +1842,9 @@ exports.createEvent = async (req, res) => {
 };
 
 exports.viewEventRegistrations = async (req, res) => {
+  if (!req.session.user || req.session.user.role !== "admin") {
+    return res.redirect("/admin/login");
+  }
   const eventId = req.params.id;
   const { search = "", page = 1 } = req.query;
   const limit = 10;
@@ -1645,6 +1899,9 @@ exports.viewEventRegistrations = async (req, res) => {
 };
 
 exports.showEvents = async (req, res) => {
+  if (!req.session.user || req.session.user.role !== "admin") {
+    return res.redirect("/admin/login");
+  }
   try {
     const infoResult = await pool.query(
       "SELECT * FROM company_info ORDER BY id DESC LIMIT 1"
@@ -1659,6 +1916,8 @@ exports.showEvents = async (req, res) => {
       event: {}, // default for create form
       formAction: "/admin/events/create",
       submitLabel: "Create Event",
+      role: "admin",
+      users: req.session.user,
     });
   } catch (err) {
     console.error("Error loading events:", err);

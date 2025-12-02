@@ -16,6 +16,9 @@ const { sendFaqAnswerEmail } = require("../utils/sendEmail");
 // });
 
 router.get("/admin/faqs", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== "admin") {
+    return res.redirect("/admin/login");
+  }
   try {
     const { filter } = req.query;
 
@@ -44,6 +47,9 @@ router.get("/admin/faqs", async (req, res) => {
       faqs: result.rows,
       title: "Manage FAQ",
       filter,
+      info: infoResult.rows[0] || {},
+      role: "admin",
+      users: req.session.user,
     });
   } catch (err) {
     console.error("Error fetching FAQs:", err);

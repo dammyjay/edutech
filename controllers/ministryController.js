@@ -7,6 +7,9 @@ exports.showForm = async (req, res) => {
   res.render("admin/ministry", {
     info: result.rows[0],
     title: "Ministry info",
+    info: infoResult.rows[0] || {},
+    role: "admin",
+    users: req.session.user,
   });
 };
 
@@ -66,6 +69,9 @@ exports.saveInfo = async (req, res) => {
 };
 
 exports.showForm = async (req, res) => {
+  if (!req.session.user || req.session.user.role !== "admin") {
+    return res.redirect("/admin/login");
+  }
   try {
     // Get latest ministry info
     const result = await pool.query(
@@ -73,7 +79,13 @@ exports.showForm = async (req, res) => {
     );
     const info = result.rows[0] || {};
 
-    res.render("admin/ministry", { info, title: "Ministry info" });
+    res.render("admin/ministry", {
+      info,
+      title: "Ministry info",
+      info: infoResult.rows[0] || {},
+      role: "admin",
+      users: req.session.user,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).send("Server Error");

@@ -36,21 +36,7 @@ const multer = require("multer");
 router.get("/login", adminController.showLogin);
 router.post("/login", adminController.login);
 router.get("/dashboard", adminController.dashboard);
-// function ensureAdmin(req, res, next) {
-//   if (!req.session.user || req.session.user.role !== "admin") {
-//     return res.status(401).json({ error: "Unauthorized" });
-//   }
-//   next();
-// }
 
-// router.get("/stats/overview", ensureAdmin, adminApi.overview);
-// router.get("/stats/users", ensureAdmin, adminApi.users);
-// router.get("/stats/courses", ensureAdmin, adminApi.courses);
-// router.get("/stats/progress", ensureAdmin, adminApi.progress);
-// router.get("/stats/quizzes", ensureAdmin, adminApi.quizzes);
-// router.get("/stats/finance", ensureAdmin, adminApi.finance);
-// router.get("/stats/feedback", ensureAdmin, adminApi.feedback);
-// router.get("/stats/activity", ensureAdmin, adminApi.activity);
 
 router.get("/analytics/export", adminController.exportAnalyticsPDF);
 router.get("/analytics", adminController.analyticsPage);
@@ -68,6 +54,14 @@ router.get(
 );
 
 router.get("/feedback", adminController.viewFeedback);
+
+// Admin API (JSON)
+router.get("/feedback/api", adminController.getFeedbackAPI);
+router.get("/feedback/export/csv", adminController.exportFeedbackCSV);
+router.get("/feedback/export/excel", adminController.exportFeedbackExcel);
+router.get("/feedback/detail/:id", adminController.getFeedbackDetail);
+
+
 router.get("/logout", adminController.logout);
 
 router.get("/forgot-password", adminController.showForgotPasswordForm);
