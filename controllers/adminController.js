@@ -4,6 +4,8 @@ const crypto = require("crypto");
 // const nodemailer = require("nodemailer");
 const sendEmail = require("../utils/sendEmail");
 const cloudinary = require("../utils/cloudinary");
+const buildFeedbackPDF = require("../utils/feedbackPdfTemplate");
+const buildAnalyticsPDF = require("../utils/buildAnalyticsPDF");
 const fs = require("fs");
 const { Parser } = require("json2csv");
 const PDFDocument = require("pdfkit");
@@ -383,48 +385,494 @@ exports.dashboard = async (req, res) => {
   }
 };
 
+// exports.exportAnalyticsPDF = async (req, res) => {
+//   try {
+//     const browser = await puppeteer.launch({
+//       headless: true,
+//       args: ["--no-sandbox", "--disable-setuid-sandbox"],
+//     });
+
+//     const page = await browser.newPage();
+
+//     const url = `${req.protocol}://${req.get("host")}/admin/analytics`;
+//     console.log("Loading URL:", url);
+
+//     if (req.cookies && req.cookies["connect.sid"]) {
+//       await page.setCookie({
+//         name: "connect.sid",
+//         value: req.cookies["connect.sid"],
+//         domain: new URL(url).hostname,
+//         path: "/",
+//         httpOnly: true,
+//         secure: req.secure,
+//       });
+//     }
+
+//     await page.goto(url, { waitUntil: "networkidle0", timeout: 60000 });
+
+//     const pdf = await page.pdf({
+//       format: "A4",
+//       printBackground: true,
+//       margin: { top: "20px", bottom: "20px" },
+//     });
+
+//     await browser.close();
+
+//     res.set({
+//       "Content-Type": "application/pdf",
+//       "Content-Disposition": "attachment; filename=analytics-report.pdf",
+//       "Content-Length": pdf.length,
+//     });
+//     res.send(pdf);
+//   } catch (err) {
+//     console.error("PDF generation error:", err);
+//     res.status(500).send("Could not generate PDF");
+//   }
+// };
+
+// exports.exportAnalyticsPDF = async (req, res) => {
+//   try {
+//     // const [
+//     //   overview,
+//     //   users,
+//     //   courses,
+//     //   quizzes,
+//     //   activity,
+//     //   finance,
+//     //   eventPaymentDetails,
+//     // ] = await Promise.all([
+//     //   pool.query(`SELECT * FROM admin_overview()`),
+//     //   pool.query(`SELECT * FROM admin_users_by_role()`),
+//     //   pool.query(`SELECT * FROM admin_courses()`),
+//     //   pool.query(`SELECT * FROM admin_quiz_stats()`),
+//     //   pool.query(`SELECT * FROM admin_activity()`),
+//     //   pool.query(`SELECT * FROM admin_finance()`),
+//     //   pool.query(`SELECT * FROM admin_event_payment_details()`),
+//     // ]);
+
+//     const [
+//       overview,
+//       users,
+//       courses,
+//       quizzes,
+//       activity,
+//       finance,
+//       eventPaymentDetails,
+//     ] = await Promise.all([
+//       // overview
+//       (async () => {
+//         const total = await pool.query(
+//           "SELECT COUNT(*)::int AS total_users FROM users2"
+//         );
+//         const roles = await pool.query(
+//           "SELECT role, COUNT(*)::int AS count FROM users2 GROUP BY role"
+//         );
+//         const newbies = await pool.query(`
+//       SELECT
+//         COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '1 day')::int AS new_24h,
+//         COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::int AS new_7d,
+//         COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::int AS new_30d
+//       FROM users2;
+//     `);
+//         const dau = await pool.query(
+//           "SELECT COUNT(DISTINCT user_id)::int AS dau FROM activities WHERE created_at >= NOW() - INTERVAL '1 day'"
+//         );
+
+//         return {
+//           total_users: total.rows[0].total_users,
+//           roles: roles.rows,
+//           new_users: newbies.rows[0],
+//           dau: dau.rows[0].dau,
+//         };
+//       })(),
+
+//       // users
+//       (async () => {
+//         const byRole = await pool.query(
+//           "SELECT role, COUNT(*)::int AS count FROM users2 GROUP BY role"
+//         );
+//         const active = await pool.query(
+//           "SELECT COUNT(*)::int AS active_48h FROM activities WHERE created_at >= NOW() - INTERVAL '48 hours'"
+//         );
+//         const inactive = await pool.query(
+//           "SELECT COUNT(*)::int AS inactive_30d FROM users2 WHERE id NOT IN (SELECT DISTINCT user_id FROM activities WHERE created_at >= NOW() - INTERVAL '30 days')"
+//         );
+//         return {
+//           byRole: byRole.rows,
+//           active: active.rows[0].active_48h,
+//           inactive: inactive.rows[0].inactive_30d,
+//         };
+//       })(),
+
+//       // courses
+//       (async () => {
+//         const counts = await pool.query(`
+//       SELECT
+//         (SELECT COUNT(*) FROM courses) AS total_courses,
+//         (SELECT COUNT(*) FROM modules) AS total_modules,
+//         (SELECT COUNT(*) FROM lessons) AS total_lessons;
+//     `);
+
+//         const topCourses =
+//           await pool.query(/* same long query you already have */);
+
+//         return {
+//           counts: counts.rows[0],
+//           topCourses: topCourses.rows,
+//         };
+//       })(),
+
+//       // quizzes
+//       (async () => {
+//         const q = await pool.query(`
+//       SELECT
+//         (SELECT COUNT(*) FROM quizzes)::int AS total_quizzes,
+//         (SELECT COUNT(*) FROM quiz_submissions)::int AS total_quiz_submissions,
+//         (SELECT COALESCE(AVG(score),0) FROM quiz_submissions)::numeric(6,2) AS avg_score;
+//     `);
+//         const passFail = await pool.query(
+//           "SELECT passed, COUNT(*)::int AS count FROM quiz_submissions GROUP BY passed"
+//         );
+//         return { summary: q.rows[0], passFail: passFail.rows };
+//       })(),
+
+//       // activity
+//       (async () => {
+//         const feed = await pool.query(`
+//       SELECT id, user_id, role, action, details, created_at
+//       FROM activities
+//       ORDER BY created_at DESC
+//       LIMIT 50
+//     `);
+//         return feed.rows;
+//       })(),
+
+//       // finance
+//       (async () => {
+//         const revenue = await pool.query(`
+//       SELECT
+//         COALESCE(SUM(amount),0)::numeric(12,2) AS total_revenue,
+//         COALESCE(SUM(amount) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days'),0)::numeric(12,2) AS revenue_30d
+//       FROM transactions;
+//     `);
+//         const schoolPayments = await pool.query(
+//           `SELECT status, COUNT(*)::int AS count FROM school_payments GROUP BY status`
+//         );
+//         const eventPayments = await pool.query(`
+//       SELECT payment_status, COUNT(*)::int AS count,
+//              COALESCE(SUM(amount_paid),0)::numeric(12,2) AS total_collected
+//       FROM event_registrations
+//       GROUP BY payment_status
+//     `);
+//         return {
+//           revenue: revenue.rows[0],
+//           schoolPayments: schoolPayments.rows,
+//           eventPayments: eventPayments.rows,
+//         };
+//       })(),
+
+//       // event Payment Details
+//       (async () => {
+//         const q = await pool.query(`
+//       SELECT ep.id, ep.payment_status, ep.amount,
+//              ep.created_at,
+//              u.fullname, u.email,
+//              ev.title AS event_title
+//       FROM event_payments ep
+//       JOIN users2 u ON u.id = ep.user_id
+//       JOIN events ev ON ev.id = ep.event_id
+//       ORDER BY ep.created_at DESC
+//     `);
+//         return q.rows;
+//       })(),
+//     ]);
+
+//     const html = buildAnalyticsPDF({
+//       overview: overview.rows[0],
+//       users: { byRole: users.rows },
+//       courses: courses.rows[0],
+//       quizzes: quizzes.rows[0],
+//       activity: { feed: activity.rows },
+//       finance: finance.rows[0],
+//       eventPaymentDetails: eventPaymentDetails.rows,
+//     });
+
+//     pdf.create(html, { format: "A4" }).toStream((err, stream) => {
+//       if (err) return res.status(500).send("PDF Generation Failed");
+//       res.setHeader("Content-Type", "application/pdf");
+//       res.setHeader("Content-Disposition", "inline; filename=analytics.pdf");
+//       stream.pipe(res);
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).send("Server Error");
+//   }
+// };
+
 exports.exportAnalyticsPDF = async (req, res) => {
   try {
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    const [
+      overview,
+      users,
+      courses,
+      quizzes,
+      activity,
+      finance,
+      eventPaymentDetails,
+    ] = await Promise.all([
+      // OVERVIEW
+      (async () => {
+        const total = await pool.query(
+          "SELECT COUNT(*)::int AS total_users FROM users2"
+        );
+
+        const roles = await pool.query(
+          "SELECT role, COUNT(*)::int AS count FROM users2 GROUP BY role"
+        );
+
+        const newbies = await pool.query(`
+          SELECT
+            COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '1 day')::int AS new_24h,
+            COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::int AS new_7d,
+            COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::int AS new_30d
+          FROM users2;
+        `);
+
+        const dau = await pool.query(
+          "SELECT COUNT(DISTINCT user_id)::int AS dau FROM activities WHERE created_at >= NOW() - INTERVAL '1 day'"
+        );
+
+        return {
+          total_users: total.rows[0].total_users,
+          roles: roles.rows,
+          new_users: newbies.rows[0],
+          dau: dau.rows[0].dau,
+        };
+      })(),
+
+      // USERS
+      (async () => {
+        const byRole = await pool.query(
+          "SELECT role, COUNT(*)::int AS count FROM users2 GROUP BY role"
+        );
+
+        const active = await pool.query(
+          "SELECT COUNT(*)::int AS active_48h FROM activities WHERE created_at >= NOW() - INTERVAL '48 hours'"
+        );
+
+        const inactive = await pool.query(`
+          SELECT COUNT(*)::int AS inactive_30d 
+          FROM users2 
+          WHERE id NOT IN (
+            SELECT DISTINCT user_id FROM activities 
+            WHERE created_at >= NOW() - INTERVAL '30 days'
+          )
+        `);
+
+        return {
+          byRole: byRole.rows,
+          active: active.rows[0].active_48h,
+          inactive: inactive.rows[0].inactive_30d,
+        };
+      })(),
+
+      // COURSES
+      (async () => {
+        const counts = await pool.query(`
+          SELECT
+            (SELECT COUNT(*) FROM courses) AS total_courses,
+            (SELECT COUNT(*) FROM modules) AS total_modules,
+            (SELECT COUNT(*) FROM lessons) AS total_lessons;
+        `);
+
+        const topCourses = await pool.query(`
+          WITH lesson_count AS (
+            SELECT 
+              c.id AS course_id,
+              COUNT(l.id)::int AS total_lessons
+            FROM courses c
+            LEFT JOIN modules m ON m.course_id = c.id
+            LEFT JOIN lessons l ON l.module_id = m.id
+            GROUP BY c.id
+          ),
+
+          completed_lessons AS (
+            SELECT 
+              m.course_id,
+              ulp.user_id,
+              COUNT(ulp.lesson_id)::int AS completed_lessons
+            FROM user_lesson_progress ulp
+            JOIN lessons l ON l.id = ulp.lesson_id
+            JOIN modules m ON m.id = l.module_id
+            GROUP BY m.course_id, ulp.user_id
+          ),
+
+          avg_completion AS (
+            SELECT 
+              course_id,
+              AVG(completed_lessons)::numeric(6,2) AS avg_completed_lessons
+            FROM completed_lessons
+            GROUP BY course_id
+          )
+
+          SELECT
+            c.id,
+            c.title,
+            lc.total_lessons,
+            COALESCE(indiv.count, 0) AS individual_enrollments,
+            COALESCE(school.count, 0) AS school_enrollments,
+            COALESCE(indiv.count,0) + COALESCE(school.count,0) AS total_enrollments,
+            COALESCE(ac.avg_completed_lessons, 0)::numeric(6,2) AS avg_completed_lessons,
+            CASE 
+              WHEN lc.total_lessons > 0 THEN
+                ROUND((COALESCE(ac.avg_completed_lessons, 0) / lc.total_lessons) * 100, 2)
+              ELSE 0
+            END AS avg_progress
+          FROM courses c
+          LEFT JOIN lesson_count lc ON lc.course_id = c.id
+          LEFT JOIN avg_completion ac ON ac.course_id = c.id
+
+          LEFT JOIN (
+            SELECT course_id, COUNT(*)::int AS count
+            FROM course_enrollments
+            GROUP BY course_id
+          ) indiv ON indiv.course_id = c.id
+
+          LEFT JOIN (
+            SELECT 
+              sc.course_id,
+              COUNT(us.user_id)::int AS count
+            FROM school_courses sc
+            JOIN user_school us 
+                ON us.school_id = sc.school_id
+               AND us.role_in_school = 'student'
+               AND us.approved = true
+            GROUP BY sc.course_id
+          ) school ON school.course_id = c.id
+
+          ORDER BY total_enrollments DESC
+          LIMIT 10;
+        `);
+
+        return {
+          counts: counts.rows[0],
+          topCourses: topCourses.rows,
+        };
+      })(),
+
+      // QUIZZES
+      (async () => {
+        const summary = await pool.query(`
+          SELECT
+            (SELECT COUNT(*) FROM quizzes)::int AS total_quizzes,
+            (SELECT COUNT(*) FROM quiz_submissions)::int AS total_quiz_submissions,
+            (SELECT COALESCE(AVG(score),0) FROM quiz_submissions)::numeric(6,2) AS avg_score;
+        `);
+
+        const passFail = await pool.query(
+          "SELECT passed, COUNT(*)::int AS count FROM quiz_submissions GROUP BY passed"
+        );
+
+        return { summary: summary.rows[0], passFail: passFail.rows };
+      })(),
+
+      // ACTIVITY
+      (async () => {
+        const feed = await pool.query(`
+          SELECT id, user_id, role, action, details, created_at
+          FROM activities
+          ORDER BY created_at DESC
+          LIMIT 50
+        `);
+        return feed.rows;
+      })(),
+
+      // FINANCE
+      (async () => {
+        const revenue = await pool.query(`
+          SELECT 
+            COALESCE(SUM(amount),0)::numeric(12,2) AS total_revenue,
+            COALESCE(SUM(amount) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days'),0)::numeric(12,2) AS revenue_30d
+          FROM transactions;
+        `);
+
+        const schoolPayments = await pool.query(`
+          SELECT status, COUNT(*)::int AS count FROM school_payments GROUP BY status
+        `);
+
+        const eventPayments = await pool.query(`
+          SELECT payment_status, COUNT(*)::int AS count,
+                 COALESCE(SUM(amount_paid),0)::numeric(12,2) AS total_collected
+          FROM event_registrations
+          GROUP BY payment_status
+        `);
+
+        return {
+          revenue: revenue.rows[0],
+          schoolPayments: schoolPayments.rows,
+          eventPayments: eventPayments.rows,
+        };
+      })(),
+
+      // eventPaymentDetails
+      (async () => {
+        const q = await pool.query(`
+    SELECT 
+      er.id,
+      er.registrant_name,
+      er.registrant_email,
+      er.registrant_phone,
+      er.payment_status,
+      er.amount_paid,
+      er.balance_due,
+      er.total_amount,
+      er.num_people,
+      er.child_names,
+      er.payment_option,
+      er.created_at,
+      ev.title AS event_title
+    FROM event_registrations er
+    JOIN events ev ON ev.id = er.event_id
+    ORDER BY er.created_at DESC
+  `);
+        return q.rows;
+      })(),
+    ]);
+
+    // Build the HTML
+    const html = buildAnalyticsPDF({
+      overview, // { total_users, roles, new_users, dau }
+      users: {
+        byRole: users.byRole,
+        active: users.active,
+        inactive: users.inactive,
+      },
+      courses: { counts: courses.counts, topCourses: courses.topCourses },
+      quizzes: { summary: quizzes.summary, passFail: quizzes.passFail },
+      activity: { feed: activity },
+      finance,
+      eventPaymentDetails,
     });
 
+    // Launch Puppeteer
+    const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
-    const url = `${req.protocol}://${req.get("host")}/admin/analytics`;
-    console.log("Loading URL:", url);
+    // Set HTML content
+    await page.setContent(html, { waitUntil: "networkidle0" });
 
-    if (req.cookies && req.cookies["connect.sid"]) {
-      await page.setCookie({
-        name: "connect.sid",
-        value: req.cookies["connect.sid"],
-        domain: new URL(url).hostname,
-        path: "/",
-        httpOnly: true,
-        secure: req.secure,
-      });
-    }
-
-    await page.goto(url, { waitUntil: "networkidle0", timeout: 60000 });
-
-    const pdf = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: { top: "20px", bottom: "20px" },
-    });
+    // Generate PDF
+    const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
 
     await browser.close();
 
-    res.set({
-      "Content-Type": "application/pdf",
-      "Content-Disposition": "attachment; filename=analytics-report.pdf",
-      "Content-Length": pdf.length,
-    });
-    res.send(pdf);
+    // Send PDF to client
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", "inline; filename=analytics.pdf");
+    res.send(pdfBuffer);
   } catch (err) {
-    console.error("PDF generation error:", err);
-    res.status(500).send("Could not generate PDF");
+    console.error(err);
+    res.status(500).send("Server Error");
   }
 };
 
@@ -926,6 +1374,44 @@ exports.getFeedbackAPI = async (req, res) => {
   }
 };
 
+exports.exportFeedbackPDF = async (req, res) => {
+  try {
+    const { rows: feedback } = await pool.query(`
+      SELECT *
+      FROM feedback
+      ORDER BY created_at DESC
+    `);
+
+    const html = buildFeedbackPDF(feedback);
+
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
+
+    const pdf = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "20px", bottom: "20px" },
+    });
+
+    await browser.close();
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=feedback_report.pdf`
+    );
+
+    res.send(pdf);
+  } catch (err) {
+    console.error("PDF Export Error:", err);
+    res.status(500).send("Failed to generate PDF");
+  }
+};
 
 // CSV export
 exports.exportFeedbackCSV = async (req, res) => {

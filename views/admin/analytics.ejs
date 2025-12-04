@@ -328,29 +328,11 @@ async function loadCourses() {
   // initial load
   refreshAll();
 
-//   document.getElementById("downloadPDF").addEventListener("click", () => {
-//   const element = document.body;
-//   html2pdf().from(element).save("admin-analytics.pdf");
-// });
 
 document.getElementById("exportPdfBtn").addEventListener("click", () => {
   // Open PDF in a new tab
   window.open("/admin/analytics/export", "_blank");
 });
-
-// document.getElementById("exportPdfBtn").addEventListener("click", async () => {
-//   const res = await fetch("/admin/analytics/export");
-//   if (!res.ok) return alert("Failed to generate PDF");
-
-//   const blob = await res.blob();
-//   const url = window.URL.createObjectURL(blob);
-//   const a = document.createElement("a");
-//   a.href = url;
-//   a.download = "analytics-report.pdf";
-//   document.body.appendChild(a);
-//   a.click();
-//   a.remove();
-// });
 
 
 </script>

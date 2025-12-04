@@ -57,6 +57,7 @@ router.get("/feedback", adminController.viewFeedback);
 
 // Admin API (JSON)
 router.get("/feedback/api", adminController.getFeedbackAPI);
+router.get("/feedback/export/pdf", adminController.exportFeedbackPDF);
 router.get("/feedback/export/csv", adminController.exportFeedbackCSV);
 router.get("/feedback/export/excel", adminController.exportFeedbackExcel);
 router.get("/feedback/detail/:id", adminController.getFeedbackDetail);
