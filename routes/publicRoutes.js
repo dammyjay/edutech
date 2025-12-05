@@ -9,7 +9,6 @@ const { feedback } = require("../controllers/adminController");
 const { buildFeedbackThankYouEmail } = require("../utils/emailTemplates"); 
 // const buildFeedbackThankYouEmail = require("../utils/feedbackEmailTemplate");
 const buildFeedbackAdminEmail = require("../utils/feedbackAdminEmail");
-const activityLoggerMiddleware = require("../middlewares/activityMiddleware");
 const { logActivityForUser } = require("../utils/activityLogger");
 
 router.get("/events/:id", userController.showEvent);
@@ -419,7 +418,7 @@ router.post("/feedback", async (req, res) => {
         buildFeedbackAdminEmail({
           name,
           user_type,
-          email,
+          email: email || "No email provided",
           school_name,
           student_class,
           organization_name,

@@ -3,7 +3,6 @@ const cloudinary = require("../utils/cloudinary");
 const fs = require("fs");
 // controllers/learningController.js
 const { askTutor } = require("../utils/ai");
-const activityLoggerMiddleware = require("../middlewares/activityMiddleware");
 const { logActivityForUser } = require("../utils/activityLogger");
 
 
