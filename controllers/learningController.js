@@ -3,22 +3,9 @@ const cloudinary = require("../utils/cloudinary");
 const fs = require("fs");
 // controllers/learningController.js
 const { askTutor } = require("../utils/ai");
+const activityLoggerMiddleware = require("../middlewares/activityMiddleware");
+const { logActivityForUser } = require("../utils/activityLogger");
 
-// exports.updateCourse = async (req, res) => {
-//   const { id } = req.params;
-//   const { title, description, level, amount } = req.body;
-
-//   try {
-//     await pool.query(
-//       "UPDATE courses SET title = $1, description = $2, level = $3, amount = $4 WHERE id = $5",
-//       [title, description, level, amount, id]
-//     );
-//     res.redirect(`/admin/courses/${id}?tab=details`);
-//   } catch (err) {
-//     console.error("Error updating course:", err);
-//     res.status(500).send("Server Error");
-//   }
-// };
 
 exports.updateCourse = async (req, res) => {
   const { id } = req.params;
@@ -90,125 +77,6 @@ exports.updateCourse = async (req, res) => {
 
 
 // -------------------- MODULES --------------------
-// exports.createModule = async (req, res) => {
-//   const {
-//     title,
-//     course_id,
-//     description,
-//     objectives,
-//     learning_outcomes,
-//     order_number,
-//   } = req.body;
-//   let thumbnail = null;
-
-//   if (req.file) {
-//     const result = await cloudinary.uploader.upload(req.file.path, {
-//       folder: "modules",
-//     });
-//     thumbnail = result.secure_url;
-//     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-//   }
-
-//   try {
-//     await pool.query(
-//       "INSERT INTO modules (title, course_id, description, objectives, learning_outcomes, thumbnail, order_number) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-//       [
-//         title,
-//         course_id,
-//         description,
-//         objectives,
-//         learning_outcomes,
-//         thumbnail,
-//         order_number,
-//       ]
-//     );
-//     res.redirect(`/admin/courses/${course_id}?tab=modules`);
-//   } catch (err) {
-//     console.error("Error creating module:", err);
-//     res.status(500).send("Server error");
-//   }
-// };
-// // exports.editModule = async (req, res) => {
-// //   const { title, description, objectives, learning_outcomes, order_number } =
-// //     req.body;
-// //   const { id } = req.params;
-
-// //   let thumbnail = null;
-// //   if (req.file) {
-// //     const result = await cloudinary.uploader.upload(req.file.path, {
-// //       folder: "modules",
-// //     });
-// //     thumbnail = result.secure_url;
-// //     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-// //   }
-
-// //   // Fetch old thumbnail if no new one
-// //   const oldModule = await pool.query(
-// //     "SELECT thumbnail FROM modules WHERE id = $1",
-// //     [id]
-// //   );
-// //   const updatedThumbnail = thumbnail || oldModule.rows[0].thumbnail;
-
-// //   await pool.query(
-// //     "UPDATE modules SET title=$1, description=$2, objectives=$3, learning_outcomes=$4, thumbnail=$5, order_number=$6 WHERE id=$7",
-// //     [
-// //       title,
-// //       description,
-// //       objectives,
-// //       learning_outcomes,
-// //       updatedThumbnail,
-// //       order_number,
-// //       id,
-// //     ]
-// //   );
-
-// //   const result = await pool.query(
-// //     "SELECT course_id FROM modules WHERE id = $1",
-// //     [id]
-// //   );
-// //   res.redirect(`/admin/courses/${result.rows[0].course_id}?tab=modules`);
-// // };
-
-// exports.editModule = async (req, res) => {
-//   const { title, description, objectives, learning_outcomes, order_number } =
-//     req.body;
-//   const { id } = req.params;
-
-//   let thumbnail = null;
-//   if (req.file) {
-//     const result = await cloudinary.uploader.upload(req.file.path, {
-//       folder: "modules",
-//     });
-//     thumbnail = result.secure_url;
-//     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-//   }
-
-//   // Fetch old thumbnail if no new one
-//   const oldModule = await pool.query(
-//     "SELECT thumbnail FROM modules WHERE id = $1",
-//     [id]
-//   );
-//   const updatedThumbnail = thumbnail || oldModule.rows[0].thumbnail;
-
-//   await pool.query(
-//     "UPDATE modules SET title=$1, description=$2, objectives=$3, learning_outcomes=$4, thumbnail=$5, order_number=$6 WHERE id=$7",
-//     [
-//       title,
-//       description,
-//       objectives,
-//       learning_outcomes,
-//       updatedThumbnail,
-//       order_number,
-//       id,
-//     ]
-//   );
-
-//   const result = await pool.query(
-//     "SELECT course_id FROM modules WHERE id = $1",
-//     [id]
-//   );
-//   res.redirect(`/admin/courses/${result.rows[0].course_id}?tab=modules`);
-// };
 
 // CREATE MODULE
 exports.createModule = async (req, res) => {
@@ -241,6 +109,12 @@ exports.createModule = async (req, res) => {
        (title, description, objectives, learning_outcomes, thumbnail, badge_image, order_number, course_id)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [title, description, objectives, learning_outcomes, thumbnailUrl, badgeUrl, order_number, course_id]
+    );
+
+    await logActivityForUser(
+      req,
+      "Module created",
+      `Module: ${title} for Course ID: ${course_id}`
     );
 
     // res.redirect("/admin/courses/" + course_id);
@@ -284,6 +158,12 @@ exports.editModule = async (req, res) => {
       [title, description, objectives, learning_outcomes, thumbnailUrl, badgeUrl, order_number, id]
     );
 
+    await logActivityForUser(
+      req,
+      "Module edited",
+      `Module ID: ${id} for Course ID: ${oldModule.rows[0].course_id}`
+    );
+
     // res.redirect("/admin/courses/" + oldModule.rows[0].course_id);
     res.redirect(`/admin/courses/${oldModule.rows[0].course_id}?tab=modules`);
   } catch (error) {
@@ -304,6 +184,11 @@ exports.deleteModule = async (req, res) => {
   const course_id = result.rows[0].course_id;
 
   await pool.query("DELETE FROM modules WHERE id = $1", [id]);
+  await logActivityForUser(
+    req,
+    "Module deleted",
+    `Module ID: ${id} for Course ID: ${course_id}`
+  );
   res.redirect(`/admin/courses/${course_id}?tab=modules`);
 };
 
@@ -548,6 +433,12 @@ exports.createLesson = async (req, res) => {
       [title, content, module_id, video_url, order_number]
     );
 
+    await logActivityForUser(
+      req,
+      "Lesson created",
+      `Lesson: ${title} in Module ID: ${module_id} for Course ID: ${course_id}`
+    );
+
     res.redirect(`/admin/courses/${course_id}?tab=lessons`);
   } catch (err) {
     console.error("Create Lesson Error:", err.message);
@@ -651,6 +542,11 @@ exports.editLesson = async (req, res) => {
     if (!result.rows[0]) throw new Error("Lesson or module not found");
 
     const courseId = result.rows[0].course_id;
+    await logActivityForUser(
+      req,
+      "Lesson edited",
+      `Lesson ID: ${id} in Module ID: ${module_id} for Course ID: ${courseId}`
+    );
 
     // Redirect to course lessons tab
     res.redirect(`/admin/courses/${courseId}?tab=lessons`);
@@ -666,6 +562,11 @@ exports.deleteLesson = async (req, res) => {
 
   try {
     await pool.query("DELETE FROM lessons WHERE id = $1", [id]);
+    await logActivityForUser(
+      req,
+      "Lesson deleted",
+      `Lesson ID: ${id} from Course ID: ${course_id}`
+    );
     res.redirect(`/admin/courses/${course_id}?tab=lessons`);
   } catch (err) {
     console.error("Error deleting lesson:", err.message);
@@ -709,62 +610,6 @@ exports.getLessonJSON = async (req, res) => {
   }
 };
 
-// exports.createQuiz = async (req, res) => {
-//   const { title, lesson_id } = req.body;
-//   try {
-//     await pool.query("INSERT INTO quizzes (title, lesson_id) VALUES ($1, $2)", [
-//       title,
-//       lesson_id,
-//     ]);
-//     res.redirect("back");
-//   } catch (err) {
-//     console.error("Error creating quiz:", err);
-//     res.status(500).send("Server error");
-//   }
-// };
-
-// exports.addQuizQuestion = async (req, res) => {
-//   const { quiz_id, question, options, correct_answer } = req.body;
-//   try {
-//     await pool.query(
-//       "INSERT INTO quiz_questions (quiz_id, question, options, correct_answer) VALUES ($1, $2, $3, $4)",
-//       [quiz_id, question, JSON.stringify(options), correct_answer]
-//     );
-//     res.redirect("back");
-//   } catch (err) {
-//     console.error("Error adding quiz question:", err);
-//     res.status(500).send("Server error");
-//   }
-// };
-
-// exports.deleteQuiz = async (req, res) => {
-//   const { id } = req.params;
-//   try {
-//     await pool.query("DELETE FROM quizzes WHERE id = $1", [id]);
-//     res.redirect("back");
-//   } catch (err) {
-//     console.error("Error deleting quiz:", err);
-//     res.status(500).send("Server error");
-//   }
-// };
-
-// exports.deleteQuizQuestion = async (req, res) => {
-//   const { quizId, questionId } = req.params;
-//   try {
-//     await pool.query(
-//       "DELETE FROM quiz_questions WHERE id = $1 AND quiz_id = $2",
-//       [questionId, quizId]
-//     );
-//     res.redirect("back");
-//   } catch (err) {
-//     console.error("Error deleting quiz question:", err);
-//     res.status(500).send("Server error");
-//   }
-// };
-
-// -------------------- ASSIGNMENTS --------------------
-
-// GET quiz questions for a lesson
 
 // GET or CREATE quiz for a lesson
 exports.getOrCreateLessonQuiz = async (req, res) => {
@@ -807,28 +652,6 @@ exports.getOrCreateLessonQuiz = async (req, res) => {
 };
 
 // CREATE question
-// exports.createQuizQuestion = async (req, res) => {
-//   const { quiz_id, question, question_type, correct_option } = req.body;
-//   let options = req.body.options || [];
-
-//   if (typeof options === 'string') options = [options];
-
-//   await pool.query(
-//     `INSERT INTO quiz_questions (quiz_id, question, question_type, options, correct_option)
-//      VALUES ($1, $2, $3, $4, $5)`,
-//     [quiz_id, question, question_type, options.length ? options : null, correct_option]
-//   );
-
-//   res.redirect('back');
-// };
-
-// DELETE question
-// exports.deleteQuizQuestion = async (req, res) => {
-//   const { id } = req.params;
-//   await pool.query(`DELETE FROM quiz_questions WHERE id = $1`, [id]);
-//   res.redirect('back');
-// };
-
 exports.createQuizQuestion = async (req, res) => {
   try {
     const { quiz_id, question, question_type, correct_option } = req.body;
@@ -908,81 +731,6 @@ exports.editQuizQuestion = async (req, res) => {
   }
 };
 
-// VIEW course with assignments
-// exports.viewCourseWithAssignments = async (req, res) => {
-//   const courseId = req.params.id;
-//   const activeTab = req.query.tab || "details";
-//   const selectedModuleId = req.query.module || "all";
-
-//   try {
-//     const courseResult = await pool.query("SELECT * FROM courses WHERE id = $1", [courseId]);
-//     const course = courseResult.rows[0];
-//     if (!course) return res.status(404).send("Course not found");
-
-//     const modulesResult = await pool.query("SELECT * FROM modules WHERE course_id = $1", [courseId]);
-//     const modules = modulesResult.rows;
-
-//     let assignmentsQuery = `
-//       SELECT a.*, m.title AS module_title
-//       FROM module_assignments a
-//       LEFT JOIN modules m ON a.module_id = m.id
-//       WHERE
-//         (m.course_id = $1)
-//         OR (a.course_id = $1)
-//     `;
-//     const queryParams = [courseId];
-
-//     if (selectedModuleId !== "all") {
-//       assignmentsQuery += " AND m.id = $2";
-//       queryParams.push(selectedModuleId);
-//     }
-
-//     const assignmentsResult = await pool.query(assignmentsQuery, queryParams);
-//     const assignments = assignmentsResult.rows;
-
-//     res.render("admin/singleCourse", {
-//       course,
-//       modules,
-//       assignments,
-//       selectedModuleId,
-//       activeTab
-//     });
-//   } catch (err) {
-//     console.error("Error loading module assignments:", err);
-//     res.status(500).send("Server error");
-//   }
-// };
-
-// exports.viewCourseWithAssignments = async (req, res) => {
-//   try {
-//     const modulesRes = await pool.query(`
-//       SELECT m.*, c.title AS course_title
-//       FROM modules m
-//       JOIN courses c ON m.course_id = c.id
-//       ORDER BY c.title, m.title
-//     `);
-
-//     const selectedModuleId = req.query.module || null;
-//     let assignments = [];
-
-//     if (selectedModuleId) {
-//       const assignmentRes = await pool.query(
-//         `SELECT * FROM module_assignments WHERE module_id = $1 ORDER BY id DESC`,
-//         [selectedModuleId]
-//       );
-//       assignments = assignmentRes.rows;
-//     }
-
-//     res.render("admin/singleCourse", {
-//       modules: modulesRes.rows,
-//       assignments,
-//       selectedModuleId,
-//     });
-//   } catch (err) {
-//     console.error("Get Lessons Error:", err.message);
-//     res.status(500).send("Server Error");
-//   }
-// };
 
 exports.viewCourseWithAssignments = async (req, res) => {
   const courseId = req.params.id;
@@ -1138,6 +886,12 @@ exports.createAssignment = async (req, res) => {
       [title, instructions, id]
     );
 
+    await logActivityForUser(
+      req,
+      "Created Module Assignment",
+      ` title: ${title}, Course ID: ${course_id}`
+    );
+
     // Attach module_title for frontend
     let moduleTitle = "";
     if (module_id) {
@@ -1150,6 +904,7 @@ exports.createAssignment = async (req, res) => {
 
     if (isAjax(req)) {
       return res.json(result.rows[0]);
+      
     } else {
       return res.redirect(`/admin/courses/${course_id}?tab=assignment`);
     }
@@ -1175,6 +930,11 @@ exports.editAssignment = async (req, res) => {
 
     if (isAjax(req)) {
       return res.json(result.rows[0]);
+      await logActivityForUser(
+            req,
+            "Edited Module Assignment",
+            `Assignment ID: ${id}, Title: ${title}`
+          );
     } else {
       return res.redirect(`/admin/courses/${course_id}?tab=assignment`);
     }
@@ -1185,28 +945,15 @@ exports.editAssignment = async (req, res) => {
 };
 
 // DELETE
-// exports.deleteAssignment = async (req, res) => {
-//   const { id } = req.params;
-//   const { course_id } = req.body;
-
-//   try {
-//     await pool.query("DELETE FROM module_assignments WHERE id = $1", [id]);
-
-//     if (isAjax(req)) {
-//       return res.json({ success: true });
-//     } else {
-//       return res.redirect(`/admin/courses/${course_id}?tab=assignment`);
-//     }
-//   } catch (err) {
-//     console.error("Error deleting assignment:", err);
-//     return res.status(500).json({ error: "Server error" });
-//   }
-// };
-
 exports.deleteAssignment = async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query("DELETE FROM module_assignments WHERE id = $1", [id]);
+    await logActivityForUser(
+            req,
+            "Deleted Module Assignment",
+            `Assignment ID: ${id}`
+          );
     return res.json({ success: true });
   } catch (err) {
     console.error("Error deleting assignment:", err);
@@ -1254,6 +1001,11 @@ exports.createProject = async (req, res) => {
       [title, description, id]
     );
 
+    await logActivityForUser(
+            req,
+            "Created Course Project",
+            ` title: ${title}, Course ID: ${id}`
+          );
     res.redirect(`/admin/courses/${id}?tab=project`);
   } catch (err) {
     console.error("❌ Error creating project:", err);
@@ -1288,6 +1040,11 @@ exports.editProject = async (req, res) => {
       "UPDATE course_projects SET title = $1, description = $2 WHERE id = $3",
       [title, description, id]
     );
+    await logActivityForUser(
+            req,
+            "Edited Course Project",
+            ` title: ${title}, Course ID: ${course_id}, Project ID: ${id}`
+          );
     res.redirect(`/admin/courses/${course_id}?tab=project`);
   } catch (err) {
     console.error("❌ Error editing project:", err);
@@ -1301,6 +1058,11 @@ exports.deleteProject = async (req, res) => {
   const { course_id } = req.body; // send hidden input in delete form
   try {
     await pool.query("DELETE FROM course_projects WHERE id = $1", [id]);
+    await logActivityForUser(
+            req,
+            "Deleted Course Project",
+            `Course ID: ${course_id}, Project ID: ${id}`
+          );
     res.redirect(`/admin/courses/${course_id}?tab=project`);
   } catch (err) {
     console.error("❌ Error deleting project:", err);

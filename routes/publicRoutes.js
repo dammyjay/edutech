@@ -9,6 +9,8 @@ const { feedback } = require("../controllers/adminController");
 const { buildFeedbackThankYouEmail } = require("../utils/emailTemplates"); 
 // const buildFeedbackThankYouEmail = require("../utils/feedbackEmailTemplate");
 const buildFeedbackAdminEmail = require("../utils/feedbackAdminEmail");
+const activityLoggerMiddleware = require("../middlewares/activityMiddleware");
+const { logActivityForUser } = require("../utils/activityLogger");
 
 router.get("/events/:id", userController.showEvent);
 
@@ -430,6 +432,11 @@ router.post("/feedback", async (req, res) => {
     }
 
     res.json({ success: true, message: "Feedback submitted successfully" });
+    await logActivityForUser(
+            req,
+            "Feedback posted",
+            `by: ${name} (${user_type})`
+          );
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: "Server error" });
@@ -511,10 +518,17 @@ router.post("/verify-payment", async (req, res) => {
         [amount, email]
       );
 
+      await logActivityForUser(
+        req,
+        "payment verified ",
+        `Name: ${fullName}, Email: ${email}, Amount: ${amount}`
+      );
+
       return res.json({
         success: true,
         message: "Payment verified successfully and wallet updated",
       });
+      
     } else {
       return res
         .status(400)
@@ -690,6 +704,12 @@ router.post("/verify-event-payment", async (req, res) => {
          SET amount_paid = $1, payment_status = $2
          WHERE id = $3`,
         [newTotalPaid, paymentStatus, regId]
+      );
+
+      await logActivityForUser(
+        req,
+        "Event payment verified",
+        `Reg ID: ${regId}, Amount Paid: ${amountPaid}`
       );
 
       return res.json({

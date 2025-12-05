@@ -80,6 +80,11 @@ exports.handleForgotPassword = async (req, res) => {
     "Password Reset",
     `Click <a href="${resetUrl}">here</a> to reset your password.`
   );
+  await logActivityForUser(
+    req,
+    "Reset password email sent",
+    `User: ${user.fullname}`
+  );
 
   res.render("admin/forgotPassword", {
     message: "a reset link has been sent.",
@@ -264,19 +269,29 @@ exports.login = async (req, res) => {
       await logActivityForUser(
         req,
         "teacher Logged in",
-        `Classroom: ${user.fullname}`
+        `Name: ${user.fullname}`
       );
       return res.redirect("/teacher/dashboard");
     } else if (user.role === "parent") {
       await logActivityForUser(
         req,
         "parent logged in",
-        `Classroom: ${user.fullname}`
+        `Name: ${user.fullname}`
       );
       return res.redirect("/parent/dashboard");
     } else if (user.role === "user" || user.role === "student") {
+      await logActivityForUser(
+        req,
+        "Student Logged in",
+        `Name: ${user.fullname}`
+      );
       return res.redirect("/student/dashboard");
     } else if (user.role === "instructor") {
+      await logActivityForUser(
+        req,
+        "Instructor Logged in",
+        `Name: ${user.fullname}`
+      );
       return res.redirect("/instructor/dashboard");
     }
   } catch (err) {
@@ -384,230 +399,6 @@ exports.dashboard = async (req, res) => {
     res.status(500).send("Server Error");
   }
 };
-
-// exports.exportAnalyticsPDF = async (req, res) => {
-//   try {
-//     const browser = await puppeteer.launch({
-//       headless: true,
-//       args: ["--no-sandbox", "--disable-setuid-sandbox"],
-//     });
-
-//     const page = await browser.newPage();
-
-//     const url = `${req.protocol}://${req.get("host")}/admin/analytics`;
-//     console.log("Loading URL:", url);
-
-//     if (req.cookies && req.cookies["connect.sid"]) {
-//       await page.setCookie({
-//         name: "connect.sid",
-//         value: req.cookies["connect.sid"],
-//         domain: new URL(url).hostname,
-//         path: "/",
-//         httpOnly: true,
-//         secure: req.secure,
-//       });
-//     }
-
-//     await page.goto(url, { waitUntil: "networkidle0", timeout: 60000 });
-
-//     const pdf = await page.pdf({
-//       format: "A4",
-//       printBackground: true,
-//       margin: { top: "20px", bottom: "20px" },
-//     });
-
-//     await browser.close();
-
-//     res.set({
-//       "Content-Type": "application/pdf",
-//       "Content-Disposition": "attachment; filename=analytics-report.pdf",
-//       "Content-Length": pdf.length,
-//     });
-//     res.send(pdf);
-//   } catch (err) {
-//     console.error("PDF generation error:", err);
-//     res.status(500).send("Could not generate PDF");
-//   }
-// };
-
-// exports.exportAnalyticsPDF = async (req, res) => {
-//   try {
-//     // const [
-//     //   overview,
-//     //   users,
-//     //   courses,
-//     //   quizzes,
-//     //   activity,
-//     //   finance,
-//     //   eventPaymentDetails,
-//     // ] = await Promise.all([
-//     //   pool.query(`SELECT * FROM admin_overview()`),
-//     //   pool.query(`SELECT * FROM admin_users_by_role()`),
-//     //   pool.query(`SELECT * FROM admin_courses()`),
-//     //   pool.query(`SELECT * FROM admin_quiz_stats()`),
-//     //   pool.query(`SELECT * FROM admin_activity()`),
-//     //   pool.query(`SELECT * FROM admin_finance()`),
-//     //   pool.query(`SELECT * FROM admin_event_payment_details()`),
-//     // ]);
-
-//     const [
-//       overview,
-//       users,
-//       courses,
-//       quizzes,
-//       activity,
-//       finance,
-//       eventPaymentDetails,
-//     ] = await Promise.all([
-//       // overview
-//       (async () => {
-//         const total = await pool.query(
-//           "SELECT COUNT(*)::int AS total_users FROM users2"
-//         );
-//         const roles = await pool.query(
-//           "SELECT role, COUNT(*)::int AS count FROM users2 GROUP BY role"
-//         );
-//         const newbies = await pool.query(`
-//       SELECT
-//         COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '1 day')::int AS new_24h,
-//         COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::int AS new_7d,
-//         COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::int AS new_30d
-//       FROM users2;
-//     `);
-//         const dau = await pool.query(
-//           "SELECT COUNT(DISTINCT user_id)::int AS dau FROM activities WHERE created_at >= NOW() - INTERVAL '1 day'"
-//         );
-
-//         return {
-//           total_users: total.rows[0].total_users,
-//           roles: roles.rows,
-//           new_users: newbies.rows[0],
-//           dau: dau.rows[0].dau,
-//         };
-//       })(),
-
-//       // users
-//       (async () => {
-//         const byRole = await pool.query(
-//           "SELECT role, COUNT(*)::int AS count FROM users2 GROUP BY role"
-//         );
-//         const active = await pool.query(
-//           "SELECT COUNT(*)::int AS active_48h FROM activities WHERE created_at >= NOW() - INTERVAL '48 hours'"
-//         );
-//         const inactive = await pool.query(
-//           "SELECT COUNT(*)::int AS inactive_30d FROM users2 WHERE id NOT IN (SELECT DISTINCT user_id FROM activities WHERE created_at >= NOW() - INTERVAL '30 days')"
-//         );
-//         return {
-//           byRole: byRole.rows,
-//           active: active.rows[0].active_48h,
-//           inactive: inactive.rows[0].inactive_30d,
-//         };
-//       })(),
-
-//       // courses
-//       (async () => {
-//         const counts = await pool.query(`
-//       SELECT
-//         (SELECT COUNT(*) FROM courses) AS total_courses,
-//         (SELECT COUNT(*) FROM modules) AS total_modules,
-//         (SELECT COUNT(*) FROM lessons) AS total_lessons;
-//     `);
-
-//         const topCourses =
-//           await pool.query(/* same long query you already have */);
-
-//         return {
-//           counts: counts.rows[0],
-//           topCourses: topCourses.rows,
-//         };
-//       })(),
-
-//       // quizzes
-//       (async () => {
-//         const q = await pool.query(`
-//       SELECT
-//         (SELECT COUNT(*) FROM quizzes)::int AS total_quizzes,
-//         (SELECT COUNT(*) FROM quiz_submissions)::int AS total_quiz_submissions,
-//         (SELECT COALESCE(AVG(score),0) FROM quiz_submissions)::numeric(6,2) AS avg_score;
-//     `);
-//         const passFail = await pool.query(
-//           "SELECT passed, COUNT(*)::int AS count FROM quiz_submissions GROUP BY passed"
-//         );
-//         return { summary: q.rows[0], passFail: passFail.rows };
-//       })(),
-
-//       // activity
-//       (async () => {
-//         const feed = await pool.query(`
-//       SELECT id, user_id, role, action, details, created_at
-//       FROM activities
-//       ORDER BY created_at DESC
-//       LIMIT 50
-//     `);
-//         return feed.rows;
-//       })(),
-
-//       // finance
-//       (async () => {
-//         const revenue = await pool.query(`
-//       SELECT
-//         COALESCE(SUM(amount),0)::numeric(12,2) AS total_revenue,
-//         COALESCE(SUM(amount) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days'),0)::numeric(12,2) AS revenue_30d
-//       FROM transactions;
-//     `);
-//         const schoolPayments = await pool.query(
-//           `SELECT status, COUNT(*)::int AS count FROM school_payments GROUP BY status`
-//         );
-//         const eventPayments = await pool.query(`
-//       SELECT payment_status, COUNT(*)::int AS count,
-//              COALESCE(SUM(amount_paid),0)::numeric(12,2) AS total_collected
-//       FROM event_registrations
-//       GROUP BY payment_status
-//     `);
-//         return {
-//           revenue: revenue.rows[0],
-//           schoolPayments: schoolPayments.rows,
-//           eventPayments: eventPayments.rows,
-//         };
-//       })(),
-
-//       // event Payment Details
-//       (async () => {
-//         const q = await pool.query(`
-//       SELECT ep.id, ep.payment_status, ep.amount,
-//              ep.created_at,
-//              u.fullname, u.email,
-//              ev.title AS event_title
-//       FROM event_payments ep
-//       JOIN users2 u ON u.id = ep.user_id
-//       JOIN events ev ON ev.id = ep.event_id
-//       ORDER BY ep.created_at DESC
-//     `);
-//         return q.rows;
-//       })(),
-//     ]);
-
-//     const html = buildAnalyticsPDF({
-//       overview: overview.rows[0],
-//       users: { byRole: users.rows },
-//       courses: courses.rows[0],
-//       quizzes: quizzes.rows[0],
-//       activity: { feed: activity.rows },
-//       finance: finance.rows[0],
-//       eventPaymentDetails: eventPaymentDetails.rows,
-//     });
-
-//     pdf.create(html, { format: "A4" }).toStream((err, stream) => {
-//       if (err) return res.status(500).send("PDF Generation Failed");
-//       res.setHeader("Content-Type", "application/pdf");
-//       res.setHeader("Content-Disposition", "inline; filename=analytics.pdf");
-//       stream.pipe(res);
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send("Server Error");
-//   }
-// };
 
 exports.exportAnalyticsPDF = async (req, res) => {
   try {
@@ -855,7 +646,10 @@ exports.exportAnalyticsPDF = async (req, res) => {
     });
 
     // Launch Puppeteer
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+      headless: "new", // optional but recommended
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
     const page = await browser.newPage();
 
     // Set HTML content
@@ -870,6 +664,10 @@ exports.exportAnalyticsPDF = async (req, res) => {
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", "inline; filename=analytics.pdf");
     res.send(pdfBuffer);
+    await logActivityForUser(
+      req,
+      "Admin Analytics pdf Downloaded"
+    );
   } catch (err) {
     console.error(err);
     res.status(500).send("Server Error");
@@ -1407,6 +1205,11 @@ exports.exportFeedbackPDF = async (req, res) => {
     );
 
     res.send(pdf);
+    await logActivityForUser(
+      req,
+      "feedback PDF Exported",
+      `${feedback.length} entries exported`
+    );
   } catch (err) {
     console.error("PDF Export Error:", err);
     res.status(500).send("Failed to generate PDF");
@@ -1985,7 +1788,7 @@ exports.createCourse = async (req, res) => {
         thumbnail_url, curriculum_url, sort_order,
         amount, created_by, instructor_id,
         curriculum_mime, curriculum_name,
-        certificate_url, certificate_mime, certificate_name
+        certificate_url, certificate_mime, certificate_filename
       )
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
       [
@@ -2089,7 +1892,11 @@ exports.editCourse = async (req, res) => {
         id,
       ]
     );
-
+  await logActivityForUser(
+              req,
+              "Course Edited",
+              `Course title: ${title}`
+            );
     res.redirect("back");
   } catch (error) {
     console.error("❌ Error editing course:", error);
@@ -2122,6 +1929,11 @@ exports.deleteCourse = async (req, res) => {
 
     // ✅ Delete course
     await pool.query("DELETE FROM courses WHERE id = $1", [id]);
+    await logActivityForUser(
+                req,
+                "Course Deleted",
+                `Course title: ${course.title}`
+              );
 
     res.redirect("/admin/courses");
   } catch (err) {

@@ -7,6 +7,7 @@ const { upload, lessonUpload } = require("../middlewares/upload");
 // const upload = require("../middlewares/upload");
 const { ensureAdmin } = require("../middlewares/auth");
 const activityLoggerMiddleware = require("../middlewares/activityMiddleware");
+const { logActivityForUser } = require("../utils/activityLogger");
 
 const adminController = require("../controllers/adminController");
 const companyController = require("../controllers/companyController");
