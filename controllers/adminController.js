@@ -9,7 +9,6 @@ const buildAnalyticsPDF = require("../utils/buildAnalyticsPDF");
 const fs = require("fs");
 const { Parser } = require("json2csv");
 const PDFDocument = require("pdfkit");
-const puppeteer = require("puppeteer");
 const { logActivityForUser } = require("../utils/activityLogger");
 const path = require("path");
 
@@ -401,6 +400,7 @@ exports.dashboard = async (req, res) => {
 };
 
 exports.exportAnalyticsPDF = async (req, res) => {
+  const puppeteer = require("puppeteer");
   try {
     const [
       overview,
@@ -1173,6 +1173,7 @@ exports.getFeedbackAPI = async (req, res) => {
 };
 
 exports.exportFeedbackPDF = async (req, res) => {
+  const puppeteer = require("puppeteer");
   try {
     const { rows: feedback } = await pool.query(`
       SELECT *
@@ -2882,6 +2883,7 @@ exports.assignChildToParent = async (req, res) => {
 // };
 
 exports.downloadCourseSummary = async (req, res) => {
+  const puppeteer = require("puppeteer");
   const { studentId, courseId } = req.params;
 
   try {
@@ -3333,6 +3335,7 @@ exports.getSchoolDetails = async (req, res) => {
 };
 
 exports.downloadSchoolProgressReport = async (req, res) => {
+  const puppeteer = require("puppeteer");
   const { schoolId } = req.params;
 
   try {
@@ -3585,6 +3588,7 @@ const progressRes = await pool.query(`
 
 // 📄 Download Student Login Cards (PDF with Logo)
 exports.downloadStudentLoginCards = async (req, res) => {
+  const puppeteer = require("puppeteer");
   const { schoolId } = req.params;
   try {
     // 1️⃣ Fetch school info
