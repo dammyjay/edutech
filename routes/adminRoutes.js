@@ -110,7 +110,7 @@ router.post("/articles/delete/:id", articleController.deleteArticle);
 
 // Career Pathways
 router.get("/pathways", adminController.showPathways);
-// router.post("/admin/pathways", adminController.createPathway);
+
 router.post(
   "/pathways",
   upload.single("thumbnail"),
@@ -126,30 +126,6 @@ router.post("/pathways/delete/:id", adminController.deletePathway);
 
 // Courses
 router.get("/courses", adminController.showCourses);
-
-// router.post(
-//   "/courses",
-//   upload.single("thumbnail"),
-//   adminController.createCourse
-// );
-
-// router.post(
-//   "/courses/edit/:id",
-//   upload.single("thumbnail"),
-//   adminController.editCourse
-// );
-
-// // existing create route
-// router.post("/courses", upload.fields([
-//   { name: "thumbnail", maxCount: 1 },
-//   { name: "curriculum", maxCount: 1 }
-// ]), adminController.createCourse);
-
-// // existing edit route
-// router.post("/courses/edit/:id", upload.fields([
-//   { name: "thumbnail", maxCount: 1 },
-//   { name: "curriculum", maxCount: 1 }
-// ]), adminController.editCourse);
 
 router.post(
   "/courses",
